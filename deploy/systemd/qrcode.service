@@ -1,0 +1,22 @@
+[Unit]
+Description=QR Code Security System
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/qrcode
+Environment=HOST=127.0.0.1
+Environment=PORT=5000
+Environment=GUNICORN_WORKERS=1
+Environment=GUNICORN_THREADS=4
+Environment=ENABLE_INTERNAL_SCHEDULER=True
+EnvironmentFile=-/opt/qrcode/.env
+ExecStart=/opt/qrcode/venv/bin/gunicorn --workers ${GUNICORN_WORKERS} --threads ${GUNICORN_THREADS} --timeout 300 --bind ${HOST}:${PORT} wsgi:app
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

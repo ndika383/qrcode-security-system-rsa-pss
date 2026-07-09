@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="650" viewBox="0 0 1280 650">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="650"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">DFD Level 2 - Generate QR</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Aliran data pada proses pembuatan QR bertanda tangan digital</tspan></text>
+<rect x="50" y="250" width="160" height="70" class="soft"/>
+<text x="130.0" y="280" text-anchor="middle" class="label"><tspan x="130.0" dy="0">Admin</tspan></text>
+<rect x="280" y="230" width="145" height="90" class="orange"/>
+<text x="352.5" y="260" text-anchor="middle" class="label"><tspan x="352.5" dy="0">1.1 Validasi</tspan></text>
+<text x="352.5" y="286" text-anchor="middle" class="small"><tspan x="352.5" dy="0">input</tspan></text>
+<rect x="445" y="230" width="145" height="90" class="orange"/>
+<text x="517.5" y="260" text-anchor="middle" class="label"><tspan x="517.5" dy="0">1.2 Data QR</tspan></text>
+<text x="517.5" y="286" text-anchor="middle" class="small"><tspan x="517.5" dy="0">timestamp nonce</tspan></text>
+<rect x="610" y="230" width="145" height="90" class="orange"/>
+<text x="682.5" y="260" text-anchor="middle" class="label"><tspan x="682.5" dy="0">1.3 Hash &amp; Sign</tspan></text>
+<text x="682.5" y="286" text-anchor="middle" class="small"><tspan x="682.5" dy="0">private key</tspan></text>
+<rect x="775" y="230" width="145" height="90" class="orange"/>
+<text x="847.5" y="260" text-anchor="middle" class="label"><tspan x="847.5" dy="0">1.4 Payload URL</tspan></text>
+<text x="847.5" y="286" text-anchor="middle" class="small"><tspan x="847.5" dy="0">token</tspan></text>
+<rect x="940" y="230" width="145" height="90" class="orange"/>
+<text x="1012.5" y="260" text-anchor="middle" class="label"><tspan x="1012.5" dy="0">1.5 Render QR</tspan></text>
+<text x="1012.5" y="286" text-anchor="middle" class="small"><tspan x="1012.5" dy="0">PNG</tspan></text>
+<rect x="1105" y="230" width="145" height="90" class="orange"/>
+<text x="1177.5" y="260" text-anchor="middle" class="label"><tspan x="1177.5" dy="0">1.6 Simpan Log</tspan></text>
+<text x="1177.5" y="286" text-anchor="middle" class="small"><tspan x="1177.5" dy="0">CSV/JSON</tspan></text>
+<rect x="420" y="430" width="135" height="70" class="green"/>
+<text x="487.5" y="460" text-anchor="middle" class="label"><tspan x="487.5" dy="0">Private Key</tspan></text>
+<rect x="750" y="430" width="135" height="70" class="green"/>
+<text x="817.5" y="460" text-anchor="middle" class="label"><tspan x="817.5" dy="0">Data JSON</tspan></text>
+<rect x="930" y="430" width="135" height="70" class="green"/>
+<text x="997.5" y="460" text-anchor="middle" class="label"><tspan x="997.5" dy="0">QR PNG</tspan></text>
+<rect x="1110" y="430" width="135" height="70" class="green"/>
+<text x="1177.5" y="460" text-anchor="middle" class="label"><tspan x="1177.5" dy="0">Generate Log</tspan></text>
+<path d="M210 285 L280 275" class="flow"/>
+<path d="M425 275 L445 275" class="flow"/>
+<path d="M590 275 L610 275" class="flow"/>
+<path d="M755 275 L775 275" class="flow"/>
+<path d="M920 275 L940 275" class="flow"/>
+<path d="M1085 275 L1105 275" class="flow"/>
+<path d="M520 430 L520 320" class="flow"/>
+<path d="M1115 320 L820 430" class="flow"/>
+<path d="M1115 320 L995 430" class="flow"/>
+<path d="M1115 320 L1175 430" class="flow"/>
+</svg>

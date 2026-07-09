@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1124" viewBox="0 0 1500 1124"><defs><linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#ecfeff"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/></filter></defs><rect width="100%" height="100%" fill="url(#top)"/>
+<rect x="24" y="24" width="1452" height="1076" rx="30" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<rect x="48" y="48" width="1404" height="72" rx="20" fill="#0f172a" filter="url(#shadow)"/>
+<text x="78" y="93" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">9.2 Wireframe Scanner USB</text>
+<rect x="48" y="122" width="1404" height="108" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="122" width="14" height="108" rx="7" fill="#2563eb"/>
+<text x="84" y="160" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Verifikasi Langsung QR Code</text>
+<text x="86" y="192" font-family="Arial, sans-serif" font-size="18" fill="#334155">Verifikasi dari barcode scanner USB atau webcam</text>
+<rect x="48" y="254" width="693" height="140" rx="18" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="254" width="693" height="12" rx="6" fill="#059669"/>
+<text x="70" y="294" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">1. Barcode Scanner USB</text>
+<text x="70" y="318" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Arahkan scanner ke QR</text>
+<text x="70" y="342" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Scanner otomatis mengirim Enter</text>
+<rect x="759" y="254" width="693" height="140" rx="18" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="759" y="254" width="693" height="12" rx="6" fill="#d97706"/>
+<text x="781" y="294" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">2. Webcam Laptop/Eksternal</text>
+<text x="781" y="318" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Klik mulai kamera</text>
+<text x="781" y="342" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Arahkan QR ke kamera</text>
+<rect x="48" y="418" width="1404" height="182" rx="20" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="418" width="14" height="182" rx="7" fill="#d97706"/>
+<text x="84" y="456" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Input untuk Barcode Scanner</text>
+<rect x="84" y="464" width="250" height="38" rx="19" fill="#d97706"/>
+<text x="209.0" y="489" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Fokus input scan otomatis ...............................................</text>
+<rect x="84" y="516" width="218" height="38" rx="19" fill="#d97706"/>
+<text x="193.0" y="541" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Verifikasi Sekarang</text>
+<rect x="48" y="624" width="1404" height="160" rx="20" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="624" width="14" height="160" rx="7" fill="#7c3aed"/>
+<text x="84" y="662" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Scan via Webcam</text>
+<text x="86" y="694" font-family="Arial, sans-serif" font-size="18" fill="#334155">Preview webcam</text>
+<rect x="84" y="694" width="148" height="38" rx="19" fill="#7c3aed"/>
+<text x="158.0" y="719" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Mulai Kamera</text>
+<rect x="244" y="694" width="148" height="38" rx="19" fill="#dc2626"/>
+<text x="318.0" y="719" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Pilih Kamera</text>
+<rect x="404" y="694" width="178" height="38" rx="19" fill="#0891b2"/>
+<text x="493.0" y="719" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Hentikan Kamera</text>
+<rect x="48" y="808" width="1404" height="108" rx="20" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="808" width="14" height="108" rx="7" fill="#dc2626"/>
+<text x="84" y="846" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Hasil Verifikasi</text>
+<text x="86" y="878" font-family="Arial, sans-serif" font-size="18" fill="#334155">Status, data, signature, waktu</text>
+<rect x="48" y="940" width="1404" height="90" rx="20" fill="#ffffff" stroke="#0891b2" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="940" width="14" height="90" rx="7" fill="#0891b2"/>
+<text x="84" y="978" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Statistik Scanner</text>
+</svg>

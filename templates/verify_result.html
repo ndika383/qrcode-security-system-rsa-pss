@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Verifikasi QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f5f7fb; padding: 18px; }
+        .result-shell { max-width: 720px; margin: 0 auto; }
+        .status-card { border: none; border-radius: 8px; box-shadow: 0 16px 34px rgba(24,43,77,.08); overflow: hidden; }
+        .status-header { padding: 22px; color: #fff; }
+        .status-valid { background: #17845f; }
+        .status-invalid { background: #b4232c; }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,.18); font-weight: 700; }
+        .info-table th { width: 34%; color: #667085; font-weight: 600; }
+        .action-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 520px) { .action-row { grid-template-columns: 1fr 1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <main class="result-shell">
+        <div class="card status-card">
+            <div class="status-header {% if valid %}status-valid{% else %}status-invalid{% endif %}">
+                <div class="status-badge mb-3">
+                    {% if valid %}
+                        <i class="fas fa-check-circle"></i> Valid
+                    {% elif message and 'Replay' in message %}
+                        <i class="fas fa-rotate"></i> Replay Attack
+                    {% else %}
+                        <i class="fas fa-triangle-exclamation"></i> Tidak Valid
+                    {% endif %}
+                </div>
+                <h2 class="mb-1">{{ message }}</h2>
+                <p class="mb-0">
+                    {% if valid %}
+                        QR Code berhasil diverifikasi dengan tanda tangan digital.
+                    {% else %}
+                        QR Code tidak lolos verifikasi atau memerlukan pemeriksaan lanjutan.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="mb-3"><i class="fas fa-id-card me-2"></i>Informasi Data</h5>
+                <div class="table-responsive">
+                    <table class="table info-table">
+                        <tr><th>Nama</th><td>{{ data.nama if data else '-' }}</td></tr>
+                        <tr><th>ID</th><td>{{ data.id if data else '-' }}</td></tr>
+                        <tr><th>Timestamp</th><td>{{ data.timestamp if data else '-' }}</td></tr>
+                        <tr><th>Sumber</th><td>{{ source or '-' }}</td></tr>
+                        <tr><th>Waktu Verifikasi</th><td>{{ verification_time or '-' }}</td></tr>
+                    </table>
+                </div>
+
+                {% if changed_fields %}
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-pen-to-square me-2"></i>Perubahan yang Terdeteksi</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            {% for key, value in changed_fields.items() %}
+                            <tr>
+                                <th>{{ key }}</th>
+                                <td>{{ value.asli }} &rarr; {{ value.sekarang }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="action-row mt-3">
+                    <a href="{{ url_for('scan_hp') }}" class="btn btn-success">
+                        <i class="fas fa-mobile-alt me-2"></i>Scan HP
+                    </a>
+                    <a href="{{ url_for('scanner') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-qrcode me-2"></i>Scanner
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

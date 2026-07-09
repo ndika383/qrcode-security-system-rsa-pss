@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="740" viewBox="0 0 1280 740">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="740"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Mitigasi Replay Attack</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Perbedaan alur QR asli yang dipakai ulang dan QR yang datanya dimodifikasi</tspan></text>
+<rect x="70" y="150" width="210" height="90" class="green"/>
+<text x="175.0" y="180" text-anchor="middle" class="label"><tspan x="175.0" dy="0">QR Asli</tspan></text>
+<text x="175.0" y="206" text-anchor="middle" class="small"><tspan x="175.0" dy="0">signature valid</tspan><tspan x="175.0" dy="18">data original</tspan></text>
+<rect x="350" y="150" width="210" height="90" class="green"/>
+<text x="455.0" y="180" text-anchor="middle" class="label"><tspan x="455.0" dy="0">Scan Pertama</tspan></text>
+<text x="455.0" y="206" text-anchor="middle" class="small"><tspan x="455.0" dy="0">nonce usage=1</tspan><tspan x="455.0" dy="18">status valid</tspan></text>
+<rect x="630" y="150" width="210" height="90" class="yellow"/>
+<text x="735.0" y="180" text-anchor="middle" class="label"><tspan x="735.0" dy="0">Scan Kedua</tspan></text>
+<text x="735.0" y="206" text-anchor="middle" class="small"><tspan x="735.0" dy="0">nonce usage&gt;1</tspan><tspan x="735.0" dy="18">status replay</tspan></text>
+<rect x="910" y="150" width="210" height="90" class="yellow"/>
+<text x="1015.0" y="180" text-anchor="middle" class="label"><tspan x="1015.0" dy="0">Scan Berikutnya</tspan></text>
+<text x="1015.0" y="206" text-anchor="middle" class="small"><tspan x="1015.0" dy="0">count bertambah</tspan><tspan x="1015.0" dy="18">tetap replay</tspan></text>
+<path d="M280 195 L350 195" class="flow"/>
+<path d="M560 195 L630 195" class="flow"/>
+<path d="M840 195 L910 195" class="flow"/>
+<rect x="70" y="390" width="210" height="90" class="red"/>
+<text x="175.0" y="420" text-anchor="middle" class="label"><tspan x="175.0" dy="0">QR Diubah</tspan></text>
+<text x="175.0" y="446" text-anchor="middle" class="small"><tspan x="175.0" dy="0">nama/id/timestamp</tspan><tspan x="175.0" dy="18">berbeda</tspan></text>
+<rect x="350" y="390" width="210" height="90" class="orange"/>
+<text x="455.0" y="420" text-anchor="middle" class="label"><tspan x="455.0" dy="0">Banding Original</tspan></text>
+<text x="455.0" y="446" text-anchor="middle" class="small"><tspan x="455.0" dy="0">changed_fields</tspan><tspan x="455.0" dy="18">terdeteksi</tspan></text>
+<rect x="630" y="390" width="210" height="90" class="red"/>
+<text x="735.0" y="420" text-anchor="middle" class="label"><tspan x="735.0" dy="0">Klasifikasi</tspan></text>
+<text x="735.0" y="446" text-anchor="middle" class="small"><tspan x="735.0" dy="0">data palsu</tspan><tspan x="735.0" dy="18">bukan replay</tspan></text>
+<rect x="910" y="390" width="210" height="90" class="gray"/>
+<text x="1015.0" y="420" text-anchor="middle" class="label"><tspan x="1015.0" dy="0">Log Verifikasi</tspan></text>
+<text x="1015.0" y="446" text-anchor="middle" class="small"><tspan x="1015.0" dy="0">status + detail</tspan><tspan x="1015.0" dy="18">audit trail</tspan></text>
+<path d="M280 435 L350 435" class="flow"/>
+<path d="M560 435 L630 435" class="flow"/>
+<path d="M840 435 L910 435" class="flow"/>
+<rect x="230" y="590" width="820" height="70" class="soft"/>
+<text x="640" y="620" text-anchor="middle" class="label"><tspan x="640" dy="0">Aturan utama: replay hanya sah untuk QR asli dengan signature valid dan data exact match.</tspan></text>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="720"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Checklist Deployment Produksi</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Urutan validasi instalasi, konfigurasi, reverse proxy, SSL/TLS, dan monitoring</tspan></text>
+<rect x="55" y="170" width="220" height="260" class="green"/>
+<text x="165.0" y="200" text-anchor="middle" class="label"><tspan x="165.0" dy="0">1. Server</tspan></text>
+<text x="165.0" y="226" text-anchor="middle" class="small"><tspan x="165.0" dy="0">Ubuntu 24.04</tspan><tspan x="165.0" dy="18">user sudo</tspan><tspan x="165.0" dy="18">DNS domain</tspan></text>
+<rect x="300" y="170" width="220" height="260" class="green"/>
+<text x="410.0" y="200" text-anchor="middle" class="label"><tspan x="410.0" dy="0">2. App</tspan></text>
+<text x="410.0" y="226" text-anchor="middle" class="small"><tspan x="410.0" dy="0">/opt/qrcode</tspan><tspan x="410.0" dy="18">venv</tspan><tspan x="410.0" dy="18">requirements</tspan></text>
+<rect x="545" y="170" width="220" height="260" class="green"/>
+<text x="655.0" y="200" text-anchor="middle" class="label"><tspan x="655.0" dy="0">3. Runtime</tspan></text>
+<text x="655.0" y="226" text-anchor="middle" class="small"><tspan x="655.0" dy="0">.env</tspan><tspan x="655.0" dy="18">systemd</tspan><tspan x="655.0" dy="18">Gunicorn</tspan></text>
+<rect x="790" y="170" width="220" height="260" class="green"/>
+<text x="900.0" y="200" text-anchor="middle" class="label"><tspan x="900.0" dy="0">4. Edge</tspan></text>
+<text x="900.0" y="226" text-anchor="middle" class="small"><tspan x="900.0" dy="0">Nginx</tspan><tspan x="900.0" dy="18">SSL/TLS</tspan><tspan x="900.0" dy="18">Firewall</tspan></text>
+<rect x="1035" y="170" width="220" height="260" class="green"/>
+<text x="1145.0" y="200" text-anchor="middle" class="label"><tspan x="1145.0" dy="0">5. Verify</tspan></text>
+<text x="1145.0" y="226" text-anchor="middle" class="small"><tspan x="1145.0" dy="0">curl local</tspan><tspan x="1145.0" dy="18">curl HTTPS</tspan><tspan x="1145.0" dy="18">journal/log</tspan></text>
+<rect x="220" y="550" width="840" height="85" class="gray"/>
+<text x="640" y="583" text-anchor="middle" class="label"><tspan x="640" dy="0">Kriteria selesai</tspan></text>
+<text x="640" y="612" text-anchor="middle" class="small"><tspan x="640" dy="0">Aplikasi hanya bind lokal, domain HTTPS aktif, QR baru memakai BASE_URL publik, log service bersih.</tspan></text>
+</svg>

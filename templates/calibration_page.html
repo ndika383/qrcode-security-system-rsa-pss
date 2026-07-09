@@ -1,0 +1,643 @@
+<!-- templates/calibration_page.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalibrasi Performa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .tier-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+        .tier-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .progress-thick {
+            height: 30px;
+            font-size: 1rem;
+            line-height: 30px;
+        }
+        .result-table th {
+            background-color: #f8f9fa;
+        }
+        .badge-tier {
+            font-size: 0.85rem;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="display-5">
+                    <i class="bi bi-sliders text-primary"></i> Kalibrasi Performa Sistem
+                </h1>
+                <p class="lead">Kalibrasi parameter distribusi untuk generate & verify QR Code yang realistis</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('testing.testing_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Dashboard Testing
+                </a>
+            </div>
+        </div>
+
+        <!-- Info Alert -->
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle"></i> <strong>Info:</strong>
+            Kalibrasi mengukur performa nyata operasi kriptografi (RSA & ECDSA) di sistem Anda untuk menghasilkan data testing yang realistis.
+            Tombol <strong>"Hentikan Kalibrasi"</strong> tersedia jika proses berjalan terlalu lama.
+        </div>
+
+        {% if existing_calibration %}
+        <!-- Existing Calibration Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-check-circle"></i> Kalibrasi Tersimpan
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <p class="mb-2"><strong>Tanggal:</strong> {{ existing_calibration.metadata.calibration_date }}</p>
+                                <p class="mb-2"><strong>Tier:</strong> <span class="badge bg-primary">{{ existing_calibration.metadata.tier }}</span></p>
+                                <p class="mb-2"><strong>Sampel:</strong> {{ "{:,}".format(existing_calibration.metadata.num_samples) }}</p>
+                            </div>
+                        </div>
+
+                        {% if existing_calibration.benchmark_results %}
+                        <hr>
+                        <h6 class="mb-3">Hasil Benchmark Tersimpan:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered result-table">
+                                <thead>
+                                    <tr>
+                                        <th>Algoritma</th>
+                                        <th>Operasi</th>
+                                        <th>Mean (ms)</th>
+                                        <th>Std Dev (ms)</th>
+                                        <th>95% CI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for algo, ops in existing_calibration.benchmark_results.items() %}
+                                        {% for op_name, data in ops.items() %}
+                                        <tr>
+                                            {% if loop.first %}
+                                            <td rowspan="{{ ops|length }}" class="fw-bold">{{ algo }}</td>
+                                            {% endif %}
+                                            <td>{{ op_name }}</td>
+                                            <td>{{ "%.3f"|format(data.mean) }}</td>
+                                            <td>{{ "%.3f"|format(data.std) }}</td>
+                                            <td>[{{ "%.3f"|format(data.ci_lower) }}, {{ "%.3f"|format(data.ci_upper) }}]</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Live System Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pc-display"></i> Live System Info
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Platform:</strong></p>
+                                <ul class="mb-2 small">
+                                    <li>{{ live_system.platform_system }} {{ live_system.platform_release }}</li>
+                                    {% if live_system.platform_version %}
+                                    <li>Build: {{ live_system.platform_version[:50] }}{% if live_system.platform_version|length > 50 %}...{% endif %}</li>
+                                    {% endif %}
+                                </ul>
+                                <p class="mb-1"><strong>Processor:</strong></p>
+                                <ul class="mb-2 small">
+                                    <li>{{ live_system.platform_machine }}</li>
+                                    {% if live_system.platform_processor %}<li>{{ live_system.platform_processor }}</li>{% endif %}
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>CPU:</strong></p>
+                                <ul class="mb-2 small">
+                                    <li>{{ live_system.cpu_count_logical }} logical cores / {{ live_system.cpu_count_physical or '?' }} physical cores</li>
+                                    {% if live_system.cpu_freq_max %}<li>{{ live_system.cpu_freq_max }} {{ live_system.cpu_freq_unit }} (max frequency)</li>{% endif %}
+                                </ul>
+                                <p class="mb-1"><strong>RAM:</strong></p>
+                                {% if live_system.ram_total_gb %}
+                                <ul class="mb-2 small">
+                                    <li>Total: {{ live_system.ram_total_gb }} GB</li>
+                                    <li>Used: {{ live_system.ram_used_gb }} GB ({{ live_system.ram_percent }}%)</li>
+                                    <li>Available: {{ live_system.ram_available_gb }} GB</li>
+                                </ul>
+                                {% else %}
+                                <ul class="mb-2 small"><li>Informasi RAM tidak tersedia</li></ul>
+                                {% endif %}
+                                <p class="mb-2"><strong>Python:</strong> {{ live_system.python_version[:40] }}{% if live_system.python_version|length > 40 %}...{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-speedometer2"></i> Pilih Tier Kalibrasi
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for tier in tiers_info %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card tier-card {% if tier.name == 'quick_check' %}border-info{% elif tier.name == 'production' %}border-success{% else %}border-warning{% endif %}">
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            {% if tier.name == 'quick_check' %}
+                                                <i class="bi bi-lightning-charge text-info" style="font-size: 3rem;"></i>
+                                            {% elif tier.name == 'production' %}
+                                                <i class="bi bi-gear text-success" style="font-size: 3rem;"></i>
+                                            {% else %}
+                                                <i class="bi bi-trophy text-warning" style="font-size: 3rem;"></i>
+                                            {% endif %}
+                                        </div>
+                                        <h5 class="card-title text-center">{{ tier.display_name }}</h5>
+                                        <p class="card-text">
+                                            <strong>Sampel per Operasi:</strong> {{ "{:,}".format(tier.samples) }}<br>
+                                            <strong>Est. Total Iterasi:</strong> <span id="totalIter_{{ tier.name }}">~{{ "{:,}".format(tier.samples * 4) }}</span> <small class="text-muted">(2 algoritma × sign+verify)</small><br>
+                                            <strong>Est. Waktu:</strong> ~{{ (tier.estimated_runtime / 60)|round(1) }} menit<br>
+                                            <strong>Akurasi:</strong> ±{{ tier.accuracy }}%<br>
+                                            <strong>Use Case:</strong><br>
+                                            <small class="text-muted">{{ tier.use_case }}</small>
+                                        </p>
+                                        <button class="btn btn-{% if tier.name == 'quick_check' %}info{% elif tier.name == 'production' %}success{% else %}warning{% endif %} w-100"
+                                                onclick="startCalibration('{{ tier.name }}')"
+                                                {% if tier.estimated_runtime > 600 %}data-bs-toggle="tooltip" title="Tier ini membutuhkan waktu yang lama"{% endif %}>
+                                            <i class="bi bi-play-circle"></i> Jalankan {{ tier.display_name }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Algorithm Selection -->
+                        <hr>
+                        <h6 class="mb-3">Algoritma yang akan dikalibrasi:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="ecdsa_p256" id="algo_ecdsa" checked>
+                                    <label class="form-check-label" for="algo_ecdsa">
+                                        <strong>ECDSA P-256</strong> - Lebih cepat, signature lebih kecil
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="rsa_pss_2048" id="algo_rsa" checked>
+                                    <label class="form-check-label" for="algo_rsa">
+                                        <strong>RSA-PSS 2048</strong> - Lebih kompatibel, signature lebih besar
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="row mb-4" id="progressSection" style="display: none;">
+            <div class="col-12">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-hourglass-split"></i> Kalibrasi Berjalan
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h6 id="progressMessage">Memulai kalibrasi...</h6>
+                            <div class="progress progress-thick mt-3">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                     id="progressBar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                    0%
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <p class="mb-1 text-muted">
+                                    <small id="progressDetails">Iterasi: 0 / 0</small>
+                                </p>
+                                <p class="mb-1 text-primary fw-bold" id="progressOperation"></p>
+                                <p class="mb-0 text-muted">
+                                    <small id="progressTier"></small>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-danger btn-lg" id="stopCalibrationBtn" onclick="stopCalibration()">
+                                <i class="bi bi-stop-circle"></i> Hentikan Kalibrasi
+                            </button>
+                        </div>
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Perhatian:</strong> Jangan menutup halaman ini selama kalibrasi berjalan. Tombol "Hentikan Kalibrasi" tersedia jika proses terlalu lama.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row mb-4" id="resultsSection" style="display: none;">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-check-circle-fill"></i> Kalibrasi Selesai!
+                        </h5>
+                    </div>
+                    <div class="card-body" id="resultsContent">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Section -->
+        <div class="row mb-4" id="errorSection" style="display: none;">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> Kalibrasi Gagal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger" role="alert" id="errorMessage">
+                            <!-- Error message will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let progressInterval = null;
+
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Check if calibration is already running
+            checkCalibrationStatus();
+
+            // Update estimated total iterations when algorithm selection changes
+            updateTotalIterations();
+            document.getElementById('algo_ecdsa').addEventListener('change', updateTotalIterations);
+            document.getElementById('algo_rsa').addEventListener('change', updateTotalIterations);
+        });
+
+        function updateTotalIterations() {
+            const tiers = {{ tiers_info | tojson }};
+            const algoCount = (document.getElementById('algo_ecdsa').checked ? 1 : 0) +
+                             (document.getElementById('algo_rsa').checked ? 1 : 0);
+            
+            tiers.forEach(tier => {
+                const totalIter = tier.samples * algoCount * 2; // ×2 for sign+verify
+                const elem = document.getElementById('totalIter_' + tier.name);
+                if (elem) {
+                    elem.textContent = '~' + totalIter.toLocaleString();
+                }
+            });
+        }
+
+        function checkCalibrationStatus() {
+            fetch('/testing/calibration_progress')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.running) {
+                        showProgressSection();
+                        startProgressPolling();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking calibration status:', error);
+                });
+        }
+
+        function startCalibration(tier) {
+            // Get selected algorithms
+            const algorithms = [];
+            if (document.getElementById('algo_ecdsa').checked) {
+                algorithms.push('ecdsa_p256');
+            }
+            if (document.getElementById('algo_rsa').checked) {
+                algorithms.push('rsa_pss_2048');
+            }
+
+            if (algorithms.length === 0) {
+                alert('Pilih minimal satu algoritma!');
+                return;
+            }
+
+            // Confirm if production or validation tier
+            if (tier === 'production' || tier === 'validation') {
+                const tierConfig = tier === 'production' ? 'Production (~5-10 menit)' : 'Validation (~1 jam)';
+                if (!confirm(`Tier ${tierConfig}. Yakin ingin melanjutkan?`)) {
+                    return;
+                }
+            }
+
+            // Hide results and errors
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+
+            // Show progress
+            showProgressSection();
+
+            // Start calibration
+            fetch('/testing/run_calibration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    tier: tier,
+                    algorithms: algorithms
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('progressMessage').textContent = `Kalibrasi ${tier} dimulai...`;
+                    startProgressPolling();
+                } else {
+                    showError(data.message || 'Gagal memulai kalibrasi');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Error jaringan: ' + error.message);
+            });
+        }
+
+        function showProgressSection() {
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+            
+            // Enable stop button
+            const stopBtn = document.getElementById('stopCalibrationBtn');
+            if (stopBtn) {
+                stopBtn.disabled = false;
+                stopBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Hentikan Kalibrasi';
+            }
+        }
+
+        function showResultsSection() {
+            document.getElementById('progressSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('errorSection').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('progressSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML = `<i class="bi bi-x-circle"></i> ${message}`;
+        }
+
+        function stopCalibration() {
+            if (!confirm('⚠️ Yakin ingin menghentikan kalibrasi?\n\nProses yang sedang berjalan akan dihentikan dan hasil tidak akan disimpan.')) {
+                return;
+            }
+
+            // Disable button to prevent double-click
+            const stopBtn = document.getElementById('stopCalibrationBtn');
+            stopBtn.disabled = true;
+            stopBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghentikan...';
+
+            // Call stop endpoint
+            fetch('/testing/stop_calibration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                    showError('Kalibrasi dihentikan oleh pengguna: ' + data.message);
+                } else {
+                    showError('Gagal menghentikan kalibrasi: ' + data.message);
+                    stopBtn.disabled = false;
+                    stopBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Hentikan Kalibrasi';
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping calibration:', error);
+                showError('Error jaringan saat menghentikan kalibrasi');
+                stopBtn.disabled = false;
+                stopBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Hentikan Kalibrasi';
+            });
+        }
+
+        function startProgressPolling() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+
+            progressInterval = setInterval(() => {
+                fetch('/testing/calibration_progress')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update progress bar
+                        const progress = data.progress || 0;
+                        const progressBar = document.getElementById('progressBar');
+                        progressBar.style.width = progress + '%';
+                        progressBar.setAttribute('aria-valuenow', progress);
+                        progressBar.textContent = Math.round(progress) + '%';
+
+                        // Update iteration details
+                        if (data.total_iterations > 0) {
+                            document.getElementById('progressDetails').textContent =
+                                `Iterasi: ${data.current_iteration.toLocaleString()} / ${data.total_iterations.toLocaleString()}`;
+                        }
+
+                        // Update operation info
+                        if (data.current_operation) {
+                            const opText = data.current_operation.replace(/_/g, ' ').toUpperCase();
+                            document.getElementById('progressOperation').textContent = `🔧 Operasi: ${opText}`;
+                        }
+
+                        // Update tier info
+                        if (data.current_tier) {
+                            const tierNames = {
+                                'quick_check': '⚡ Quick Check',
+                                'production': '⚙️ Production Calibration',
+                                'validation': '🏆 Validation Grade'
+                            };
+                            document.getElementById('progressTier').textContent = `Tier: ${tierNames[data.current_tier] || data.current_tier}`;
+                        }
+
+                        // Update message
+                        if (data.message && data.message !== 'Memulai kalibrasi...') {
+                            document.getElementById('progressMessage').textContent = data.message;
+                            
+                            // Update button state when stopping
+                            if (data.message.includes('Menghentikan')) {
+                                const stopBtn = document.getElementById('stopCalibrationBtn');
+                                if (stopBtn) {
+                                    stopBtn.disabled = true;
+                                    stopBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghentikan...';
+                                }
+                            }
+                        }
+
+                        // Check if finished
+                        if (!data.running) {
+                            clearInterval(progressInterval);
+                            progressInterval = null;
+
+                            // Enable stop button again for next run
+                            const stopBtn = document.getElementById('stopCalibrationBtn');
+                            if (stopBtn) {
+                                stopBtn.disabled = false;
+                                stopBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Hentikan Kalibrasi';
+                            }
+
+                            if (data.error) {
+                                showError(data.error);
+                            } else if (data.result_summary) {
+                                showResults(data);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling progress:', error);
+                    });
+            }, 1000); // Poll every 1 second
+        }
+
+        function showResults(data) {
+            showResultsSection();
+
+            const summary = data.result_summary;
+            if (!summary) return;
+
+            // Cleanup calibration state dari server
+            fetch('/testing/cleanup_calibration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(cleanupData => {
+                console.log('Calibration cleanup completed:', cleanupData.message);
+            })
+            .catch(error => {
+                console.error('Error during cleanup:', error);
+            });
+
+            // Tampilkan pesan sukses yang jelas
+            let html = '<div class="alert alert-success text-center" role="alert">';
+            html += '<i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>';
+            html += '<h4 class="mt-2">✅ Kalibrasi Berhasil Selesai!</h4>';
+            html += '<p class="mb-0">Data kalibrasi telah disimpan dan akan digunakan untuk menghasilkan data testing yang realistis.</p>';
+            html += '</div>';
+
+            // Tampilkan info tambahan
+            html += '<div class="row mb-4">';
+            html += '<div class="col-md-4"><div class="card text-center bg-light"><div class="card-body">';
+            html += '<h6 class="text-muted">Algoritma Dikalibrasi</h6>';
+            html += `<h3 class="text-primary">${Object.keys(summary).length}</h3>`;
+            html += '</div></div></div>';
+
+            html += '<div class="col-md-4"><div class="card text-center bg-light"><div class="card-body">';
+            html += '<h6 class="text-muted">Total Operasi</h6>';
+            html += `<h3 class="text-primary">${Object.keys(summary).reduce((acc, algo) => acc + Object.keys(summary[algo]).length, 0)}</h3>`;
+            html += '</div></div></div>';
+
+            html += '<div class="col-md-4"><div class="card text-center bg-light"><div class="card-body">';
+            html += '<h6 class="text-muted">Status</h6>';
+            html += '<h3 class="text-success">Tersimpan ✓</h3>';
+            html += '</div></div></div></div>';
+
+            // Tampilkan tabel hasil kalibrasi
+            html += '<h6 class="mb-3"><i class="bi bi-graph-up"></i> Detail Hasil Kalibrasi:</h6>';
+            html += '<div class="table-responsive"><table class="table table-sm table-bordered result-table">';
+            html += '<thead><tr><th>Algoritma</th><th>Operasi</th><th>Mean (ms)</th><th>Std Dev (ms)</th><th>95% CI Lower</th><th>95% CI Upper</th></tr></thead>';
+            html += '<tbody>';
+
+            for (const algo in summary) {
+                const ops = summary[algo];
+                const opCount = Object.keys(ops).length;
+                let opIndex = 0;
+
+                for (const opName in ops) {
+                    const opData = ops[opName];
+                    if (opIndex === 0) {
+                        html += `<tr><td rowspan="${opCount}" class="fw-bold">${algo}</td>`;
+                    } else {
+                        html += '<tr>';
+                    }
+                    html += `<td>${opName}</td>`;
+                    html += `<td>${opData.mean_ms.toFixed(3)}</td>`;
+                    html += `<td>${opData.std_ms.toFixed(3)}</td>`;
+                    html += `<td>[${opData.ci_lower.toFixed(3)}, ${opData.ci_upper.toFixed(3)}]</td>`;
+                    html += '</tr>';
+                    opIndex++;
+                }
+            }
+
+            html += '</tbody></table></div>';
+
+            // Add action buttons
+            html += '<div class="mt-4 d-flex gap-2">';
+            html += '<button class="btn btn-primary" onclick="location.reload()">';
+            html += '<i class="bi bi-arrow-clockwise"></i> Reload Halaman';
+            html += '</button>';
+            html += '<a href="/testing/" class="btn btn-outline-secondary">';
+            html += '<i class="bi bi-speedometer2"></i> Kembali ke Dashboard Testing';
+            html += '</a>';
+            html += '</div>';
+
+            document.getElementById('resultsContent').innerHTML = html;
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1758" viewBox="0 0 1500 1758"><defs><linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#ecfeff"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/></filter></defs><rect width="100%" height="100%" fill="url(#top)"/>
+<rect x="24" y="24" width="1452" height="1710" rx="30" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<rect x="48" y="48" width="1404" height="72" rx="20" fill="#0f172a" filter="url(#shadow)"/>
+<text x="78" y="93" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">6.3 Wireframe Mobile Dashboard</text>
+<rect x="48" y="122" width="1404" height="234" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="122" width="14" height="234" rx="7" fill="#2563eb"/>
+<text x="84" y="160" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Dashboard QR Code Security</text>
+<rect x="84" y="168" width="100" height="38" rx="19" fill="#2563eb"/>
+<text x="134.0" y="193" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Home</text>
+<rect x="84" y="220" width="128" height="38" rx="19" fill="#2563eb"/>
+<text x="148.0" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Verifikasi</text>
+<rect x="84" y="272" width="158" height="38" rx="19" fill="#2563eb"/>
+<text x="163.0" y="297" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">CSV Generator</text>
+<rect x="48" y="380" width="1404" height="90" rx="20" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="380" width="14" height="90" rx="7" fill="#059669"/>
+<text x="84" y="418" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Total QR Digenerate</text>
+<rect x="48" y="494" width="1404" height="90" rx="20" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="494" width="14" height="90" rx="7" fill="#d97706"/>
+<text x="84" y="532" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Total Verifikasi</text>
+<rect x="48" y="608" width="1404" height="90" rx="20" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="608" width="14" height="90" rx="7" fill="#7c3aed"/>
+<text x="84" y="646" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Median Waktu Generate</text>
+<rect x="48" y="722" width="1404" height="90" rx="20" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="722" width="14" height="90" rx="7" fill="#dc2626"/>
+<text x="84" y="760" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">P95 Waktu Verify</text>
+<rect x="48" y="836" width="1404" height="168" rx="20" fill="#ffffff" stroke="#0891b2" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="836" width="14" height="168" rx="7" fill="#0891b2"/>
+<text x="84" y="874" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Performa Generate QR Code</text>
+<text x="86" y="906" font-family="Arial, sans-serif" font-size="18" fill="#334155">Total QR</text>
+<text x="86" y="930" font-family="Arial, sans-serif" font-size="18" fill="#334155">QR/detik</text>
+<text x="86" y="954" font-family="Arial, sans-serif" font-size="18" fill="#334155">KB/QR</text>
+<rect x="48" y="1028" width="1404" height="90" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1028" width="14" height="90" rx="7" fill="#2563eb"/>
+<text x="84" y="1066" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Statistik Dimensi QR</text>
+<rect x="48" y="1142" width="1404" height="138" rx="20" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1142" width="14" height="138" rx="7" fill="#059669"/>
+<text x="84" y="1180" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Analisis Waktu Sistem</text>
+<text x="86" y="1212" font-family="Arial, sans-serif" font-size="18" fill="#334155">Generate</text>
+<text x="86" y="1236" font-family="Arial, sans-serif" font-size="18" fill="#334155">Verifikasi</text>
+<rect x="48" y="1304" width="1404" height="90" rx="20" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1304" width="14" height="90" rx="7" fill="#d97706"/>
+<text x="84" y="1342" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Statistik File</text>
+<rect x="48" y="1418" width="1404" height="90" rx="20" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1418" width="14" height="90" rx="7" fill="#7c3aed"/>
+<text x="84" y="1456" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Analisis Performa</text>
+<rect x="48" y="1532" width="1404" height="204" rx="20" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1532" width="14" height="204" rx="7" fill="#dc2626"/>
+<rect x="84" y="1546" width="148" height="38" rx="19" fill="#dc2626"/>
+<text x="158.0" y="1571" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Log Generate</text>
+<rect x="84" y="1598" width="168" height="38" rx="19" fill="#dc2626"/>
+<text x="168.0" y="1623" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Log Verifikasi</text>
+<rect x="84" y="1650" width="178" height="38" rx="19" fill="#dc2626"/>
+<text x="173.0" y="1675" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Reset Statistik</text>
+</svg>

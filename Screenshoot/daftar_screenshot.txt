@@ -1,0 +1,32 @@
+Daftar screenshot halaman QR Code Security System
+Dibuat: 2026-06-18 06:53:05 WIB
+Base URL: http://127.0.0.1:5055
+
+00_login.jpg	/login	200
+01_home_index.jpg	/	200	QR Code Security System
+02_dashboard.jpg	/dashboard	200	Dashboard QR Code Security
+03_qr_generator.jpg	/qr_generator	200	QR Generator - QR Code Security
+04_generate_csv.jpg	/generate_csv	200	Generate CSV - QR Security System
+05_scanner_workspace.jpg	/scanner	200	Verifikasi QR Code - QR Code Security
+06_scanner_hp_mobile.jpg	/scan_hp	200	Scanner HP Otomatis - QR Code Security
+07_scanner_usb_verify_direct.jpg	/verify_direct	200	Verifikasi Langsung QR Code - QR Code Security
+08_modify_qr.jpg	/modify_qr_page	200	Modifikasi QR Code - Buat Data Palsu
+09_modification_logs.jpg	/modification_logs	200	Log Modifikasi QR Code
+10_jobs_massal.jpg	/jobs	200	Job Massal - QR Code Security
+11_security_profile.jpg	/security_profile	200	Status Teknis Keamanan - QR Code Security
+12_audit_log.jpg	/audit_log	200	Audit Log - QR Code Security
+13_log_generate.jpg	/log	200	Log Generate QR Code
+14_log_verifikasi.jpg	/log_verifikasi	200	Log Verifikasi QR Code
+15_benchmark.jpg	/benchmark	200	System Benchmark - RSA vs ECDSA
+16_verify_massal_async.jpg	/verify_massal_async	200	Verifikasi Massal - Progress
+17_testing_dashboard.jpg	/testing/	200	Automated Testing System
+18_testing_config_normal_operations.jpg	/testing/test_config/normal_operations	200	
+19_testing_config_replay_attack.jpg	/testing/test_config/replay_attack	200	
+20_testing_config_data_tampering.jpg	/testing/test_config/data_tampering	200	
+21_testing_config_signature_forgery.jpg	/testing/test_config/signature_forgery	200	
+22_testing_config_stress_test.jpg	/testing/test_config/stress_test	200	
+23_testing_config_real_http_stress_test.jpg	/testing/test_config/real_http_stress_test	200	
+24_testing_history.jpg	/testing/history	200	Test History - Automated Testing System
+25_testing_comprehensive_test.jpg	/testing/comprehensive_test	200	Comprehensive Test Runner
+26_testing_calibration.jpg	/testing/calibration	200	Kalibrasi Performa
+27_error_404.jpg	/halaman-tidak-ditemukan-untuk-screenshot	404	Error 404 - QR Security System

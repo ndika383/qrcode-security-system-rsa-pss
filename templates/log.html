@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Generate QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+        }
+        .stat-card h6 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .stat-card .unit {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-responsive:focus {
+            outline: 2px solid rgba(13, 110, 253, 0.35);
+            outline-offset: 2px;
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        #logTable th, #logTable td {
+            white-space: nowrap;
+        }
+        #logTable {
+            min-width: 1350px;
+        }
+        .keyboard-scroll-hint {
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .qr-preview-cell {
+            min-width: 96px;
+            text-align: center;
+        }
+        .qr-preview-button {
+            border: 1px solid #dee2e6;
+            background: #fff;
+            border-radius: 8px;
+            padding: 4px;
+            line-height: 1;
+        }
+        .qr-preview-button:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+        }
+        .qr-preview-thumb {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            display: block;
+        }
+        .qr-preview-modal-img {
+            width: min(420px, 100%);
+            max-height: 70vh;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 20px;
+            padding: 5px 15px;
+            border: 1px solid #dee2e6;
+        }
+        .badge-time {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .dimension-badge {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-family: monospace;
+        }
+        .time-breakdown {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .btn-filter {
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+        }
+        .pagination .page-link {
+            border-radius: 50%;
+            margin: 0 3px;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 28px;
+        }
+        .tools-group {
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+        .tools-group .btn {
+            border-radius: 6px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="fas fa-history me-2"></i>Log Generate QR Code
+                        </h2>
+                        <p class="text-muted mb-0">Riwayat semua generate QR Code dengan statistik waktu</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Log -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Statistik Generate
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #007bff;">
+                            <h6><i class="fas fa-qrcode me-2"></i>Total Generate</h6>
+                            <div class="value text-primary">{{ jumlah_data }}</div>
+                            <div class="unit">QR Code</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #28a745;">
+                            <h6><i class="fas fa-user me-2"></i>Tunggal</h6>
+                            <div class="value text-success">{{ statistik.tunggal }}</div>
+                            <div class="unit">Single QR</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #ffc107;">
+                            <h6><i class="fas fa-users me-2"></i>Massal</h6>
+                            <div class="value text-warning">{{ statistik.massal }}</div>
+                            <div class="unit">Batch QR</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #17a2b8;">
+                            <h6><i class="fas fa-stopwatch me-2"></i>Rata-rata Waktu</h6>
+                            <div class="value text-info">{{ "%.3f"|format(statistik.rata_waktu) if statistik.rata_waktu else 0 }}</div>
+                            <div class="unit">Detik/QR</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Breakdown Waktu Rata-rata -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-clock me-2"></i>Rata-rata Breakdown Waktu:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Data</small>
+                                    <span class="badge bg-primary badge-time">
+                                        {{ "%.3f"|format(statistik.rata_data_time) if statistik.rata_data_time else 0 }}s
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Sign</small>
+                                    <span class="badge bg-danger badge-time">
+                                        {{ "%.3f"|format(statistik.rata_sign_time) if statistik.rata_sign_time else 0 }}s
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">QR</small>
+                                    <span class="badge bg-warning badge-time">
+                                        {{ "%.3f"|format(statistik.rata_qr_time) if statistik.rata_qr_time else 0 }}s
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Save</small>
+                                    <span class="badge bg-success badge-time">
+                                        {{ "%.3f"|format(statistik.rata_save_time) if statistik.rata_save_time else 0 }}s
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex flex-column align-items-center p-2 bg-primary text-white rounded">
+                                    <small>Total Rata-rata</small>
+                                    <span class="badge bg-light text-primary badge-time">
+                                        {{ "%.3f"|format(statistik.rata_waktu) if statistik.rata_waktu else 0 }}s
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter dan Tools -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="fas fa-filter me-2"></i>Filter & Tools
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="btn-group tools-group" role="group">
+                            <a href="{{ url_for('download_all_qr_codes') }}"
+                               class="btn btn-primary {% if not qr_file_counts.total %}disabled{% endif %}"
+                               {% if qr_file_counts.total %}
+                               onclick="return confirm('Download semua {{ qr_file_counts.total }} file QR Code sebagai ZIP? Proses ini bisa memakan waktu jika file sangat banyak.')"
+                               {% else %}
+                               aria-disabled="true"
+                               {% endif %}>
+                                <i class="fas fa-file-archive me-2"></i>Download Semua QR
+                                <span class="badge bg-light text-primary ms-1">{{ qr_file_counts.total }}</span>
+                            </a>
+                            <a href="{{ url_for('download_log_excel') }}" class="btn btn-success">
+                                <i class="fas fa-file-excel me-2"></i>Export Excel
+                            </a>
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetModal">
+                                <i class="fas fa-sync-alt me-2"></i>Reset Format
+                            </button>
+                            <a href="{{ url_for('hapus_log', jenis='generate') }}" class="btn btn-danger" 
+                               onclick="return confirm('Yakin menghapus log generate? File lama akan di-backup.')">
+                                <i class="fas fa-trash-alt me-2"></i>Hapus Log
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <form method="GET" class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Data per Halaman:</label>
+                                <select name="per_page" class="form-select" onchange="this.form.submit()">
+                                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Filter Tanggal:</label>
+                                <input type="date" name="date" class="form-control" 
+                                       value="{{ request.args.get('date', '') }}"
+                                       onchange="this.form.submit()">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Filter Sumber:</label>
+                                <select name="sumber" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Semua</option>
+                                    <option value="Tunggal" {% if request.args.get('sumber') == 'Tunggal' %}selected{% endif %}>Tunggal</option>
+                                    <option value="Massal" {% if request.args.get('sumber') == 'Massal' %}selected{% endif %}>Massal</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-info">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a href="{{ url_for('view_log_verifikasi') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-clipboard-check me-2"></i>Log Verifikasi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Log -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-2"></i>Data Log Generate
+                        </h5>
+                    </div>
+	                    <div class="col-md-6 text-end">
+	                        <span class="badge bg-light text-dark">
+	                            Menampilkan {{ rows|length }} dari {{ jumlah_data }} data
+	                        </span>
+	                        <span class="badge bg-light text-primary keyboard-scroll-hint ms-2">
+	                            <i class="fas fa-keyboard me-1"></i>Geser: &larr; / &rarr;
+	                        </span>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="card-body p-0">
+	                <div class="table-responsive" id="logTableScroll" tabindex="0" aria-label="Area tabel Data Log Generate, gunakan panah kiri dan kanan untuk menggeser tabel">
+                    <table id="logTable" class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+	                                {% for header in headers %}
+	                                <th>
+	                                    {% if header == 'Preview QR' %}
+	                                        <i class="fas fa-qrcode me-1"></i>
+	                                    {% elif header == 'Sumber' %}
+	                                        <i class="fas fa-tag me-1"></i>
+                                    {% elif header == 'Waktu' %}
+                                        <i class="fas fa-clock me-1"></i>
+                                    {% elif header == 'Nama' %}
+                                        <i class="fas fa-user me-1"></i>
+                                    {% elif header == 'ID' %}
+                                        <i class="fas fa-id-card me-1"></i>
+                                    {% elif 'Versi' in header %}
+                                        <i class="fas fa-code-branch me-1"></i>
+                                    {% elif 'Modul' in header %}
+                                        <i class="fas fa-th me-1"></i>
+                                    {% elif 'Resolusi' in header %}
+                                        <i class="fas fa-expand-alt me-1"></i>
+                                    {% elif 'Ukuran' in header %}
+                                        <i class="fas fa-weight me-1"></i>
+                                    {% elif 'Signature' in header %}
+                                        <i class="fas fa-signature me-1"></i>
+                                    {% elif 'Waktu' in header %}
+                                        <i class="fas fa-stopwatch me-1"></i>
+                                    {% else %}
+                                        <i class="fas fa-columns me-1"></i>
+                                    {% endif %}
+                                    {{ header }}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+	                                {% for header in headers %}
+	                                <td{% if header == 'Preview QR' %} class="qr-preview-cell"{% endif %}>
+	                                    {% if header == 'Preview QR' %}
+	                                        {% set preview = row[header] %}
+	                                        {% if preview and preview.available %}
+	                                            <button type="button"
+	                                                    class="qr-preview-button"
+	                                                    data-bs-toggle="modal"
+	                                                    data-bs-target="#qrPreviewModal"
+	                                                    data-qr-src="{{ preview.url }}"
+	                                                    data-qr-file="{{ preview.filename }}"
+	                                                    data-qr-title="{{ row['Nama']|default('-', true) }} - {{ row['ID']|default('-', true) }}">
+	                                                <img src="{{ preview.url }}"
+	                                                     alt="{{ preview.alt }}"
+	                                                     class="qr-preview-thumb"
+	                                                     loading="lazy">
+	                                                <span class="visually-hidden">Lihat preview {{ preview.filename }}</span>
+	                                            </button>
+	                                        {% else %}
+	                                            <span class="badge bg-light text-muted border"
+	                                                  data-bs-toggle="tooltip"
+	                                                  title="{{ preview.message if preview else 'File QR tidak ditemukan' }}">
+	                                                Tidak ada
+	                                            </span>
+	                                        {% endif %}
+	                                    
+	                                    {% elif header == 'Sumber' %}
+	                                        <span class="badge {% if row[header] == 'Tunggal' %}bg-primary{% else %}bg-warning{% endif %}">
+                                            {{ row[header] }}
+                                        </span>
+                                    
+                                    {% elif header == 'Waktu' %}
+                                        <small class="text-muted">
+                                            {{ row[header]|string|truncate(19, True, '') }}
+                                        </small>
+                                    
+                                    {% elif header == 'Resolusi' %}
+                                        <span class="badge dimension-badge">
+                                            {{ row[header] }}
+                                        </span>
+                                    
+                                    {% elif header == 'Ukuran File (KB)' %}
+                                        <span class="badge bg-secondary">
+                                            {{ "%.2f"|format(row[header]) if row[header] is number else row[header] }}
+                                        </span>
+                                    
+                                    {% elif header == 'Versi QR' %}
+                                        <span class="badge bg-info">
+                                            V{{ row[header] }}
+                                        </span>
+                                    
+                                    {% elif header == 'Modul' %}
+                                        <span class="badge bg-dark">
+                                            {{ row[header] }}
+                                        </span>
+                                    
+                                    {% elif header == 'Panjang Signature' %}
+                                        <span class="badge bg-success">
+                                            {{ row[header] }} chars
+                                        </span>
+                                    
+                                    {% elif 'Waktu' in header and 'detik' in header %}
+                                        <span class="badge badge-time {% if 'Total' in header %}bg-primary{% else %}bg-light text-dark{% endif %}">
+                                            {% if row[header] is number %}
+                                                {{ "%.3f"|format(row[header]) }}s
+                                            {% else %}
+                                                {{ row[header] }}
+                                            {% endif %}
+                                        </span>
+                                    
+                                    {% else %}
+                                        {{ row[header]|default('-', True) }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <!-- Previous -->
+                        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('view_log', page=page-1, per_page=per_page, 
+                                date=request.args.get('date', ''), sumber=request.args.get('sumber', '')) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Page numbers -->
+                        {% for p in range(1, total_pages + 1) %}
+                            {% if p >= page-2 and p <= page+2 %}
+                            <li class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('view_log', page=p, per_page=per_page,
+                                    date=request.args.get('date', ''), sumber=request.args.get('sumber', '')) }}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Next -->
+                        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('view_log', page=page+1, per_page=per_page,
+                                date=request.args.get('date', ''), sumber=request.args.get('sumber', '')) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Halaman {{ page }} dari {{ total_pages }} | Total {{ jumlah_data }} data
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Informasi Format -->
+        <div class="alert alert-info mt-4">
+            <h6><i class="fas fa-info-circle me-2"></i>Informasi Kolom Log:</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="mb-0">
+                        <li><strong>Sumber:</strong> Tunggal (single QR) atau Massal (batch)</li>
+                        <li><strong>Versi QR:</strong> Versi QR Code (1-40)</li>
+                        <li><strong>Modul:</strong> Jumlah modul hitam/putih</li>
+                        <li><strong>Resolusi:</strong> Dimensi gambar dalam pixel</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="mb-0">
+                        <li><strong>Ukuran File:</strong> Besar file QR dalam KB</li>
+                        <li><strong>Panjang Signature:</strong> Panjang digital signature</li>
+                        <li><strong>Waktu Data/QR/Sign/Save:</strong> Breakdown waktu generate</li>
+                        <li><strong>Total Waktu:</strong> Total waktu generate per QR</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="container text-center mt-4 mb-5 text-muted">
+        <hr>
+        <small>&copy; 2026 QR Code Security System - Log Audit System</small>
+    </footer>
+
+    <!-- Modal Reset Format -->
+    <div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="resetModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Konfirmasi Reset Format
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Anda akan mereset format log ke versi terbaru dengan 14 kolom.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Perhatian:</strong> Log lama akan di-backup ke folder <code>logs/backup/</code>
+                    </div>
+                    <p>Kolom baru yang akan ditambahkan:</p>
+                    <ul>
+                        <li>Waktu Data (detik)</li>
+                        <li>Waktu Sign (detik)</li>
+                        <li>Waktu QR (detik)</li>
+                        <li>Waktu Save (detik)</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <a href="{{ url_for('reset_log_format') }}" class="btn btn-warning">
+                        <i class="fas fa-sync-alt me-2"></i>Reset Format
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Preview QR -->
+    <div class="modal fade" id="qrPreviewModal" tabindex="-1" aria-labelledby="qrPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="qrPreviewModalLabel">
+                        <i class="fas fa-qrcode me-2"></i>Preview QR Code
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="qrPreviewImage" src="" alt="Preview QR Code" class="qr-preview-modal-img mb-3">
+                    <div class="text-muted small" id="qrPreviewMeta">-</div>
+                </div>
+                <div class="modal-footer">
+                    <a id="qrPreviewOpenLink" href="#" target="_blank" rel="noopener" class="btn btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-2"></i>Buka Gambar
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+			$(document).ready(function() {
+				// Inisialisasi DataTable
+				$('#logTable').DataTable({
+					"order": [[1, "desc"]], // Urutkan berdasarkan kolom ke-2 (Waktu) secara descending
+					"paging": false, // NONAKTIFKAN paginasi DataTables
+					"searching": false, // NONAKTIFKAN pencarian DataTables (kita sudah punya filter)
+					"info": false, // NONAKTIFKAN info DataTables
+					"language": {
+						"search": "Cari dalam log:",
+						"lengthMenu": "Tampilkan _MENU_ data per halaman",
+						"zeroRecords": "Data log tidak ditemukan",
+						"info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+						"infoEmpty": "Tidak ada data",
+						"infoFiltered": "(disaring dari _MAX_ total data)",
+						"paginate": {
+							"first": "Pertama",
+							"last": "Terakhir",
+							"next": "Berikutnya",
+							"previous": "Sebelumnya"
+						}
+					},
+					"pageLength": {{ per_page }},
+					"responsive": true,
+					"dom": '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>',
+					"initComplete": function() {
+						// Sembunyikan fitur pencarian DataTable karena kita sudah punya filter sendiri
+						$('.dataTables_filter').hide();
+					}
+				});
+				
+					// Tooltip untuk badge waktu
+					$('[data-bs-toggle="tooltip"]').tooltip();
+
+					const qrPreviewModal = document.getElementById('qrPreviewModal');
+					if (qrPreviewModal) {
+						qrPreviewModal.addEventListener('show.bs.modal', function(event) {
+							const button = event.relatedTarget;
+							if (!button) return;
+
+							const imageUrl = button.getAttribute('data-qr-src') || '';
+							const fileName = button.getAttribute('data-qr-file') || '-';
+							const title = button.getAttribute('data-qr-title') || 'Preview QR Code';
+
+							const modalTitle = document.getElementById('qrPreviewModalLabel');
+							modalTitle.innerHTML = '<i class="fas fa-qrcode me-2"></i>';
+							modalTitle.appendChild(document.createTextNode(title));
+							document.getElementById('qrPreviewImage').src = imageUrl;
+							document.getElementById('qrPreviewImage').alt = 'Preview ' + fileName;
+							document.getElementById('qrPreviewMeta').textContent = fileName;
+							document.getElementById('qrPreviewOpenLink').href = imageUrl;
+						});
+
+						qrPreviewModal.addEventListener('hidden.bs.modal', function() {
+							document.getElementById('qrPreviewImage').src = '';
+							document.getElementById('qrPreviewOpenLink').href = '#';
+						});
+					}
+
+				// Auto-refresh setiap 30 detik jika di halaman pertama
+					{% if page == 1 %}
+					function refreshLogWhenSafe() {
+						if (!document.body.classList.contains('modal-open')) {
+							window.location.reload();
+							return;
+						}
+						setTimeout(refreshLogWhenSafe, 10000);
+					}
+					setTimeout(refreshLogWhenSafe, 30000); // 30 detik
+					{% endif %}
+				});
+	</script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

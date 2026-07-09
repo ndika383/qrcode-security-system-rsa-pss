@@ -1,0 +1,10 @@
+Daftar file Word hasil konversi dokumen QR Code Security System
+
+3_4_dokumentasi_teknis_user_manual_serah_terima_source_code.docx
+analisis_kebutuhan_bisnis_kriptograf.docx
+desain_ui_ux_wireframe_dashboard_scanner.docx
+dokumen_desain_sistem_sdd_dfd_flowchart_erd.docx
+dokumen_ui_ux_layout_terbaru_2026.docx
+instalasi_konfigurasi_deployment_produksi.docx
+perancangan_arsitektur_basis_data_log_storage.docx
+semua_dokumen_lengkap_dengan_gambar.docx

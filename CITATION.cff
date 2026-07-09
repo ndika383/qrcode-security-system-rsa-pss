@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "Jika menggunakan perangkat lunak ini, sitasikan rilis GitHub/Zenodo yang terkait."
+type: software
+title: "QR Code Security System RSA-PSS"
+authors:
+  - given-names: "Andika Agus"
+    family-names: "Slameto"
+    affiliation: "Program Studi Informatika, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    email: "rmkt.andika@amikom.ac.id"
+    orcid: "https://orcid.org/0000-0002-6842-4163"
+  - given-names: "Yudi"
+    family-names: "Sutanto"
+    affiliation: "Program Studi Informatika, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    email: "yudisuta@amikom.ac.id"
+  - given-names: "Hendra"
+    family-names: "Kurniawan"
+    affiliation: "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    email: "hendrakurniawan@amikom.ac.id"
+version: "1.0.0"
+date-released: "2026-07-09"
+abstract: "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu."
+keywords:
+  - QR Code
+  - RSA-PSS
+  - ECDSA
+  - digital signature
+  - Flask
+  - verification

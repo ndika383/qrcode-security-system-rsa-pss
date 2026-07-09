@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="740" viewBox="0 0 1280 740">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="740"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Runtime systemd dan Gunicorn</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Service production menjalankan Gunicorn wsgi:app sebagai user www-data</tspan></text>
+<rect x="70" y="160" width="220" height="90" class="gray"/>
+<text x="180.0" y="190" text-anchor="middle" class="label"><tspan x="180.0" dy="0">systemctl</tspan></text>
+<text x="180.0" y="216" text-anchor="middle" class="small"><tspan x="180.0" dy="0">enable --now</tspan><tspan x="180.0" dy="18">restart/status</tspan></text>
+<rect x="370" y="160" width="250" height="90" class="orange"/>
+<text x="495.0" y="190" text-anchor="middle" class="label"><tspan x="495.0" dy="0">qrcode.service</tspan></text>
+<text x="495.0" y="216" text-anchor="middle" class="small"><tspan x="495.0" dy="0">User=www-data</tspan><tspan x="495.0" dy="18">WorkingDirectory=/opt/qrcode</tspan></text>
+<rect x="700" y="160" width="230" height="90" class="soft"/>
+<text x="815.0" y="190" text-anchor="middle" class="label"><tspan x="815.0" dy="0">Environment</tspan></text>
+<text x="815.0" y="216" text-anchor="middle" class="small"><tspan x="815.0" dy="0">.env</tspan><tspan x="815.0" dy="18">HOST/PORT/BASE_URL</tspan></text>
+<rect x="1010" y="160" width="210" height="90" class="green"/>
+<text x="1115.0" y="190" text-anchor="middle" class="label"><tspan x="1115.0" dy="0">Gunicorn</tspan></text>
+<text x="1115.0" y="216" text-anchor="middle" class="small"><tspan x="1115.0" dy="0">workers=1</tspan><tspan x="1115.0" dy="18">threads=4</tspan><tspan x="1115.0" dy="18">timeout=300</tspan></text>
+<rect x="1010" y="350" width="210" height="90" class="soft"/>
+<text x="1115.0" y="380" text-anchor="middle" class="label"><tspan x="1115.0" dy="0">wsgi.py</tspan></text>
+<text x="1115.0" y="406" text-anchor="middle" class="small"><tspan x="1115.0" dy="0">start scheduler</tspan><tspan x="1115.0" dy="18">import app</tspan></text>
+<rect x="700" y="350" width="230" height="90" class="soft"/>
+<text x="815.0" y="380" text-anchor="middle" class="label"><tspan x="815.0" dy="0">Flask app</tspan></text>
+<text x="815.0" y="406" text-anchor="middle" class="small"><tspan x="815.0" dy="0">app.py</tspan><tspan x="815.0" dy="18">cleanup scheduler</tspan></text>
+<rect x="370" y="350" width="250" height="90" class="gray"/>
+<text x="495.0" y="380" text-anchor="middle" class="label"><tspan x="495.0" dy="0">Logs</tspan></text>
+<text x="495.0" y="406" text-anchor="middle" class="small"><tspan x="495.0" dy="0">journalctl</tspan><tspan x="495.0" dy="18">logs/app.log</tspan></text>
+<path d="M290 205 L370 205" class="flow"/>
+<path d="M620 205 L700 205" class="flow"/>
+<path d="M930 205 L1010 205" class="flow"/>
+<path d="M1115 250 L1115 350" class="flow"/>
+<path d="M1010 395 L930 395" class="flow"/>
+<path d="M700 395 L620 395" class="flow"/>
+<path d="M495 350 L495 250" class="flow"/>
+<rect x="230" y="560" width="820" height="82" class="red"/>
+<text x="640" y="592" text-anchor="middle" class="label"><tspan x="640" dy="0">Catatan penting</tspan></text>
+<text x="640" y="620" text-anchor="middle" class="small"><tspan x="640" dy="0">Jangan menaikkan workers di atas 1 jika scheduler internal belum dipisah, agar cleanup tidak berjalan dobel.</tspan></text>
+</svg>

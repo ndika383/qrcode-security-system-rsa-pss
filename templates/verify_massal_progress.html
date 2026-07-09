@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Massal - Progress</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .progress-container {
+            height: 40px;
+            background-color: #e9ecef;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4e54c8, #8f94fb);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .time-info {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+        }
+        .stat-card h6 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-card .unit {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .log-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .log-entry {
+            padding: 5px 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .log-success {
+            color: #28a745;
+        }
+        .log-warning {
+            color: #ffc107;
+        }
+        .log-error {
+            color: #dc3545;
+        }
+        .log-info {
+            color: #17a2b8;
+        }
+        .spinner-container {
+            text-align: center;
+            padding: 40px;
+        }
+        .phase-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .phase {
+            text-align: center;
+            flex: 1;
+            padding: 10px;
+            position: relative;
+        }
+        .phase.active {
+            color: #4e54c8;
+            font-weight: bold;
+        }
+        .phase.completed {
+            color: #28a745;
+        }
+        .phase::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: #dee2e6;
+            z-index: 1;
+        }
+        .phase:last-child::after {
+            display: none;
+        }
+        .phase .phase-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .results-ready {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .estimated-time {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="fas fa-tasks me-2"></i>Verifikasi Massal - Progress
+                        </h2>
+                        <p class="text-muted mb-0">Proses verifikasi multiple QR Code dengan tracking real-time</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('scanner') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Kembali ke Scanner
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Progress -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-sync-alt me-2"></i>Progress Verifikasi Massal
+                    <span id="taskStatus" class="float-end">Memulai proses...</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Phase Indicator -->
+                <div class="phase-indicator">
+                    <div class="phase active" id="phase1">
+                        <div class="phase-icon"><i class="fas fa-upload"></i></div>
+                        <div>Upload File</div>
+                    </div>
+                    <div class="phase" id="phase2">
+                        <div class="phase-icon"><i class="fas fa-qrcode"></i></div>
+                        <div>Decode QR</div>
+                    </div>
+                    <div class="phase" id="phase3">
+                        <div class="phase-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div>Verifikasi</div>
+                    </div>
+                    <div class="phase" id="phase4">
+                        <div class="phase-icon"><i class="fas fa-database"></i></div>
+                        <div>Database Check</div>
+                    </div>
+                    <div class="phase" id="phase5">
+                        <div class="phase-icon"><i class="fas fa-check-circle"></i></div>
+                        <div>Selesai</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div id="progressBar" class="progress-bar" style="width: 0%">0%</div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row" id="statsCards">
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #4e54c8;">
+                            <h6><i class="fas fa-file me-2"></i>Total File</h6>
+                            <div class="value text-primary" id="totalFiles">0</div>
+                            <div class="unit">File QR Code</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #28a745;">
+                            <h6><i class="fas fa-check me-2"></i>Diproses</h6>
+                            <div class="value text-success" id="processedFiles">0</div>
+                            <div class="unit">File Terproses</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #17a2b8;">
+                            <h6><i class="fas fa-percentage me-2"></i>Progress</h6>
+                            <div class="value text-info" id="percentageText">0%</div>
+                            <div class="unit">Persentase Selesai</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #ffc107;">
+                            <h6><i class="fas fa-clock me-2"></i>Estimasi</h6>
+                            <div class="value text-warning" id="estimatedRemaining">00:00:00</div>
+                            <div class="unit">Waktu Tersisa</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time Information -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="time-info">
+                            <h6><i class="fas fa-history me-2"></i>Informasi Waktu</h6>
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <small class="text-muted">Waktu Mulai:</small>
+                                    <div id="startTime">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Waktu Berjalan:</small>
+                                    <div id="elapsedTime">00:00:00</div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <small class="text-muted">File Saat Ini:</small>
+                                    <div id="currentFile" class="text-truncate">Menunggu...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="time-info">
+                            <h6><i class="fas fa-chart-line me-2"></i>Performance Metrics</h6>
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <small class="text-muted">Kecepatan:</small>
+                                    <div id="speedMetric">0 file/detik</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Rata-rata Waktu:</small>
+                                    <div id="avgTimeMetric">0.000s/file</div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <div class="progress" style="height: 8px;">
+                                        <div id="cpuUsage" class="progress-bar bg-success" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted">CPU Usage: <span id="cpuPercent">0%</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6><i class="fas fa-clipboard-list me-2"></i>Activity Log</h6>
+                        <div class="log-container" id="activityLog">
+                            <div class="log-entry log-info">
+                                <i class="fas fa-info-circle me-2"></i>Sistem: Memulai proses verifikasi massal...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Ready -->
+                <div class="row mt-4" id="resultsContainer" style="display: none;">
+                    <div class="col-12">
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle me-2"></i>Verifikasi Selesai!</h5>
+                            <p>Proses verifikasi massal telah berhasil diselesaikan.</p>
+                            <div class="mt-3">
+                                <a id="viewResultsBtn" href="#" class="btn btn-success btn-lg me-2">
+                                    <i class="fas fa-eye me-2"></i>Lihat Hasil
+                                </a>
+                                <a href="{{ url_for('scanner') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-redo me-2"></i>Verifikasi Lagi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Container -->
+                <div class="row mt-4" id="errorContainer" style="display: none;">
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Error Terjadi</h5>
+                            <p id="errorMessage">Terjadi kesalahan saat memproses verifikasi.</p>
+                            <button onclick="location.reload()" class="btn btn-warning">
+                                <i class="fas fa-redo me-2"></i>Coba Lagi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            const taskId = "{{ task_id }}";
+            let progressInterval;
+            let startTime;
+            let lastProcessed = 0;
+            let speedSamples = [];
+            let currentPhase = 1;
+            
+            // Fungsi untuk update progress
+            function updateProgress() {
+                $.getJSON(`/api/verify_massal_progress_status?task_id=${taskId}`, function(data) {
+                    // Update progress bar
+                    const percentage = data.percentage || 0;
+                    $('#progressBar').css('width', percentage + '%');
+                    $('#progressBar').text(percentage.toFixed(1) + '%');
+                    
+                    // Update stats
+                    $('#totalFiles').text(data.total || 0);
+                    $('#processedFiles').text(data.processed || 0);
+                    $('#percentageText').text(percentage.toFixed(1) + '%');
+                    $('#taskStatus').text(data.status || 'Memulai proses...');
+                    
+                    // Update time info
+                    $('#startTime').text(data.start_time ? new Date(data.start_time).toLocaleTimeString() : '-');
+                    $('#elapsedTime').text(data.elapsed_time || '00:00:00');
+                    $('#estimatedRemaining').text(data.estimated_remaining || '00:00:00');
+                    
+                    // Update current file
+                    if (data.current > 0) {
+                        $('#currentFile').text(`File ${data.current} dari ${data.total}: ${data.status || 'Memproses...'}`);
+                    }
+                    
+                    // Calculate speed
+                    if (lastProcessed > 0 && data.processed > lastProcessed) {
+                        const filesProcessed = data.processed - lastProcessed;
+                        speedSamples.push(filesProcessed);
+                        if (speedSamples.length > 5) speedSamples.shift();
+                        
+                        const avgSpeed = speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length;
+                        $('#speedMetric').text(avgSpeed.toFixed(1) + ' file/detik');
+                        
+                        if (data.total > 0 && data.processed > 0) {
+                            const avgTime = parseFloat(data.elapsed_time.replace(':', '').replace(':', '')) / data.processed;
+                            $('#avgTimeMetric').text(avgTime.toFixed(3) + 's/file');
+                        }
+                    }
+                    lastProcessed = data.processed || 0;
+                    
+                    // Update phases based on progress
+                    updatePhases(percentage);
+                    
+                    // Add to activity log
+                    if (data.status && data.status !== $('#activityLog .log-entry:first').text().replace('Sistem: ', '')) {
+                        addLogEntry(data.status, 'info');
+                    }
+                    
+                    // Update CPU usage (simulated)
+                    const cpuUsage = Math.min(100, Math.max(10, percentage * 0.8));
+                    $('#cpuUsage').css('width', cpuUsage + '%');
+                    $('#cpuPercent').text(cpuUsage.toFixed(0) + '%');
+                    
+                    // Handle completion
+                    if (data.is_complete) {
+                        clearInterval(progressInterval);
+                        
+                        if (data.error) {
+                            showError(data.error);
+                        } else {
+                            showResultsReady(data);
+                        }
+                    }
+                }).fail(function() {
+                    addLogEntry('Error: Gagal mendapatkan status progress', 'error');
+                });
+            }
+            
+            // Fungsi untuk update phases
+            function updatePhases(percentage) {
+                // Reset all phases
+                $('.phase').removeClass('active completed');
+                
+                // Determine current phase based on percentage
+                let newPhase = 1;
+                if (percentage > 0 && percentage < 20) {
+                    newPhase = 2; // Decode QR
+                } else if (percentage >= 20 && percentage < 60) {
+                    newPhase = 3; // Verification
+                } else if (percentage >= 60 && percentage < 90) {
+                    newPhase = 4; // Database Check
+                } else if (percentage >= 90) {
+                    newPhase = 5; // Completed
+                }
+                
+                // Mark previous phases as completed
+                for (let i = 1; i < newPhase; i++) {
+                    $(`#phase${i}`).addClass('completed');
+                }
+                
+                // Mark current phase as active
+                $(`#phase${newPhase}`).addClass('active');
+                
+                currentPhase = newPhase;
+            }
+            
+            // Fungsi untuk menambah log entry
+            function addLogEntry(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                let icon = 'info-circle';
+                let colorClass = 'log-info';
+                
+                switch(type) {
+                    case 'success':
+                        icon = 'check-circle';
+                        colorClass = 'log-success';
+                        break;
+                    case 'warning':
+                        icon = 'exclamation-triangle';
+                        colorClass = 'log-warning';
+                        break;
+                    case 'error':
+                        icon = 'times-circle';
+                        colorClass = 'log-error';
+                        break;
+                }
+                
+                const logEntry = `
+                    <div class="log-entry ${colorClass}">
+                        <i class="fas fa-${icon} me-2"></i>${timestamp}: ${message}
+                    </div>
+                `;
+                
+                $('#activityLog').prepend(logEntry);
+                
+                // Keep only last 20 entries
+                const entries = $('#activityLog .log-entry');
+                if (entries.length > 20) {
+                    entries.last().remove();
+                }
+            }
+            
+            // Fungsi untuk menunjukkan hasil siap
+            function showResultsReady(data) {
+                $('#resultsContainer').show();
+                $('#viewResultsBtn').attr('href', `/view_verify_massal_results?task_id=${taskId}`);
+                
+                addLogEntry('Proses verifikasi selesai! Hasil siap dilihat.', 'success');
+            }
+            
+            // Fungsi untuk menunjukkan error
+            function showError(errorMessage) {
+                $('#errorContainer').show();
+                $('#errorMessage').text(errorMessage);
+                
+                addLogEntry(`Error: ${errorMessage}`, 'error');
+            }
+            
+            // Mulai polling progress
+            progressInterval = setInterval(updateProgress, 2000);
+            
+            // Update pertama kali
+            updateProgress();
+            
+            // Cleanup saat meninggalkan halaman
+            $(window).on('beforeunload', function() {
+                clearInterval(progressInterval);
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

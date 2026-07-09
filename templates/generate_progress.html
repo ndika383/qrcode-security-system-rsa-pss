@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Massal - Progress</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .progress-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        .progress {
+            height: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            border-radius: 12px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #007bff;
+        }
+        .time-stats {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .time-stat {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .time-stat h6 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .time-stat .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="fas fa-qrcode me-2"></i>Generate QR Code Massal
+                        </h2>
+                        <p class="text-muted mb-0">Proses generate QR Code dari file CSV sedang berjalan</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="text-center mb-4">
+                <h4 id="statusTitle">Memulai Proses Generate</h4>
+                <p class="text-muted" id="statusDescription">Mempersiapkan data untuk diproses...</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span id="progressText">0%</span>
+                    <span id="processedText">0/0</span>
+                </div>
+                <div class="progress">
+                    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-info-circle fa-2x text-primary me-3"></i>
+                    <div>
+                        <h5 class="mb-1" id="currentStatus">Status: Memulai...</h5>
+                        <small class="text-muted" id="currentItem">Sedang mempersiapkan...</small>
+                    </div>
+                </div>
+                
+                <!-- Time Statistics -->
+                <div class="time-stats">
+                    <div class="time-stat">
+                        <h6>Waktu Berjalan</h6>
+                        <div class="value" id="elapsedTime">00:00:00</div>
+                    </div>
+                    <div class="time-stat">
+                        <h6>Estimasi Sisa</h6>
+                        <div class="value" id="remainingTime">Menghitung...</div>
+                    </div>
+                    <div class="time-stat">
+                        <h6>Kecepatan</h6>
+                        <div class="value" id="processingSpeed">0 QR/menit</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Animation -->
+            <div id="loadingSection" class="text-center">
+                <div class="loader"></div>
+                <p class="mt-3" id="loadingText">Memulai proses generate...</p>
+            </div>
+
+            <!-- Results Preview (akan muncul saat proses berjalan) -->
+            <div id="resultsPreview" class="result-preview" style="display: none;">
+                <h5 class="mb-3">Preview Hasil:</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>ID</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mt-4">
+                <div class="col-md-6 mb-2">
+                    <button class="btn btn-danger w-100" id="stopButton" style="display: none;">
+                        <i class="fas fa-stop-circle me-2"></i>Hentikan Generate
+                    </button>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <button class="btn btn-primary w-100" id="viewResultsButton" style="display: none;">
+                        <i class="fas fa-eye me-2"></i>Lihat Hasil Lengkap
+                    </button>
+                    <button class="btn btn-success w-100" id="downloadButton" style="display: none;">
+                        <i class="fas fa-download me-2"></i>Download QR Codes
+                    </button>
+                    <form action="{{ url_for('verify_generated_task', task_id=task_id) }}" method="POST" class="mt-2" id="verifyGeneratedForm" style="display: none;">
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="fas fa-shield-alt me-2"></i>Verifikasi Semua QR
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Log Proses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="log-messages" id="logMessages" style="max-height: 200px; overflow-y: auto;">
+                        <div class="alert alert-info mb-2">
+                            <small><i class="fas fa-info-circle me-2"></i>Proses generate dimulai</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let totalItems = 0;
+        let processedItems = 0;
+        let startTime = new Date();
+        let refreshInterval;
+        let terminalErrorShown = false;
+        let stopRequested = false;
+        let statusErrorCount = 0;
+        
+        // Fungsi untuk format waktu
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Fungsi untuk menambah log
+        function addLog(message, type = 'info') {
+            const logMessages = $('#logMessages');
+            const alertClass = type === 'error' ? 'alert-danger' : 
+                              type === 'warning' ? 'alert-warning' : 
+                              type === 'success' ? 'alert-success' : 'alert-info';
+            
+            const icon = type === 'error' ? 'fa-exclamation-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+            
+            const logItem = `<div class="alert ${alertClass} mb-2">
+                <small><i class="fas ${icon} me-2"></i>${message}</small>
+            </div>`;
+            
+            logMessages.prepend(logItem);
+            
+            // Batasi jumlah log
+            if (logMessages.children().length > 20) {
+                logMessages.children().last().remove();
+            }
+        }
+
+        function showTerminalTaskError(message) {
+            if (terminalErrorShown) {
+                return;
+            }
+
+            terminalErrorShown = true;
+
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+
+            $('#loadingSection').hide();
+            $('#statusTitle').text('Task tidak ditemukan');
+            $('#statusDescription').text('Proses sebelumnya terhenti atau task sudah tidak tersedia di server.');
+            $('#currentStatus').text('Status: Perlu memuat ulang halaman');
+            $('#currentItem').text('Jika file CSV masih tersimpan, sistem akan mencoba memulihkan task saat halaman dibuka ulang.');
+            addLog(message, 'error');
+        }
+
+        function setStopButtonState(response) {
+            const stopButton = $('#stopButton');
+
+            if (response.is_complete || response.error) {
+                stopButton.hide();
+                return;
+            }
+
+            if (response.is_stopped || stopRequested) {
+                stopButton.show()
+                    .prop('disabled', true)
+                    .html('<i class="fas fa-hourglass-half me-2"></i>Menghentikan...');
+                return;
+            }
+
+            if (response.is_processing) {
+                stopButton.show()
+                    .prop('disabled', false)
+                    .html('<i class="fas fa-stop-circle me-2"></i>Hentikan Generate');
+            } else {
+                stopButton.hide();
+            }
+        }
+        
+        // Fungsi untuk update progress bar
+        function updateProgress(percentage, processed, total, status, currentItem) {
+            // Update progress bar
+            $('#progressBar').css('width', percentage + '%');
+            $('#progressText').text(percentage.toFixed(1) + '%');
+            $('#processedText').text(processed + '/' + total);
+            $('#currentStatus').text('Status: ' + status);
+            $('#currentItem').text(currentItem || '');
+            
+            // Update halaman utama
+            $('#statusTitle').text('Memproses: ' + Math.round(percentage) + '%');
+            $('#statusDescription').text(`${processed} dari ${total} QR Code telah diproses`);
+        }
+        
+        // Fungsi untuk mendapatkan status progress
+        function getProgressStatus(taskId) {
+            if (!taskId) {
+                showTerminalTaskError('Error: Task ID tidak ditemukan');
+                return;
+            }
+            
+            $.ajax({
+                url: '/api/generate_progress_status?task_id=' + taskId,
+                type: 'GET',
+                success: function(response) {
+                    if (statusErrorCount > 0) {
+                        addLog('Koneksi status progress pulih.', 'success');
+                        statusErrorCount = 0;
+                    }
+
+                    if (response.error && !response.is_complete) {
+                        if (response.error === 'Task tidak ditemukan' || response.error === 'Task ID tidak ditemukan') {
+                            showTerminalTaskError('Error: ' + response.error);
+                        } else {
+                            addLog('Error: ' + response.error, 'error');
+                        }
+                        return;
+                    }
+                    
+                    // Update data
+                    totalItems = response.total || 0;
+                    processedItems = response.processed || 0;
+                    setStopButtonState(response);
+                    
+                    // Update progress bar
+                    updateProgress(
+                        response.percentage || 0,
+                        response.processed || 0,
+                        response.total || 0,
+                        response.status || 'Memproses...',
+                        response.current_item || ''
+                    );
+                    
+                    // Update waktu
+                    if (response.elapsed_time) {
+                        $('#elapsedTime').text(response.elapsed_time);
+                    }
+                    
+                    if (response.estimated_remaining) {
+                        $('#remainingTime').text(response.estimated_remaining);
+                    }
+                    
+                    // Hitung kecepatan
+                    if (response.processed > 0 && response.start_time) {
+                        const start = new Date(response.start_time);
+                        const now = new Date();
+                        const secondsElapsed = (now - start) / 1000;
+                        const qrPerMinute = (response.processed / secondsElapsed) * 60;
+                        $('#processingSpeed').text(qrPerMinute.toFixed(1) + ' QR/menit');
+                    }
+                    
+                    // Cek apakah proses sudah selesai
+                    if (response.is_complete) {
+                        clearInterval(refreshInterval);
+                        $('#stopButton').hide();
+                        
+                        if (response.error) {
+                            // Error terjadi
+                            $('#loadingSection').hide();
+                            addLog('Proses selesai dengan error: ' + response.error, 'error');
+                        } else if (response.is_stopped) {
+                            $('#loadingSection').html(`
+                                <div class="text-center">
+                                    <i class="fas fa-stop-circle fa-5x text-warning mb-3"></i>
+                                    <h4 class="text-warning">Proses Dihentikan</h4>
+                                    <p>${response.processed || 0} dari ${response.total || 0} QR Code telah diproses</p>
+                                </div>
+                            `);
+
+                            addLog('Proses generate dihentikan oleh user.', 'warning');
+                            $('#viewResultsButton').show();
+                            $('#downloadButton').show();
+                            $('#verifyGeneratedForm').show();
+                            getGenerateResults(taskId);
+                        } else {
+                            // Proses berhasil
+                            $('#loadingSection').html(`
+                                <div class="text-center">
+                                    <i class="fas fa-check-circle fa-5x text-success mb-3"></i>
+                                    <h4 class="text-success">Proses Selesai!</h4>
+                                    <p>${response.total || 0} QR Code berhasil digenerate</p>
+                                </div>
+                            `);
+                            
+                            addLog('Proses generate selesai!', 'success');
+                            
+                            // Tampilkan tombol hasil
+                            $('#viewResultsButton').show();
+                            $('#downloadButton').show();
+                            $('#verifyGeneratedForm').show();
+                            
+                            // Ambil hasil lengkap
+                            getGenerateResults(taskId);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    statusErrorCount += 1;
+                    if (statusErrorCount === 1 || statusErrorCount % 5 === 0) {
+                        addLog('Error mendapatkan status progress: ' + error, 'error');
+                    }
+                }
+            });
+        }
+
+        function stopGenerateProcess() {
+            const taskId = '{{ task_id }}';
+
+            if (!taskId) {
+                showTerminalTaskError('Error: Task ID tidak ditemukan');
+                return;
+            }
+
+            if (!confirm('Hentikan proses generate QR Code massal sekarang?')) {
+                return;
+            }
+
+            stopRequested = true;
+            $('#stopButton')
+                .prop('disabled', true)
+                .html('<i class="fas fa-hourglass-half me-2"></i>Menghentikan...');
+            addLog('Permintaan stop dikirim...', 'warning');
+
+            $.ajax({
+                url: '/api/stop_generate_process?task_id=' + taskId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.error) {
+                        stopRequested = false;
+                        $('#stopButton')
+                            .prop('disabled', false)
+                            .html('<i class="fas fa-stop-circle me-2"></i>Hentikan Generate');
+                        addLog('Error menghentikan proses: ' + response.error, 'error');
+                        return;
+                    }
+
+                    addLog(response.status || 'Proses sedang dihentikan...', 'warning');
+                    getProgressStatus(taskId);
+                },
+                error: function(xhr, status, error) {
+                    stopRequested = false;
+                    $('#stopButton')
+                        .prop('disabled', false)
+                        .html('<i class="fas fa-stop-circle me-2"></i>Hentikan Generate');
+                    addLog('Error menghentikan proses: ' + error, 'error');
+                }
+            });
+        }
+        
+        // Fungsi untuk mendapatkan hasil generate
+        function getGenerateResults(taskId) {
+            $.ajax({
+                url: '/api/get_generate_results?task_id=' + taskId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.error) {
+                        addLog('Error mendapatkan hasil: ' + response.error, 'error');
+                        return;
+                    }
+                    
+                    if (response.success) {
+                        // Tampilkan preview hasil
+                        $('#resultsPreview').show();
+                        const previewTable = $('#previewTableBody');
+                        previewTable.empty();
+                        
+                        // Tampilkan maksimal 10 baris preview
+                        const previewItems = response.results.slice(0, 10);
+                        previewItems.forEach(item => {
+                            const row = `<tr>
+                                <td>${item.no}</td>
+                                <td>${item.nama}</td>
+                                <td><code>${item.id}</code></td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Berhasil
+                                    </span>
+                                </td>
+                            </tr>`;
+                            previewTable.append(row);
+                        });
+                        
+                        if (response.results.length > 10) {
+                            previewTable.append(`<tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    ... dan ${response.results.length - 10} data lainnya
+                                </td>
+                            </tr>`);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    addLog('Error mendapatkan hasil: ' + error, 'error');
+                }
+            });
+        }
+        
+        // Fungsi untuk memulai proses generate
+        function startGenerateProcess() {
+            const taskId = '{{ task_id }}';
+            
+            if (!taskId) {
+                addLog('Error: Task ID tidak ditemukan', 'error');
+                return;
+            }
+            
+            $.ajax({
+                url: '/api/start_generate_process?task_id=' + taskId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.error) {
+                        if (response.error === 'Task tidak ditemukan' || response.error === 'Task ID tidak ditemukan') {
+                            showTerminalTaskError('Error: ' + response.error);
+                        } else {
+                            addLog('Error: ' + response.error, 'error');
+                        }
+                    } else {
+                        addLog(response.status || 'Proses generate dimulai...', 'info');
+                        
+                        // Mulai polling untuk status progress
+                        refreshInterval = setInterval(function() {
+                            getProgressStatus(taskId);
+                        }, 2000);
+                        
+                        // Polling pertama
+                        getProgressStatus(taskId);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    addLog('Error memulai proses: ' + error, 'error');
+                }
+            });
+        }
+        
+        // Event handler untuk tombol lihat hasil
+        $('#viewResultsButton').click(function() {
+            const taskId = '{{ task_id }}';
+            window.location.href = '/view_generate_results?task_id=' + taskId;
+        });
+        
+        // Event handler untuk tombol download
+        $('#downloadButton').click(function() {
+            const taskId = '{{ task_id }}';
+            window.location.href = '/download_qr_massal?task_id=' + taskId;
+        });
+
+        $('#stopButton').click(function() {
+            stopGenerateProcess();
+        });
+        
+        // Mulai proses saat halaman dimuat
+        $(document).ready(function() {
+            const taskId = '{{ task_id }}';
+            addLog('Halaman progress dimuat untuk task: ' + taskId, 'info');
+            startGenerateProcess();
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

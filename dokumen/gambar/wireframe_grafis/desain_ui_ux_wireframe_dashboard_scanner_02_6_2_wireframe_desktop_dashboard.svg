@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1614" viewBox="0 0 1500 1614"><defs><linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#ecfeff"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/></filter></defs><rect width="100%" height="100%" fill="url(#top)"/>
+<rect x="24" y="24" width="1452" height="1566" rx="30" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<rect x="48" y="48" width="1404" height="72" rx="20" fill="#0f172a" filter="url(#shadow)"/>
+<text x="78" y="93" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">6.2 Wireframe Desktop Dashboard</text>
+<rect x="48" y="122" width="1404" height="160" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="122" width="14" height="160" rx="7" fill="#2563eb"/>
+<text x="84" y="160" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Dashboard QR Code Security</text>
+<text x="86" y="192" font-family="Arial, sans-serif" font-size="18" fill="#334155">Analisis performa dan statistik sistem QR Code dengan digital signature</text>
+<rect x="84" y="192" width="100" height="38" rx="19" fill="#2563eb"/>
+<text x="134.0" y="217" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Home</text>
+<rect x="196" y="192" width="128" height="38" rx="19" fill="#059669"/>
+<text x="260.0" y="217" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Verifikasi</text>
+<rect x="336" y="192" width="158" height="38" rx="19" fill="#d97706"/>
+<text x="415.0" y="217" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">CSV Generator</text>
+<rect x="48" y="306" width="337" height="140" rx="18" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="306" width="337" height="12" rx="6" fill="#059669"/>
+<text x="70" y="346" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Total QR</text>
+<text x="70" y="370" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">5.004</text>
+<text x="70" y="394" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Tunggal/Massal</text>
+<rect x="403" y="306" width="337" height="140" rx="18" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="403" y="306" width="337" height="12" rx="6" fill="#d97706"/>
+<text x="425" y="346" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Total Verifikasi</text>
+<text x="425" y="370" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">273</text>
+<text x="425" y="394" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Valid/Invalid</text>
+<rect x="758" y="306" width="337" height="140" rx="18" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="758" y="306" width="337" height="12" rx="6" fill="#7c3aed"/>
+<text x="780" y="346" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Median Generate</text>
+<text x="780" y="370" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">0.XXX s</text>
+<text x="780" y="394" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">progress mini</text>
+<rect x="1113" y="306" width="337" height="140" rx="18" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="1113" y="306" width="337" height="12" rx="6" fill="#dc2626"/>
+<text x="1135" y="346" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">P95 Verify</text>
+<text x="1135" y="370" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">0.XXX s</text>
+<text x="1135" y="394" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">grade progress</text>
+<rect x="48" y="470" width="693" height="104" rx="18" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="470" width="693" height="12" rx="6" fill="#d97706"/>
+<text x="70" y="510" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Performa Generate QR Code</text>
+<rect x="759" y="470" width="693" height="104" rx="18" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="759" y="470" width="693" height="12" rx="6" fill="#7c3aed"/>
+<text x="781" y="510" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Statistik Dimensi QR</text>
+<rect x="48" y="598" width="693" height="106" rx="18" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="598" width="693" height="12" rx="6" fill="#7c3aed"/>
+<text x="70" y="638" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">[Total QR] [QR/detik] [KB/QR]</text>
+<text x="70" y="662" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">circle metric circle metric circle metric</text>
+<rect x="759" y="598" width="693" height="106" rx="18" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="759" y="598" width="693" height="12" rx="6" fill="#dc2626"/>
+<text x="781" y="638" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Avg dimension</text>
+<text x="781" y="662" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Min/Max dimension</text>
+<rect x="48" y="728" width="693" height="208" rx="18" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="728" width="693" height="12" rx="6" fill="#dc2626"/>
+<text x="70" y="768" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Analisis Waktu Sistem</text>
+<text x="70" y="792" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Generate QR Code</text>
+<text x="70" y="816" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Total waktu generate</text>
+<text x="70" y="840" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Median per QR</text>
+<text x="70" y="864" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Estimasi throughput</text>
+<rect x="759" y="728" width="693" height="208" rx="18" fill="#ffffff" stroke="#0891b2" stroke-width="2" filter="url(#shadow)"/>
+<rect x="759" y="728" width="693" height="12" rx="6" fill="#0891b2"/>
+<text x="781" y="768" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Verifikasi QR Code</text>
+<text x="781" y="792" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Total waktu verify</text>
+<text x="781" y="816" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Median per verify</text>
+<text x="781" y="840" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">P95 response grade</text>
+<rect x="48" y="960" width="693" height="208" rx="18" fill="#ffffff" stroke="#0891b2" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="960" width="693" height="12" rx="6" fill="#0891b2"/>
+<text x="70" y="1000" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Statistik File</text>
+<text x="70" y="1024" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">QR Tunggal</text>
+<text x="70" y="1048" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">QR Massal</text>
+<text x="70" y="1072" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Data JSON</text>
+<text x="70" y="1096" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Upload</text>
+<rect x="759" y="960" width="693" height="208" rx="18" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="759" y="960" width="693" height="12" rx="6" fill="#2563eb"/>
+<text x="781" y="1000" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Analisis Performa</text>
+<text x="781" y="1024" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Generate Target Attainment</text>
+<text x="781" y="1048" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">P95 Response Time Grade</text>
+<text x="781" y="1072" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Valid QR Rate 95% CI</text>
+<text x="781" y="1096" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Breakdown sumber verify</text>
+<rect x="48" y="1192" width="1404" height="100" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1192" width="14" height="100" rx="7" fill="#2563eb"/>
+<rect x="84" y="1206" width="148" height="38" rx="19" fill="#2563eb"/>
+<text x="158.0" y="1231" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Log Generate</text>
+<rect x="244" y="1206" width="168" height="38" rx="19" fill="#059669"/>
+<text x="328.0" y="1231" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Log Verifikasi</text>
+<rect x="424" y="1206" width="178" height="38" rx="19" fill="#d97706"/>
+<text x="513.0" y="1231" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Reset Statistik</text>
+<rect x="48" y="1316" width="1404" height="108" rx="20" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1316" width="14" height="108" rx="7" fill="#059669"/>
+<text x="84" y="1354" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Metodologi &amp; Referensi Teknis</text>
+<text x="86" y="1386" font-family="Arial, sans-serif" font-size="18" fill="#334155">Sumber data, SLI, rumus, target, grade, batasan interpretasi</text>
+</svg>

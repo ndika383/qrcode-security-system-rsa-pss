@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Palsu Berhasil Dibuat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .qr-image {
+            max-width: 300px;
+            height: auto;
+            border: 3px solid #dc3545;
+            padding: 10px;
+            background: white;
+        }
+        .fraud-banner {
+            background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .data-comparison {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .original {
+            color: #198754;
+            font-weight: bold;
+        }
+        .modified {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .action-buttons .btn {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="fraud-banner text-center">
+            <h2><i class="bi bi-exclamation-triangle"></i> QR CODE PALSU BERHASIL DIBUAT</h2>
+            <p class="mb-0">QR Code ini akan terdeteksi sebagai data palsu saat verifikasi</p>
+        </div>
+
+        <!-- QR Code Image -->
+        <div class="qr-container">
+            <h4>QR Code Palsu</h4>
+            <img src="{{ url_for('static', filename=fake_qr_path) }}" alt="Fake QR Code" class="qr-image img-fluid">
+            <div class="mt-3">
+                <div><strong>Resolusi:</strong> {{ resolution }}</div>
+                <div><strong>Ukuran File:</strong> {{ file_size }}</div>
+                <div><strong>Jenis Modifikasi:</strong> <span class="badge bg-danger">{{ fraud_type }}</span></div>
+                <div><strong>Signature:</strong> <span class="badge bg-warning">{{ signature_note }}</span></div>
+            </div>
+        </div>
+
+        <!-- Data Comparison -->
+        <div class="data-comparison">
+            <h4 class="mb-4 text-center"><i class="bi bi-arrow-left-right"></i> Perbandingan Data</h4>
+            <div class="row">
+                <!-- Data Asli -->
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-check-circle"></i> Data Asli</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr><th>Nama:</th><td class="original">{{ original_data.nama }}</td></tr>
+                                <tr><th>ID:</th><td class="original">{{ original_data.id }}</td></tr>
+                                <tr><th>Timestamp:</th><td class="original">{{ original_data.timestamp }}</td></tr>
+                                <tr><th>Nonce:</th><td class="original">{{ original_data.nonce }}</td></tr>
+                                {% if original_data.qr_version %}<tr><th>QR Version:</th><td>{{ original_data.qr_version }}</td></tr>{% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Modifikasi -->
+                <div class="col-md-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="bi bi-x-circle"></i> Data Palsu</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr><th>Nama:</th><td class="modified">{{ modified_data.nama }}</td></tr>
+                                <tr><th>ID:</th><td class="modified">{{ modified_data.id }}</td></tr>
+                                <tr><th>Timestamp:</th><td class="modified">{{ modified_data.timestamp }}</td></tr>
+                                <tr><th>Nonce:</th><td class="modified">{{ modified_data.nonce }}</td></tr>
+                                {% if modified_data.qr_version %}<tr><th>QR Version:</th><td>{{ modified_data.qr_version }}</td></tr>{% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Changes Summary -->
+            <div class="mt-4 p-3 bg-light rounded">
+                <h5><i class="bi bi-list-check"></i> Ringkasan Perubahan:</h5>
+                <ul>
+                    {% if original_data.nama != modified_data.nama %}
+                    <li><strong>Nama diubah:</strong> "{{ original_data.nama }}" → "{{ modified_data.nama }}"</li>
+                    {% endif %}
+                    {% if original_data.id != modified_data.id %}
+                    <li><strong>ID diubah:</strong> "{{ original_data.id }}" → "{{ modified_data.id }}"</li>
+                    {% endif %}
+                    {% if original_data.nonce != modified_data.nonce %}
+                    <li><strong>Nonce diubah:</strong> "{{ original_data.nonce }}" → "{{ modified_data.nonce }}"</li>
+                    {% endif %}
+                    {% if original_data.timestamp != modified_data.timestamp %}
+                    <li><strong>Timestamp diubah:</strong> "{{ original_data.timestamp }}" → "{{ modified_data.timestamp }}"</li>
+                    {% endif %}
+                    {% if signature_choice != 'keep' %}
+                    <li><strong>Signature dimodifikasi:</strong> {{ signature_note }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- URL Verifikasi Section (BARU) -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-link"></i> URL Verifikasi</h5>
+            </div>
+            <div class="card-body">
+                {% if qr_url %}
+                <p><strong>URL untuk verifikasi kamera HP:</strong></p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="qrUrl" value="{{ qr_url }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('qrUrl')">
+                        <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-phone"></i> QR Code ini dapat discan langsung oleh kamera HP.
+                    Sistem akan mengarahkan ke URL di atas untuk verifikasi.
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    QR Code ini tidak memiliki URL verifikasi. Mungkin hanya bisa dibaca oleh scanner khusus.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Expected Verification Result -->
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-shield-exclamation"></i> Hasil Verifikasi yang Diharapkan:</h5>
+            {% if modified_data != original_data %}
+            <p>❌ <strong>Data Telah Dimodifikasi / Data Palsu</strong> - Payload berubah dari data asli. Jika signature lama dipertahankan, signature tidak akan cocok dengan data baru.</p>
+            {% elif signature_choice != 'keep' %}
+            <p>⚠️ <strong>Data Valid tapi Signature Invalid</strong> - Signature tidak cocok dengan data</p>
+            {% else %}
+            <p>🔁 <strong>Replay Attack Terdeteksi</strong> - Payload masih asli. Setelah verifikasi pertama valid, scan berikutnya akan langsung dianggap replay.</p>
+            {% endif %}
+            <p class="mb-0">Coba verifikasi QR Code ini di halaman <a href="{{ url_for('scanner') }}">Scanner</a> untuk melihat deteksi sistem</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center action-buttons">
+            <a href="{{ url_for('static', filename=fake_qr_path) }}" download class="btn btn-danger">
+                <i class="bi bi-download"></i> Download QR Code Palsu
+            </a>
+            <a href="{{ url_for('scanner') }}" class="btn btn-primary">
+                <i class="bi bi-qr-code-scan"></i> Verifikasi QR Code Ini
+            </a>
+            <a href="{{ url_for('modify_qr_page') }}" class="btn btn-secondary">
+                <i class="bi bi-plus-circle"></i> Buat QR Palsu Lainnya
+            </a>
+            <a href="{{ url_for('view_modification_logs') }}" class="btn btn-info">
+                <i class="bi bi-clock-history"></i> Lihat Log Modifikasi
+            </a>
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="card mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Tips Testing</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-arrow-repeat text-warning"></i> Replay Attack</h6>
+                        <small>Gunakan nonce yang sama untuk mensimulasikan replay attack</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-person-x text-danger"></i> Identity Theft</h6>
+                        <small>Ubah nama/ID untuk mensimulasikan pencurian identitas</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-shield-x text-success"></i> Signature Tampering</h6>
+                        <small>Corrupt signature untuk test integritas data</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(elementId) {
+            const copyText = document.getElementById(elementId);
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // For mobile devices
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                alert('URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

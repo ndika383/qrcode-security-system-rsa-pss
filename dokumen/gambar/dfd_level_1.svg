@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="980" viewBox="0 0 1500 980">
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}.actor{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}.process{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:16}.store{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:12}.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.flow{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.flowText{font:400 12px Arial,sans-serif;fill:#334155}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+  </defs>
+  <rect class="bg" width="1500" height="980"/>
+  <text x="750" y="48" text-anchor="middle" class="title">DFD Level 1 - Proses Utama Sistem</text>
+  <text x="750" y="76" text-anchor="middle" class="subtitle">Generate QR, Verifikasi QR, Dashboard, Log/Audit, dan Task Massal</text>
+
+  <rect x="55" y="150" width="190" height="82" class="actor"/><text x="150" y="184" text-anchor="middle" class="label">Admin / Operator</text><text x="150" y="210" text-anchor="middle" class="small">Input dan monitoring</text>
+  <rect x="55" y="435" width="190" height="82" class="actor"/><text x="150" y="469" text-anchor="middle" class="label">Petugas Lapangan</text><text x="150" y="495" text-anchor="middle" class="small">Scanner HP</text>
+  <rect x="55" y="710" width="190" height="82" class="actor"/><text x="150" y="744" text-anchor="middle" class="label">Auditor</text><text x="150" y="770" text-anchor="middle" class="small">Log dan laporan</text>
+
+  <rect x="405" y="120" width="220" height="94" class="process"/><text x="515" y="154" text-anchor="middle" class="label">1.0 Generate QR</text><text x="515" y="181" text-anchor="middle" class="small">Data, signature, QR PNG</text>
+  <rect x="405" y="300" width="220" height="94" class="process"/><text x="515" y="334" text-anchor="middle" class="label">2.0 Verifikasi QR</text><text x="515" y="361" text-anchor="middle" class="small">Crypto + replay state</text>
+  <rect x="405" y="480" width="220" height="94" class="process"/><text x="515" y="514" text-anchor="middle" class="label">3.0 Dashboard</text><text x="515" y="541" text-anchor="middle" class="small">Statistik dan performa</text>
+  <rect x="405" y="660" width="220" height="94" class="process"/><text x="515" y="694" text-anchor="middle" class="label">4.0 Log dan Audit</text><text x="515" y="721" text-anchor="middle" class="small">Filter, export, audit</text>
+  <rect x="405" y="820" width="220" height="94" class="process"/><text x="515" y="854" text-anchor="middle" class="label">5.0 Task Massal</text><text x="515" y="881" text-anchor="middle" class="small">Generate / verify async</text>
+
+  <rect x="875" y="80" width="230" height="72" class="store"/><text x="990" y="110" text-anchor="middle" class="label">D1 Data Original</text><text x="990" y="133" text-anchor="middle" class="small">static/data/*.json</text>
+  <rect x="1180" y="80" width="230" height="72" class="store"/><text x="1295" y="110" text-anchor="middle" class="label">D2 QR Artefact</text><text x="1295" y="133" text-anchor="middle" class="small">PNG upload/qr/massal</text>
+  <rect x="875" y="220" width="230" height="72" class="store"/><text x="990" y="250" text-anchor="middle" class="label">D3 Payload Token</text><text x="990" y="273" text-anchor="middle" class="small">data/verify_payloads</text>
+  <rect x="1180" y="220" width="230" height="72" class="store"/><text x="1295" y="250" text-anchor="middle" class="label">D4 Nonce State</text><text x="1295" y="273" text-anchor="middle" class="small">SQLite nonce_state</text>
+  <rect x="875" y="390" width="230" height="72" class="store"/><text x="990" y="420" text-anchor="middle" class="label">D5 Generate Log</text><text x="990" y="443" text-anchor="middle" class="small">log_generate.csv</text>
+  <rect x="1180" y="390" width="230" height="72" class="store"/><text x="1295" y="420" text-anchor="middle" class="label">D6 Verify Log</text><text x="1295" y="443" text-anchor="middle" class="small">log_verifikasi.csv</text>
+  <rect x="875" y="560" width="230" height="72" class="store"/><text x="990" y="590" text-anchor="middle" class="label">D7 Audit Log</text><text x="990" y="613" text-anchor="middle" class="small">audit_log.csv</text>
+  <rect x="1180" y="560" width="230" height="72" class="store"/><text x="1295" y="590" text-anchor="middle" class="label">D8 Task Snapshot</text><text x="1295" y="613" text-anchor="middle" class="small">task_results / metadata</text>
+
+  <path d="M245 185 L405 160" class="flow"/><text x="275" y="158" class="flowText">data generate</text>
+  <path d="M245 205 C320 245 340 320 405 340" class="flow"/><text x="270" y="270" class="flowText">file QR / scan</text>
+  <path d="M245 470 L405 350" class="flow"/><text x="280" y="420" class="flowText">hasil scan HP</text>
+  <path d="M245 185 C320 420 330 500 405 525" class="flow"/><text x="270" y="455" class="flowText">lihat dashboard</text>
+  <path d="M245 750 L405 705" class="flow"/><text x="280" y="730" class="flowText">permintaan log</text>
+  <path d="M245 205 C315 760 330 850 405 865" class="flow"/><text x="265" y="840" class="flowText">job massal</text>
+
+  <path d="M625 150 L875 112" class="flow"/>
+  <path d="M625 160 C800 160 1030 120 1180 115" class="flow"/>
+  <path d="M625 178 C760 210 800 240 875 255" class="flow"/>
+  <path d="M625 195 C760 330 810 400 875 425" class="flow"/>
+
+  <path d="M625 328 C720 250 780 135 875 118" class="flow"/>
+  <path d="M625 342 C820 330 1040 270 1180 255" class="flow"/>
+  <path d="M625 360 C820 380 1030 410 1180 425" class="flow"/>
+  <path d="M625 375 C750 410 1050 255 1180 255" class="flow"/>
+
+  <path d="M625 525 C760 480 850 440 875 425" class="flow"/>
+  <path d="M625 540 C870 520 1070 450 1180 425" class="flow"/>
+  <path d="M625 700 C760 650 830 600 875 595" class="flow"/>
+  <path d="M625 865 C820 830 1060 640 1180 595" class="flow"/>
+  <path d="M625 850 C760 720 850 470 875 425" class="flow"/>
+  <path d="M625 875 C820 735 1080 485 1180 425" class="flow"/>
+</svg>

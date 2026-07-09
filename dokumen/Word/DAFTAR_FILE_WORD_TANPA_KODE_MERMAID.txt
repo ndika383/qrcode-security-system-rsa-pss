@@ -1,0 +1,7 @@
+File Word revisi tanpa blok source Mermaid mentah:
+
+dokumen_desain_sistem_sdd_dfd_flowchart_erd_tanpa_kode_mermaid.docx
+semua_dokumen_lengkap_gambar_asli_semua_diagram_tanpa_kode_mermaid.docx
+
+Jumlah diagram/gambar asli: 36
+Jumlah screenshot: 28

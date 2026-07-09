@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1220" viewBox="0 0 1600 1220">
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}.start{fill:#dcfce7;stroke:#16a34a;stroke-width:3}.step{fill:#fff;stroke:#2563eb;stroke-width:2.5;rx:12}.crypto{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:12}.state{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:12}.decision{fill:#fef9c3;stroke:#ca8a04;stroke-width:3}.resultValid{fill:#dcfce7;stroke:#16a34a;stroke-width:3;rx:12}.resultWarn{fill:#fef3c7;stroke:#d97706;stroke-width:3;rx:12}.resultBad{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:12}.log{fill:#f1f5f9;stroke:#64748b;stroke-width:2.5;rx:12}.label{font:700 15px Arial,sans-serif;fill:#111827}.small{font:400 12px Arial,sans-serif;fill:#374151}.flow{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.yesno{font:700 12px Arial,sans-serif;fill:#334155}.bandCrypto{fill:#dbeafe;stroke:#60a5fa;stroke-width:2;rx:18;opacity:.55}.bandState{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+  </defs>
+  <rect class="bg" width="1600" height="1220"/>
+  <text x="800" y="45" text-anchor="middle" class="title">Flowchart Sistem Verifikasi 2-Lapis</text>
+  <text x="800" y="74" text-anchor="middle" class="subtitle">Lapis 1 Kriptograf dan Lapis 2 State / Validasi Bisnis</text>
+
+  <rect x="80" y="250" width="700" height="280" class="bandCrypto"/>
+  <text x="120" y="280" class="label">LAPIS 1 - KRIPTOGRAF</text>
+  <rect x="820" y="250" width="700" height="650" class="bandState"/>
+  <text x="860" y="280" class="label">LAPIS 2 - STATE DAN VALIDASI BISNIS</text>
+
+  <ellipse cx="800" cy="125" rx="95" ry="34" class="start"/><text x="800" y="130" text-anchor="middle" class="label">Mulai Verifikasi</text>
+  <rect x="690" y="185" width="220" height="58" class="step"/><text x="800" y="209" text-anchor="middle" class="label">Input QR</text><text x="800" y="229" text-anchor="middle" class="small">Upload / HP / USB / Massal</text>
+  <rect x="320" y="310" width="230" height="64" class="crypto"/><text x="435" y="336" text-anchor="middle" class="label">Decode / Resolve Payload</text><text x="435" y="358" text-anchor="middle" class="small">gambar, token, atau URL encoded</text>
+  <polygon points="435,410 540,470 435,530 330,470" class="decision"/><text x="435" y="466" text-anchor="middle" class="label">Payload</text><text x="435" y="486" text-anchor="middle" class="label">lengkap?</text>
+
+  <rect x="110" y="620" width="210" height="58" class="resultBad"/><text x="215" y="645" text-anchor="middle" class="label">Format QR</text><text x="215" y="665" text-anchor="middle" class="label">Tidak Valid</text>
+
+  <rect x="590" y="310" width="150" height="64" class="crypto"/><text x="665" y="336" text-anchor="middle" class="label">Canonical</text><text x="665" y="358" text-anchor="middle" class="small">JSON sort_keys</text>
+  <rect x="590" y="410" width="150" height="64" class="crypto"/><text x="665" y="436" text-anchor="middle" class="label">Hash</text><text x="665" y="458" text-anchor="middle" class="small">SHA-256</text>
+  <polygon points="665,515 755,575 665,635 575,575" class="decision"/><text x="665" y="571" text-anchor="middle" class="label">Algoritma</text><text x="665" y="591" text-anchor="middle" class="label">payload?</text>
+  <rect x="430" y="700" width="150" height="60" class="crypto"/><text x="505" y="725" text-anchor="middle" class="label">Verify</text><text x="505" y="746" text-anchor="middle" class="small">RSA-PSS</text>
+  <rect x="615" y="700" width="150" height="60" class="crypto"/><text x="690" y="725" text-anchor="middle" class="label">Verify</text><text x="690" y="746" text-anchor="middle" class="small">ECDSA P-256</text>
+  <rect x="245" y="700" width="150" height="60" class="resultBad"/><text x="320" y="725" text-anchor="middle" class="label">Algoritma</text><text x="320" y="746" text-anchor="middle" class="small">tidak dikenal</text>
+  <polygon points="585,805 690,865 585,925 480,865" class="decision"/><text x="585" y="861" text-anchor="middle" class="label">Signature</text><text x="585" y="881" text-anchor="middle" class="label">valid?</text>
+
+  <rect x="905" y="310" width="230" height="62" class="state"/><text x="1020" y="336" text-anchor="middle" class="label">Cari Data Original</text><text x="1020" y="356" text-anchor="middle" class="small">static/data/*.json</text>
+  <polygon points="1020,405 1125,465 1020,525 915,465" class="decision"/><text x="1020" y="461" text-anchor="middle" class="label">Original</text><text x="1020" y="481" text-anchor="middle" class="label">ditemukan?</text>
+  <polygon points="1235,405 1340,465 1235,525 1130,465" class="decision"/><text x="1235" y="461" text-anchor="middle" class="label">Exact</text><text x="1235" y="481" text-anchor="middle" class="label">match?</text>
+  <rect x="1295" y="575" width="190" height="64" class="resultBad"/><text x="1390" y="600" text-anchor="middle" class="label">Data Palsu /</text><text x="1390" y="622" text-anchor="middle" class="label">Dimodifikasi</text>
+  <rect x="850" y="575" width="190" height="64" class="resultBad"/><text x="945" y="600" text-anchor="middle" class="label">Data Tidak</text><text x="945" y="622" text-anchor="middle" class="label">Ditemukan</text>
+  <rect x="1065" y="575" width="190" height="64" class="resultBad"/><text x="1160" y="600" text-anchor="middle" class="label">Signature</text><text x="1160" y="622" text-anchor="middle" class="label">Invalid</text>
+
+  <polygon points="1235,675 1340,735 1235,795 1130,735" class="decision"/><text x="1235" y="731" text-anchor="middle" class="label">Nonce</text><text x="1235" y="751" text-anchor="middle" class="label">valid?</text>
+  <rect x="1065" y="830" width="190" height="64" class="resultBad"/><text x="1160" y="855" text-anchor="middle" class="label">Nonce</text><text x="1160" y="877" text-anchor="middle" class="label">Tidak Valid</text>
+  <rect x="1305" y="830" width="190" height="64" class="state"/><text x="1400" y="855" text-anchor="middle" class="label">Atomic Upsert</text><text x="1400" y="877" text-anchor="middle" class="small">nonce_state</text>
+  <polygon points="1400,930 1500,990 1400,1050 1300,990" class="decision"/><text x="1400" y="986" text-anchor="middle" class="label">Used /</text><text x="1400" y="1006" text-anchor="middle" class="label">expired?</text>
+  <rect x="1180" y="1100" width="190" height="64" class="resultValid"/><text x="1275" y="1125" text-anchor="middle" class="label">Valid dan</text><text x="1275" y="1147" text-anchor="middle" class="label">Authentik</text>
+  <rect x="1410" y="1100" width="150" height="64" class="resultWarn"/><text x="1485" y="1125" text-anchor="middle" class="label">Replay</text><text x="1485" y="1147" text-anchor="middle" class="label">Attack</text>
+
+  <rect x="625" y="1035" width="210" height="58" class="log"/><text x="730" y="1060" text-anchor="middle" class="label">Log Verifikasi</text><text x="730" y="1080" text-anchor="middle" class="small">log_verifikasi.csv</text>
+  <ellipse cx="730" cy="1145" rx="82" ry="32" class="start"/><text x="730" y="1150" text-anchor="middle" class="label">Render Hasil</text>
+
+  <path d="M800 159 L800 185" class="flow"/>
+  <path d="M690 215 C550 230 470 270 435 310" class="flow"/>
+  <path d="M435 374 L435 410" class="flow"/>
+  <path d="M330 470 C245 500 215 555 215 620" class="flow"/><text x="270" y="520" class="yesno">Tidak</text>
+  <path d="M540 470 C570 420 610 385 665 374" class="flow"/><text x="560" y="450" class="yesno">Ya</text>
+  <path d="M665 374 L665 410" class="flow"/>
+  <path d="M665 474 L665 515" class="flow"/>
+  <path d="M610 620 L505 700" class="flow"/><text x="540" y="660" class="yesno">RSA</text>
+  <path d="M690 635 L690 700" class="flow"/><text x="705" y="665" class="yesno">ECDSA</text>
+  <path d="M575 575 C450 610 345 660 320 700" class="flow"/><text x="390" y="625" class="yesno">Lain</text>
+  <path d="M505 760 L545 815" class="flow"/>
+  <path d="M690 760 L625 815" class="flow"/>
+  <path d="M320 760 C390 820 430 850 480 865" class="flow"/>
+  <path d="M690 865 C770 820 830 390 905 345" class="flow"/>
+  <path d="M585 925 C660 990 690 1010 730 1035" class="flow"/>
+  <text x="710" y="840" class="yesno">hasil signature diteruskan</text>
+
+  <path d="M1135 340 C1190 360 1220 385 1235 405" class="flow"/>
+  <path d="M1020 372 L1020 405" class="flow"/>
+  <path d="M915 465 C860 500 895 545 945 575" class="flow"/><text x="870" y="520" class="yesno">Tidak</text>
+  <path d="M1125 465 L1130 465" class="flow"/><text x="1118" y="448" class="yesno">Ya</text>
+  <path d="M1340 465 C1400 500 1405 545 1390 575" class="flow"/><text x="1380" y="520" class="yesno">Tidak</text>
+  <path d="M1235 525 L1235 675" class="flow"/><text x="1250" y="610" class="yesno">Ya + signature valid</text>
+  <path d="M1185 525 C1160 545 1160 560 1160 575" class="flow"/><text x="1110" y="548" class="yesno">signature invalid</text>
+  <path d="M1130 735 C1090 770 1120 805 1160 830" class="flow"/><text x="1095" y="780" class="yesno">Tidak</text>
+  <path d="M1340 735 C1390 760 1400 800 1400 830" class="flow"/><text x="1370" y="780" class="yesno">Ya</text>
+  <path d="M1400 894 L1400 930" class="flow"/>
+  <path d="M1300 990 C1220 1015 1220 1060 1275 1100" class="flow"/><text x="1235" y="1035" class="yesno">Tidak</text>
+  <path d="M1500 990 C1540 1025 1535 1070 1485 1100" class="flow"/><text x="1515" y="1035" class="yesno">Ya</text>
+
+  <path d="M215 678 C340 940 500 1040 625 1060" class="flow"/>
+  <path d="M945 639 C880 805 800 980 730 1035" class="flow"/>
+  <path d="M1160 639 C1060 830 900 1000 835 1060" class="flow"/>
+  <path d="M1390 639 C1200 865 960 1020 835 1060" class="flow"/>
+  <path d="M1160 894 C1030 980 900 1040 835 1060" class="flow"/>
+  <path d="M1275 1100 C1080 1100 930 1085 835 1070" class="flow"/>
+  <path d="M1485 1100 C1240 1120 965 1095 835 1070" class="flow"/>
+  <path d="M730 1093 L730 1113" class="flow"/>
+</svg>

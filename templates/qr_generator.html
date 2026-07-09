@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Generator - QR Code Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+        .upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #27ae60;
+            background-color: #eef8f2;
+        }
+        .btn-generate {
+            background: linear-gradient(135deg, #3498db 0%, #27ae60 100%);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        .btn-generate:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .info-panel {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            border-radius: 8px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="bi bi-qr-code me-2"></i>QR Generator
+                        </h2>
+                        <p class="text-muted mb-0">Generate QR Code bertanda tangan digital secara tunggal atau massal dari CSV</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-house me-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white p-0">
+                <ul class="nav nav-tabs" id="generatorTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="single-tab" data-bs-toggle="tab"
+                                data-bs-target="#single" type="button" role="tab">
+                            <i class="bi bi-file-earmark-plus me-2"></i>Generate Tunggal
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="batch-tab" data-bs-toggle="tab"
+                                data-bs-target="#batch" type="button" role="tab">
+                            <i class="bi bi-collection me-2"></i>Generate Massal
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="generatorTabContent">
+                    <div class="tab-pane fade show active" id="single" role="tabpanel">
+                        <form action="{{ url_for('generate_qr') }}" method="POST">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nama Lengkap</label>
+                                        <input type="text" class="form-control" name="nama" required
+                                               placeholder="Masukkan nama lengkap">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">User ID</label>
+                                        <input type="text" class="form-control" name="userid" required
+                                               placeholder="Masukkan ID unik">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Algoritma Tanda Tangan</label>
+                                        <div class="d-flex gap-3 flex-wrap">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="alg" id="alg_rsa" value="RSA" checked>
+                                                <label class="form-check-label" for="alg_rsa">RSA 2048</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="alg" id="alg_ecdsa" value="ECDSA">
+                                                <label class="form-check-label" for="alg_ecdsa">ECDSA P-256</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-generate">
+                                            <i class="bi bi-qr-code me-2"></i>Generate QR Code
+                                        </button>
+                                        <div class="info-panel mt-3">
+                                            <h6><i class="bi bi-info-circle me-2"></i>Output</h6>
+                                            <small class="text-muted">
+                                                QR disimpan sebagai PNG, data asli disimpan sebagai JSON, dan aktivitas dicatat ke log generate.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="batch" role="tabpanel">
+                        <form action="{{ url_for('generate_from_csv') }}" method="POST" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="upload-area" onclick="document.getElementById('csvFile').click()">
+                                        <i class="bi bi-file-earmark-spreadsheet display-4 text-muted mb-3"></i>
+                                        <h5>Upload file CSV</h5>
+                                        <p class="text-muted">atau klik area ini untuk memilih file</p>
+                                        <input type="file" name="csvfile" id="csvFile" class="d-none" accept=".csv" required>
+                                        <div class="mt-3">
+                                            <small class="text-muted">Kolom wajib: <code>nama</code> dan <code>id</code></small>
+                                        </div>
+                                    </div>
+                                    <div id="csvFileInfo" class="mt-3" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-file-earmark-text me-2"></i>
+                                            <span id="csvFileName"></span>
+                                            <button type="button" class="btn-close float-end" onclick="clearCsvFile()"></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid gap-2">
+                                        <label class="form-label">Algoritma Tanda Tangan</label>
+                                        <select class="form-select mb-2" name="alg">
+                                            <option value="RSA" selected>RSA 2048</option>
+                                            <option value="ECDSA">ECDSA P-256</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-generate">
+                                            <i class="bi bi-upload me-2"></i>Upload CSV & Generate
+                                        </button>
+                                        <a href="{{ url_for('generate_csv') }}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-file-earmark-arrow-down me-2"></i>Buat CSV Sample
+                                        </a>
+                                        <div class="info-panel mt-3">
+                                            <h6><i class="bi bi-clock-history me-2"></i>Progress</h6>
+                                            <small class="text-muted">
+                                                Batch CSV diproses di background dan dapat dipantau dari halaman progress.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if session.get('last_generated_count') %}
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Generate Terakhir</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <p class="mb-0">
+                            {{ session['last_generated_count'] }} QR berhasil digenerate
+                            <small class="text-muted">({{ session.get('last_generated_time', '') }})</small>
+                        </p>
+                    </div>
+                    <div class="col-md-5 text-end">
+                        <form action="{{ url_for('verify_generated_task', task_id=session.get('last_generated_task_id')) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-warning me-2">
+                                <i class="bi bi-shield-check me-2"></i>Verifikasi Semua
+                            </button>
+                        </form>
+                        <a href="{{ url_for('download_qr_massal', task_id=session.get('last_generated_task_id')) }}" class="btn btn-outline-success">
+                            <i class="bi bi-download me-2"></i>Download ZIP
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const csvFile = document.getElementById('csvFile');
+        const csvFileInfo = document.getElementById('csvFileInfo');
+        const csvFileName = document.getElementById('csvFileName');
+
+        csvFile.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                csvFileName.textContent = this.files[0].name;
+                csvFileInfo.style.display = 'block';
+            }
+        });
+
+        function clearCsvFile() {
+            csvFile.value = '';
+            csvFileInfo.style.display = 'none';
+            csvFileName.textContent = '';
+        }
+    </script>
+</body>
+</html>

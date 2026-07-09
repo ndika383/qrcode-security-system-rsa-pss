@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="720"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Target Database-Backed Event Log</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Skema penguatan dari CSV log menuju database event terstruktur</tspan></text>
+<rect x="100" y="170" width="240" height="220" class="orange"/>
+<text x="220.0" y="200" text-anchor="middle" class="label"><tspan x="220.0" dy="0">nonce_state</tspan></text>
+<text x="220.0" y="226" text-anchor="middle" class="small"><tspan x="220.0" dy="0">PK nonce</tspan><tspan x="220.0" dy="18">first_used_at</tspan><tspan x="220.0" dy="18">last_used_at</tspan><tspan x="220.0" dy="18">usage_count</tspan></text>
+<rect x="400" y="170" width="240" height="220" class="green"/>
+<text x="520.0" y="200" text-anchor="middle" class="label"><tspan x="520.0" dy="0">generate_events</tspan></text>
+<text x="520.0" y="226" text-anchor="middle" class="small"><tspan x="520.0" dy="0">event_id</tspan><tspan x="520.0" dy="18">qr_data_id</tspan><tspan x="520.0" dy="18">timing</tspan><tspan x="520.0" dy="18">file metadata</tspan></text>
+<rect x="700" y="170" width="240" height="220" class="green"/>
+<text x="820.0" y="200" text-anchor="middle" class="label"><tspan x="820.0" dy="0">verify_events</tspan></text>
+<text x="820.0" y="226" text-anchor="middle" class="small"><tspan x="820.0" dy="0">event_id</tspan><tspan x="820.0" dy="18">status_code</tspan><tspan x="820.0" dy="18">changed_fields</tspan><tspan x="820.0" dy="18">timing</tspan></text>
+<rect x="1000" y="170" width="240" height="220" class="gray"/>
+<text x="1120.0" y="200" text-anchor="middle" class="label"><tspan x="1120.0" dy="0">audit_events</tspan></text>
+<text x="1120.0" y="226" text-anchor="middle" class="small"><tspan x="1120.0" dy="0">event_id</tspan><tspan x="1120.0" dy="18">actor</tspan><tspan x="1120.0" dy="18">action</tspan><tspan x="1120.0" dy="18">detail_json</tspan></text>
+<rect x="210" y="530" width="860" height="90" class="soft"/>
+<text x="640" y="563" text-anchor="middle" class="label"><tspan x="640" dy="0">Target Desain Produksi</tspan></text>
+<text x="640" y="592" text-anchor="middle" class="small"><tspan x="640" dy="0">CSV menjadi format export, sedangkan event log utama pindah ke SQLite/PostgreSQL dengan index dan event_id.</tspan></text>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="780" viewBox="0 0 1280 780">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="780"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Wireframe Dashboard Operasional</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Struktur visual dashboard untuk monitoring statistik dan performa</tspan></text>
+<rect x="90" y="110" width="1100" height="85" class="soft"/>
+<text x="640" y="143" text-anchor="middle" class="label"><tspan x="640" dy="0">Dashboard QR Code Security</tspan></text>
+<text x="640" y="168" text-anchor="middle" class="small"><tspan x="640" dy="0">[Home]  [Verifikasi]  [CSV Generator]</tspan></text>
+<rect x="90" y="230" width="245" height="95" class="green"/>
+<text x="212.5" y="260" text-anchor="middle" class="label"><tspan x="212.5" dy="0">Total QR</tspan></text>
+<text x="212.5" y="286" text-anchor="middle" class="small"><tspan x="212.5" dy="0">angka utama</tspan><tspan x="212.5" dy="18">badge/progress</tspan></text>
+<rect x="375" y="230" width="245" height="95" class="green"/>
+<text x="497.5" y="260" text-anchor="middle" class="label"><tspan x="497.5" dy="0">Total Verifikasi</tspan></text>
+<text x="497.5" y="286" text-anchor="middle" class="small"><tspan x="497.5" dy="0">angka utama</tspan><tspan x="497.5" dy="18">badge/progress</tspan></text>
+<rect x="660" y="230" width="245" height="95" class="green"/>
+<text x="782.5" y="260" text-anchor="middle" class="label"><tspan x="782.5" dy="0">Median Generate</tspan></text>
+<text x="782.5" y="286" text-anchor="middle" class="small"><tspan x="782.5" dy="0">angka utama</tspan><tspan x="782.5" dy="18">badge/progress</tspan></text>
+<rect x="945" y="230" width="245" height="95" class="green"/>
+<text x="1067.5" y="260" text-anchor="middle" class="label"><tspan x="1067.5" dy="0">P95 Verify</tspan></text>
+<text x="1067.5" y="286" text-anchor="middle" class="small"><tspan x="1067.5" dy="0">angka utama</tspan><tspan x="1067.5" dy="18">badge/progress</tspan></text>
+<rect x="90" y="370" width="690" height="170" class="box"/>
+<text x="435.0" y="400" text-anchor="middle" class="label"><tspan x="435.0" dy="0">Performa Generate QR</tspan></text>
+<text x="435.0" y="426" text-anchor="middle" class="small"><tspan x="435.0" dy="0">Total QR</tspan><tspan x="435.0" dy="18">QR/detik</tspan><tspan x="435.0" dy="18">KB/QR</tspan></text>
+<rect x="820" y="370" width="370" height="170" class="box"/>
+<text x="1005.0" y="400" text-anchor="middle" class="label"><tspan x="1005.0" dy="0">Statistik Dimensi QR</tspan></text>
+<text x="1005.0" y="426" text-anchor="middle" class="small"><tspan x="1005.0" dy="0">avg</tspan><tspan x="1005.0" dy="18">min / max</tspan></text>
+<rect x="90" y="580" width="1100" height="120" class="orange"/>
+<text x="640.0" y="610" text-anchor="middle" class="label"><tspan x="640.0" dy="0">Analisis Waktu + File + Performa</tspan></text>
+<text x="640.0" y="636" text-anchor="middle" class="small"><tspan x="640.0" dy="0">generate vs verify</tspan><tspan x="640.0" dy="18">statistik file</tspan><tspan x="640.0" dy="18">grade dan metodologi</tspan></text>
+</svg>

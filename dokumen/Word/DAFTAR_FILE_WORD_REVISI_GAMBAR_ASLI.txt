@@ -1,0 +1,8 @@
+File Word revisi dengan gambar asli, semua diagram, wireframe, flowchart, arsitektur, dan screenshot tertanam:
+
+semua_dokumen_lengkap_dengan_gambar_asli_dan_semua_diagram.docx
+dokumen_ui_ux_layout_terbaru_2026_dengan_gambar_asli_dan_semua_diagram.docx
+
+Folder gambar asli hasil konversi: /opt/qrcode/dokumen/Gambar-Asli
+Jumlah diagram/gambar dari dokumen/gambar: 36
+Jumlah screenshot halaman: 28

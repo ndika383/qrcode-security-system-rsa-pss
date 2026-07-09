@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Modifikasi QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .card {
+            margin-bottom: 10px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 12px 15px;
+        }
+        .form-check-input:checked + .form-check-label {
+            font-weight: 600;
+            color: #0d6efd;
+        }
+        .sub-options {
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+            border-left: 3px solid #0d6efd;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        .nav-tabs .nav-link.active {
+            font-weight: 600;
+            background-color: #e7f1ff;
+            border-bottom: 2px solid #0d6efd;
+        }
+        .form-control-sm {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+        }
+        .badge-mod {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+        }
+        .compact-section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #dee2e6;
+        }
+        .compact-section:last-child {
+            border-bottom: none;
+        }
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .option-item {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .option-item:hover {
+            background-color: #f8f9fa;
+            border-color: #86b7fe;
+        }
+        .option-item.active {
+            background-color: #e7f1ff;
+            border-color: #0d6efd;
+        }
+        .signature-preview {
+            font-family: monospace;
+            font-size: 0.75rem;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-0"><i class="bi bi-pencil-square text-primary"></i> Modifikasi QR Code</h4>
+                <small class="text-muted">Edit data untuk membuat versi palsu</small>
+            </div>
+            <div>
+                <a href="{{ url_for('modify_qr_page') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="mb-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show py-2" role="alert">
+                            <small>
+                                {% if category == 'danger' %}<i class="bi bi-exclamation-triangle-fill"></i>
+                                {% elif category == 'warning' %}<i class="bi bi-exclamation-triangle"></i>
+                                {% elif category == 'success' %}<i class="bi bi-check-circle-fill"></i>
+                                {% elif category == 'info' %}<i class="bi bi-info-circle-fill"></i>
+                                {% else %}<i class="bi bi-info-circle"></i>{% endif %}
+                                {{ message }}
+                            </small>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Data Asli Preview -->
+        <div class="card mb-3">
+            <div class="card-header bg-light py-2">
+                <h6 class="mb-0"><i class="bi bi-check-circle text-success"></i> Data Asli</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Nama</small>
+                        <span class="fw-bold text-success">{{ data.nama }}</span>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">ID</small>
+                        <span class="fw-bold text-success">{{ data.id }}</span>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Nonce</small>
+                        <code class="text-success">{{ data.nonce }}</code>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Timestamp</small>
+                        <small class="text-success">{{ data.timestamp|truncate(16) }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabbed Interface untuk Modifikasi -->
+        <div class="card">
+            <div class="card-header bg-light py-2">
+                <ul class="nav nav-tabs nav-tabs-sm border-0" id="modificationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active py-1" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button" role="tab">
+                            <i class="bi bi-card-text"></i> Data
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1" id="signature-tab" data-bs-toggle="tab" data-bs-target="#signature" type="button" role="tab">
+                            <i class="bi bi-shield-lock"></i> Signature
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">
+                            <i class="bi bi-gear"></i> Advanced
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <form action="{{ url_for('apply_modification') }}" method="POST" id="modificationForm">
+                <div class="card-body p-3">
+                    <div class="tab-content" id="modificationTabsContent">
+                        
+                        <!-- Tab 1: Data Modifications -->
+                        <div class="tab-pane fade show active" id="data" role="tabpanel">
+                            
+                            <!-- Nama -->
+                            <div class="compact-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="checkbox" class="form-check-input me-2" id="modify_nama" name="modify_nama" value="yes">
+                                    <label for="modify_nama" class="form-check-label fw-bold">Nama</label>
+                                </div>
+                                <div class="option-grid">
+                                    <div class="option-item" onclick="toggleOption('nama_random')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nama_random" name="nama_modes" value="random" hidden>
+                                        <span>Random</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nama_reverse')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nama_reverse" name="nama_modes" value="reverse" hidden>
+                                        <span>Reverse</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nama_uppercase')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nama_uppercase" name="nama_modes" value="uppercase" hidden>
+                                        <span>UPPERCASE</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nama_lowercase')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nama_lowercase" name="nama_modes" value="lowercase" hidden>
+                                        <span>lowercase</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nama_add_text')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nama_add_text" name="nama_modes" value="add_text" hidden>
+                                        <span>Add Text</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nama_custom')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nama_custom" name="nama_modes" value="custom" hidden>
+                                        <span>Custom</span>
+                                    </div>
+                                </div>
+                                <div id="nama_custom_fields" class="mt-2" style="display: none;">
+                                    <div class="row g-2">
+                                        <div class="col-8" id="nama_suffix_div">
+                                            <input type="text" class="form-control form-control-sm" id="nama_suffix" name="nama_suffix" placeholder="Suffix (contoh: _palsu)">
+                                        </div>
+                                        <div class="col-8" id="custom_nama_div" style="display: none;">
+                                            <input type="text" class="form-control form-control-sm" id="custom_nama" name="custom_nama" placeholder="Nama custom">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ID -->
+                            <div class="compact-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="checkbox" class="form-check-input me-2" id="modify_id" name="modify_id" value="yes">
+                                    <label for="modify_id" class="form-check-label fw-bold">ID</label>
+                                </div>
+                                <div class="option-grid">
+                                    <div class="option-item" onclick="toggleOption('id_random')">
+                                        <input type="checkbox" class="form-check-input me-1" id="id_random" name="id_modes" value="random" hidden>
+                                        <span>Random</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('id_increment')">
+                                        <input type="checkbox" class="form-check-input me-1" id="id_increment" name="id_modes" value="increment" hidden>
+                                        <span>Increment</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('id_decrement')">
+                                        <input type="checkbox" class="form-check-input me-1" id="id_decrement" name="id_modes" value="decrement" hidden>
+                                        <span>Decrement</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('id_custom')">
+                                        <input type="checkbox" class="form-check-input me-1" id="id_custom" name="id_modes" value="custom" hidden>
+                                        <span>Custom</span>
+                                    </div>
+                                </div>
+                                <div id="id_custom_fields" class="mt-2" style="display: none;">
+                                    <input type="text" class="form-control form-control-sm" id="custom_id" name="custom_id" placeholder="ID custom">
+                                </div>
+                            </div>
+
+                            <!-- Nonce -->
+                            <div class="compact-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="checkbox" class="form-check-input me-2" id="modify_nonce" name="modify_nonce" value="yes">
+                                    <label for="modify_nonce" class="form-check-label fw-bold">Nonce</label>
+                                </div>
+                                <div class="option-grid">
+                                    <div class="option-item" onclick="toggleOption('nonce_random')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nonce_random" name="nonce_modes" value="random" hidden>
+                                        <span>Random</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nonce_increment_hex')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nonce_increment_hex" name="nonce_modes" value="increment_hex" hidden>
+                                        <span>Increment Hex</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nonce_zero')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nonce_zero" name="nonce_modes" value="zero" hidden>
+                                        <span>All Zero</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nonce_reuse')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nonce_reuse" name="nonce_modes" value="reuse" hidden>
+                                        <span>Reuse (Replay)</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('nonce_custom')">
+                                        <input type="checkbox" class="form-check-input me-1" id="nonce_custom" name="nonce_modes" value="custom" hidden>
+                                        <span>Custom</span>
+                                    </div>
+                                </div>
+                                <div id="nonce_custom_fields" class="mt-2" style="display: none;">
+                                    <input type="text" class="form-control form-control-sm" id="custom_nonce" name="custom_nonce" placeholder="8 digit hex (a1b2c3d4)">
+                                </div>
+                            </div>
+
+                            <!-- Timestamp -->
+                            <div class="compact-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="checkbox" class="form-check-input me-2" id="modify_timestamp" name="modify_timestamp" value="yes">
+                                    <label for="modify_timestamp" class="form-check-label fw-bold">Timestamp</label>
+                                </div>
+                                <div class="option-grid">
+                                    <div class="option-item" onclick="toggleOption('timestamp_future')">
+                                        <input type="checkbox" class="form-check-input me-1" id="timestamp_future" name="timestamp_modes" value="future" hidden>
+                                        <span>+30 Hari</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('timestamp_past')">
+                                        <input type="checkbox" class="form-check-input me-1" id="timestamp_past" name="timestamp_modes" value="past" hidden>
+                                        <span>-30 Hari</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('timestamp_current')">
+                                        <input type="checkbox" class="form-check-input me-1" id="timestamp_current" name="timestamp_modes" value="current" hidden>
+                                        <span>Sekarang</span>
+                                    </div>
+                                    <div class="option-item" onclick="toggleOption('timestamp_custom')">
+                                        <input type="checkbox" class="form-check-input me-1" id="timestamp_custom" name="timestamp_modes" value="custom" hidden>
+                                        <span>Custom</span>
+                                    </div>
+                                </div>
+                                <div id="timestamp_custom_fields" class="mt-2" style="display: none;">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="date" class="form-control form-control-sm" id="custom_date" name="custom_date">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="time" class="form-control form-control-sm" id="custom_time" name="custom_time">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Signature -->
+                        <div class="tab-pane fade" id="signature" role="tabpanel">
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2">Current Signature Preview:</small>
+                                <div class="signature-preview mb-3">
+                                    {{ signature[:80] }}...
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Pilih treatment signature:</label>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="signature_choice" id="keep" value="keep" checked>
+                                        <label class="form-check-label" for="keep">
+                                            <strong>Keep Original</strong> - signature asli (tidak cocok dengan data modifikasi)
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="signature_choice" id="remove" value="remove">
+                                        <label class="form-check-label" for="remove">
+                                            <strong>Remove Signature</strong> - tidak ada signature
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="signature_choice" id="corrupt" value="corrupt">
+                                        <label class="form-check-label" for="corrupt">
+                                            <strong>Corrupt Signature</strong> - ubah beberapa byte
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="signature_choice" id="random" value="random">
+                                        <label class="form-check-label" for="random">
+                                            <strong>Random Signature</strong> - buat signature acak
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info py-2">
+                                    <small><i class="bi bi-lightbulb"></i> Signature adalah bagian penting untuk verifikasi keaslian data.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Advanced -->
+                        <div class="tab-pane fade" id="advanced" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tambahan Fields (JSON)</label>
+                                <textarea class="form-control form-control-sm" id="additional_fields" name="additional_fields" rows="4" placeholder='{"field1": "value1", "field2": "value2"}'></textarea>
+                                <small class="text-muted">Fields tambahan akan digabungkan dengan data yang ada.</small>
+                            </div>
+                            
+                            <div class="alert alert-warning py-2">
+                                <small><i class="bi bi-exclamation-triangle"></i> QR Code yang dihasilkan akan terdeteksi sebagai data palsu saat verifikasi.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card-footer bg-light py-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <small class="text-muted">Pilih minimal satu modifikasi</small>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-magic"></i> Generate QR Code Palsu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Quick Preview (Mini Alert) -->
+        <div class="alert alert-secondary py-2 mt-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-2"></i>
+                <small><strong>Tips:</strong> Data berubah akan terdeteksi sebagai ❌ Data Palsu/Dimodifikasi. Replay hanya untuk payload asli yang signature-nya valid saat diverifikasi ulang.</small>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Fungsi toggle untuk option grid
+        function toggleOption(optionId) {
+            const checkbox = document.getElementById(optionId);
+            const optionItem = checkbox.closest('.option-item');
+            
+            checkbox.checked = !checkbox.checked;
+            optionItem.classList.toggle('active', checkbox.checked);
+            
+            // Tampilkan field custom jika diperlukan
+            if (optionId === 'nama_add_text' || optionId === 'nama_custom') {
+                const customFields = document.getElementById('nama_custom_fields');
+                customFields.style.display = 'block';
+                
+                if (optionId === 'nama_add_text' && checkbox.checked) {
+                    document.getElementById('nama_suffix_div').style.display = 'block';
+                    document.getElementById('custom_nama_div').style.display = 'none';
+                } else if (optionId === 'nama_custom' && checkbox.checked) {
+                    document.getElementById('nama_suffix_div').style.display = 'none';
+                    document.getElementById('custom_nama_div').style.display = 'block';
+                }
+            }
+            
+            if (optionId === 'id_custom' && checkbox.checked) {
+                document.getElementById('id_custom_fields').style.display = 'block';
+            } else if (optionId === 'id_custom') {
+                document.getElementById('id_custom_fields').style.display = 'none';
+            }
+            
+            if (optionId === 'nonce_custom' && checkbox.checked) {
+                document.getElementById('nonce_custom_fields').style.display = 'block';
+            } else if (optionId === 'nonce_custom') {
+                document.getElementById('nonce_custom_fields').style.display = 'none';
+            }
+            
+            if (optionId === 'timestamp_custom' && checkbox.checked) {
+                document.getElementById('timestamp_custom_fields').style.display = 'block';
+            } else if (optionId === 'timestamp_custom') {
+                document.getElementById('timestamp_custom_fields').style.display = 'none';
+            }
+            
+            // Nonaktifkan opsi lainnya jika memilih reuse (replay attack)
+            if (optionId === 'nonce_reuse' && checkbox.checked) {
+                ['nonce_random', 'nonce_increment_hex', 'nonce_zero', 'nonce_custom'].forEach(id => {
+                    const otherCheckbox = document.getElementById(id);
+                    if (otherCheckbox) {
+                        otherCheckbox.checked = false;
+                        otherCheckbox.closest('.option-item')?.classList.remove('active');
+                    }
+                });
+                document.getElementById('nonce_custom_fields').style.display = 'none';
+            }
+        }
+
+        // Aktifkan/deaktifkan bagian saat checkbox utama di-check
+        document.querySelectorAll('input[id^="modify_"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const sectionId = this.id.replace('modify_', '');
+                const section = this.closest('.compact-section');
+                const options = section.querySelectorAll('.option-item');
+                
+                if (this.checked) {
+                    options.forEach(option => option.style.opacity = '1');
+                } else {
+                    options.forEach(option => option.style.opacity = '0.5');
+                    // Reset semua opsi dalam section
+                    section.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        if (cb !== this) {
+                            cb.checked = false;
+                            cb.closest('.option-item')?.classList.remove('active');
+                        }
+                    });
+                    // Sembunyikan custom fields
+                    section.querySelectorAll('[id$="_custom_fields"]').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                }
+            });
+        });
+
+        // Validasi form
+        document.getElementById('modificationForm').addEventListener('submit', function(e) {
+            let atLeastOneModification = false;
+            
+            // Cek apakah setidaknya satu modifikasi dipilih
+            const modificationCheckboxes = [
+                'modify_nama',
+                'modify_id',
+                'modify_nonce',
+                'modify_timestamp'
+            ];
+            
+            for (let checkboxName of modificationCheckboxes) {
+                const checkbox = document.querySelector(`input[name="${checkboxName}"]`);
+                if (checkbox && checkbox.checked) {
+                    atLeastOneModification = true;
+                    break;
+                }
+            }
+            
+            if (!atLeastOneModification) {
+                e.preventDefault();
+                alert('Pilih setidaknya satu modifikasi! (Nama, ID, Nonce, atau Timestamp)');
+                return false;
+            }
+            
+            // Validasi nonce custom (harus hex 8 digit)
+            const nonceCustomCheckbox = document.querySelector('input[name="nonce_modes"][value="custom"]');
+            if (nonceCustomCheckbox && nonceCustomCheckbox.checked) {
+                const customNonce = document.getElementById('custom_nonce').value;
+                if (!/^[0-9a-fA-F]{8}$/.test(customNonce)) {
+                    e.preventDefault();
+                    alert('Custom nonce harus berupa 8 digit hexadesimal! Contoh: a1b2c3d4');
+                    return false;
+                }
+            }
+            
+            // Validasi JSON untuk additional fields
+            const additionalFields = document.getElementById('additional_fields').value.trim();
+            if (additionalFields) {
+                try {
+                    JSON.parse(additionalFields);
+                } catch (err) {
+                    e.preventDefault();
+                    alert('Format JSON pada Additional Fields tidak valid!');
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set tab pertama sebagai aktif
+            document.querySelector('#data-tab').classList.add('active');
+            document.querySelector('#data').classList.add('show', 'active');
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

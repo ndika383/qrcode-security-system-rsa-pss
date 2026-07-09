@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="760"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Peta Dokumentasi Teknis dan User Manual</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Struktur dokumen 3.4 untuk penggunaan, operasi, dan serah terima source code</tspan></text>
+<rect x="500" y="120" width="280" height="95" class="orange"/>
+<text x="640.0" y="150" text-anchor="middle" class="label"><tspan x="640.0" dy="0">Dokumentasi 3.4</tspan></text>
+<text x="640.0" y="176" text-anchor="middle" class="small"><tspan x="640.0" dy="0">User Manual</tspan><tspan x="640.0" dy="18">Dokumen Teknis</tspan><tspan x="640.0" dy="18">Serah Terima Source Code</tspan></text>
+<rect x="70" y="300" width="230" height="110" class="green"/>
+<text x="185.0" y="330" text-anchor="middle" class="label"><tspan x="185.0" dy="0">Panduan Pengguna</tspan></text>
+<text x="185.0" y="356" text-anchor="middle" class="small"><tspan x="185.0" dy="0">login</tspan><tspan x="185.0" dy="18">generate</tspan><tspan x="185.0" dy="18">verifikasi</tspan></text>
+<path d="M640 215 L185 300" class="flow"/>
+<rect x="360" y="300" width="230" height="110" class="green"/>
+<text x="475.0" y="330" text-anchor="middle" class="label"><tspan x="475.0" dy="0">Panduan Admin</tspan></text>
+<text x="475.0" y="356" text-anchor="middle" class="small"><tspan x="475.0" dy="0">dashboard</tspan><tspan x="475.0" dy="18">log</tspan><tspan x="475.0" dy="18">audit</tspan></text>
+<path d="M640 215 L475 300" class="flow"/>
+<rect x="650" y="300" width="230" height="110" class="soft"/>
+<text x="765.0" y="330" text-anchor="middle" class="label"><tspan x="765.0" dy="0">Panduan Teknis</tspan></text>
+<text x="765.0" y="356" text-anchor="middle" class="small"><tspan x="765.0" dy="0">struktur kode</tspan><tspan x="765.0" dy="18">config</tspan><tspan x="765.0" dy="18">operasi</tspan></text>
+<path d="M640 215 L765 300" class="flow"/>
+<rect x="940" y="300" width="230" height="110" class="yellow"/>
+<text x="1055.0" y="330" text-anchor="middle" class="label"><tspan x="1055.0" dy="0">Serah Terima</tspan></text>
+<text x="1055.0" y="356" text-anchor="middle" class="small"><tspan x="1055.0" dy="0">source</tspan><tspan x="1055.0" dy="18">env</tspan><tspan x="1055.0" dy="18">key</tspan><tspan x="1055.0" dy="18">backup</tspan></text>
+<path d="M640 215 L1055 300" class="flow"/>
+<rect x="360" y="520" width="230" height="110" class="gray"/>
+<text x="475.0" y="550" text-anchor="middle" class="label"><tspan x="475.0" dy="0">Lampiran SOP</tspan></text>
+<text x="475.0" y="576" text-anchor="middle" class="small"><tspan x="475.0" dy="0">troubleshooting</tspan><tspan x="475.0" dy="18">checklist</tspan><tspan x="475.0" dy="18">kontak</tspan></text>
+<path d="M640 215 L475 520" class="flow"/>
+<rect x="650" y="520" width="230" height="110" class="pink"/>
+<text x="765.0" y="550" text-anchor="middle" class="label"><tspan x="765.0" dy="0">Bukti Penerimaan</tspan></text>
+<text x="765.0" y="576" text-anchor="middle" class="small"><tspan x="765.0" dy="0">uji fungsi</tspan><tspan x="765.0" dy="18">sign-off</tspan><tspan x="765.0" dy="18">catatan risiko</tspan></text>
+<path d="M640 215 L765 520" class="flow"/>
+</svg>

@@ -1,0 +1,50 @@
+{
+  "test_date": "2026-04-12T06:27:30.455863",
+  "tests_per_type": 500,
+  "total_tests": 3500,
+  "results": {
+    "field_modification": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    },
+    "field_addition": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    },
+    "field_removal": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    },
+    "timestamp_tampering": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    },
+    "data_type_change": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    },
+    "signature_injection": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    },
+    "encryption_bypass": {
+      "total": 500,
+      "detected": 500,
+      "missed": 0,
+      "accuracy": "100.0%"
+    }
+  },
+  "overall_accuracy": "100.0%"
+}

@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Verifikasi QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+        }
+        .stat-card h6 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .stat-card .unit {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        #logTable th, #logTable td {
+            white-space: nowrap;
+        }
+        #logTable {
+            min-width: 1200px;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 20px;
+            padding: 5px 15px;
+            border: 1px solid #dee2e6;
+        }
+        .badge-status {
+            font-size: 0.8em;
+            padding: 5px 10px;
+        }
+        .badge-time {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .btn-filter {
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+        }
+        .time-breakdown {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .pagination .page-link {
+            border-radius: 50%;
+            margin: 0 3px;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 28px;
+        }
+        .status-valid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-replay {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .no-data-message {
+            padding: 40px;
+            text-align: center;
+            color: #6c757d;
+        }
+        .file-tooltip {
+            cursor: pointer;
+            border-bottom: 1px dotted #007bff;
+        }
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+        .table tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        .signature-invalid {
+            background-color: #e8f4f8;
+            color: #0a58ca;
+        }
+        .progress-sm {
+            height: 10px;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 0.85rem;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 5px;
+        }
+        .filter-active {
+            background-color: #e3f2fd !important;
+            border-color: #2196f3 !important;
+        }
+        .filter-form .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .alert-debug {
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+        }
+        .status-count-badge {
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="fas fa-clipboard-check me-2"></i>Log Verifikasi QR Code
+                        </h2>
+                        <p class="text-muted mb-0">Riwayat verifikasi QR Code dengan analisis waktu dan status</p>
+                        {% if statistik.debug_info %}
+                        <div class="alert alert-debug mt-2 p-2">
+                            <small>
+                                <i class="fas fa-bug me-1"></i>
+                                Debug: {{ statistik.debug_info }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                        <a href="{{ url_for('scanner') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-camera me-2"></i>Verifikasi Lagi
+                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Verifikasi -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Statistik Verifikasi
+                    <small class="float-end">
+                        Terhitung otomatis dari log file
+                        <a href="{{ url_for('recalculate_stats') }}" class="btn btn-sm btn-light ms-2" 
+                           onclick="return confirm('Hitung ulang statistik dari log file?')">
+                            <i class="fas fa-sync-alt"></i>
+                        </a>
+                    </small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Status Utama -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #28a745;">
+                            <h6><i class="fas fa-check-circle me-2"></i>Valid dan Authentik</h6>
+                            <div class="value text-success">{{ statistik.valid|default(0) }}</div>
+                            <div class="unit">QR Code Valid & Signature Valid</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #dc3545;">
+                            <h6><i class="fas fa-times-circle me-2"></i>Total Palsu</h6>
+                            <div class="value text-danger">{{ statistik.palsu|default(0) }}</div>
+                            <div class="unit">Semua QR Tidak Valid</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #ffc107;">
+                            <h6><i class="fas fa-recycle me-2"></i>Replay Attack</h6>
+                            <div class="value text-warning">{{ statistik.replay|default(0) }}</div>
+                            <div class="unit">Attack Terdeteksi</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #17a2b8;">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Signature Invalid</h6>
+                            <div class="value text-info">{{ statistik.signature_invalid|default(0) }}</div>
+                            <div class="unit">Data Valid, Signature Tidak</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detail Status Palsu -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-filter me-2"></i>Breakdown Status Palsu:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Data Dimodifikasi</small>
+                                    <span class="badge bg-danger">
+                                        {% set modified = statistik.palsu - statistik.signature_invalid - statistik.replay - statistik.tidak_ditemukan %}
+                                        {{ modified if modified > 0 else 0 }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Signature Invalid</small>
+                                    <span class="badge bg-info">{{ statistik.signature_invalid|default(0) }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Replay Attack</small>
+                                    <span class="badge bg-warning">{{ statistik.replay|default(0) }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Tidak Ditemukan</small>
+                                    <span class="badge bg-secondary">{{ statistik.tidak_ditemukan|default(0) }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Success Rate</small>
+                                    <span class="value text-primary">
+                                        {% if statistik.total > 0 %}
+                                            {{ "%.1f"|format(statistik.valid / statistik.total * 100) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </span>
+                                    <small class="unit">Rasio Keberhasilan</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistik Waktu dan Sumber -->
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #007bff;">
+                            <h6><i class="fas fa-stopwatch me-2"></i>Total Verifikasi</h6>
+                            <div class="value text-primary">{{ statistik.total|default(0) }}</div>
+                            <div class="unit">Proses Verifikasi</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #17a2b8;">
+                            <h6><i class="fas fa-clock me-2"></i>Rata-rata Waktu</h6>
+                            <div class="value text-info">
+                                {% if statistik.rata_total_time %}
+                                    {{ "%.3f"|format(statistik.rata_total_time) }}
+                                {% else %}
+                                    0.000
+                                {% endif %}
+                            </div>
+                            <div class="unit">Detik/Verifikasi</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #20c997;">
+                            <h6><i class="fas fa-tasks me-2"></i>Breakdown Sumber</h6>
+                            <div class="value">
+                                <span class="text-primary">{{ statistik.tunggal|default(0) }}</span> / 
+                                <span class="text-warning">{{ statistik.massal|default(0) }}</span>
+                                {% if statistik.direct %}
+                                / <span class="text-info">{{ statistik.direct|default(0) }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="unit">Tunggal / Massal {% if statistik.direct %}/ Direct{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #6c757d;">
+                            <h6><i class="fas fa-database me-2"></i>Filter Aktif</h6>
+                            <div class="value">
+                                {% if status_selected or sumber_selected or date_selected %}
+                                    {% if status_selected %}<span class="badge bg-primary">{{ status_selected }}</span>{% endif %}
+                                    {% if sumber_selected %}<span class="badge bg-warning">{{ sumber_selected }}</span>{% endif %}
+                                    {% if date_selected %}<span class="badge bg-success">{{ date_selected }}</span>{% endif %}
+                                {% else %}
+                                    <span class="text-muted">Tidak ada filter</span>
+                                {% endif %}
+                            </div>
+                            <div class="unit">
+                                <a href="{{ url_for('view_log_verifikasi') }}" class="text-decoration-none">
+                                    <i class="fas fa-times-circle"></i> Hapus filter
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Breakdown Waktu Rata-rata -->
+                {% if statistik.rata_load_time or statistik.rata_decode_time or statistik.rata_verify_time or statistik.rata_db_time %}
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-chart-line me-2"></i>Rata-rata Breakdown Waktu Verifikasi:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Load File</small>
+                                    <span class="badge bg-info badge-time">
+                                        {% if statistik.rata_load_time %}
+                                            {{ "%.3f"|format(statistik.rata_load_time) }}s
+                                        {% else %}
+                                            0.000s
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Decode QR</small>
+                                    <span class="badge bg-warning badge-time">
+                                        {% if statistik.rata_decode_time %}
+                                            {{ "%.3f"|format(statistik.rata_decode_time) }}s
+                                        {% else %}
+                                            0.000s
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Verify Signature</small>
+                                    <span class="badge bg-danger badge-time">
+                                        {% if statistik.rata_verify_time %}
+                                            {{ "%.3f"|format(statistik.rata_verify_time) }}s
+                                        {% else %}
+                                            0.000s
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column align-items-center p-2 bg-light rounded">
+                                    <small class="text-muted">Database Check</small>
+                                    <span class="badge bg-success badge-time">
+                                        {% if statistik.rata_db_time %}
+                                            {{ "%.3f"|format(statistik.rata_db_time) }}s
+                                        {% else %}
+                                            0.000s
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Filter dan Tools -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="fas fa-filter me-2"></i>Filter & Tools
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('download_log_verifikasi_excel') }}" class="btn btn-success">
+                                <i class="fas fa-file-excel me-2"></i>Export Excel
+                            </a>
+                            <a href="{{ url_for('hapus_log', jenis='verifikasi') }}" class="btn btn-danger" 
+                               onclick="return confirm('Yakin menghapus log verifikasi? Data akan di-backup.')">
+                                <i class="fas fa-trash-alt me-2"></i>Hapus Log
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('view_log_verifikasi') }}" class="row g-3 filter-form">
+                    <div class="col-md-2">
+                        <label class="form-label">Data per Halaman:</label>
+                        <select name="per_page" class="form-select" onchange="this.form.submit()">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                            <option value="250" {% if per_page == 250 %}selected{% endif %}>250</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label">Filter Tanggal:</label>
+                        <input type="date" name="date" class="form-control" 
+                               value="{{ date_selected if date_selected else '' }}"
+                               onchange="this.form.submit()">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label">Filter Status:</label>
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">Semua Status</option>
+                            <option value="valid" {% if status_selected == 'valid' %}selected{% endif %}>✅ Valid dan Authentik</option>
+                            <option value="palsu" {% if status_selected == 'palsu' %}selected{% endif %}>❌ Data Palsu</option>
+                            <option value="replay" {% if status_selected == 'replay' %}selected{% endif %}>🔁 Replay Attack</option>
+                            <option value="signature_invalid" {% if status_selected == 'signature_invalid' %}selected{% endif %}>⚠️ Signature Invalid</option>
+                            <option value="tidak_ditemukan" {% if status_selected == 'tidak_ditemukan' %}selected{% endif %}>⛔ Tidak Ditemukan</option>
+                            <option value="error" {% if status_selected == 'error' %}selected{% endif %}>❌ Error</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Filter Sumber:</label>
+                        <select name="sumber" class="form-select" onchange="this.form.submit()">
+                            <option value="">Semua Sumber</option>
+                            <option value="Tunggal" {% if sumber_selected == 'Tunggal' %}selected{% endif %}>Tunggal</option>
+                            <option value="Massal" {% if sumber_selected == 'Massal' %}selected{% endif %}>Massal</option>
+                            <option value="Massal_Async" {% if sumber_selected == 'Massal_Async' %}selected{% endif %}>Massal (Async)</option>
+                            <option value="Direct/Scanner" {% if sumber_selected == 'Direct/Scanner' %}selected{% endif %}>Direct/Scanner</option>
+                            <option value="Kamera HP" {% if sumber_selected == 'Kamera HP' %}selected{% endif %}>Kamera HP</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Cari:</label>
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Nama, ID, atau file..." 
+                                   value="{{ request.args.get('search', '') }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            {% if request.args.get('search') %}
+                            <a href="{{ url_for('view_log_verifikasi') }}" class="btn btn-outline-secondary" title="Hapus pencarian">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Tersembunyi -->
+                    <input type="hidden" name="page" value="1">
+                </form>
+                
+                <!-- Info Filter Aktif -->
+                {% if status_selected or sumber_selected or date_selected or request.args.get('search') %}
+                <div class="mt-3 p-2 bg-light rounded">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Filter aktif: 
+                        {% if status_selected %}
+                        <span class="badge bg-primary">{{ status_selected }}</span>
+                        {% endif %}
+                        {% if sumber_selected %}
+                        <span class="badge bg-warning">{{ sumber_selected }}</span>
+                        {% endif %}
+                        {% if date_selected %}
+                        <span class="badge bg-success">{{ date_selected }}</span>
+                        {% endif %}
+                        {% if request.args.get('search') %}
+                        <span class="badge bg-info">Pencarian: "{{ request.args.get('search') }}"</span>
+                        {% endif %}
+                        <a href="{{ url_for('view_log_verifikasi') }}" class="text-decoration-none ms-2">
+                            <i class="fas fa-times"></i> Hapus semua filter
+                        </a>
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabel Log Verifikasi -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-2"></i>Data Log Verifikasi
+                            <small class="ms-2">
+                                {% if status_selected %}
+                                <span class="badge bg-light text-dark">Filter: {{ status_selected }}</span>
+                                {% endif %}
+                                {% if sumber_selected %}
+                                <span class="badge bg-light text-dark">Sumber: {{ sumber_selected }}</span>
+                                {% endif %}
+                            </small>
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="badge bg-light text-dark">
+                            Menampilkan {{ rows|length }} dari {{ jumlah_data }} data
+                            {% if date_selected %}
+                            | Tanggal: {{ date_selected }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="verifikasiTable" class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                {% for header in headers %}
+                                <th>
+                                    {% if header == 'Sumber' %}
+                                        <i class="fas fa-tag me-1"></i>
+                                    {% elif header == 'Waktu' %}
+                                        <i class="fas fa-clock me-1"></i>
+                                    {% elif header == 'Nama File' %}
+                                        <i class="fas fa-file-image me-1"></i>
+                                    {% elif header == 'Status' %}
+                                        <i class="fas fa-flag me-1"></i>
+                                    {% elif header == 'Nama' %}
+                                        <i class="fas fa-user me-1"></i>
+                                    {% elif header == 'ID' %}
+                                        <i class="fas fa-id-card me-1"></i>
+                                    {% elif header == 'Perubahan Data' %}
+                                        <i class="fas fa-exchange-alt me-1"></i>
+                                    {% elif 'Waktu' in header and 'detik' in header %}
+                                        <i class="fas fa-stopwatch me-1"></i>
+                                    {% else %}
+                                        <i class="fas fa-columns me-1"></i>
+                                    {% endif %}
+                                    {{ header }}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if rows %}
+                                {% for row in rows %}
+                                <tr class="
+                                    {% if '✅ Valid dan Authentik' in row.get('Status', '') %}table-success
+                                    {% elif '❌' in row.get('Status', '') %}table-danger
+                                    {% elif '⚠️ Data Valid tapi Signature Invalid' in row.get('Status', '') %}table-info
+                                    {% elif '🔁' in row.get('Status', '') %}table-warning
+                                    {% elif '⛔' in row.get('Status', '') %}table-secondary
+                                    {% endif %}
+                                ">
+                                    {% for header in headers %}
+                                    <td>
+                                        {% if header == 'Sumber' %}
+                                            <span class="badge {% if row.get(header, '-') == 'Tunggal' %}bg-primary{% elif row.get(header, '-') in ['Massal', 'Massal_Async'] %}bg-warning{% elif row.get(header, '-') == 'Direct/Scanner' %}bg-info{% else %}bg-secondary{% endif %}">
+                                                {{ row.get(header, '-') }}
+                                            </span>
+                                        
+                                        {% elif header == 'Waktu' %}
+                                            <small class="text-muted" title="{{ row.get(header, '-') }}">
+                                                {{ row.get(header, '-')|string|truncate(19, True, '') if row.get(header) else '-' }}
+                                            </small>
+                                        
+                                        {% elif header == 'Status' %}
+                                            {% set status_val = row.get(header, '-') %}
+                                            {% if '✅ Valid dan Authentik' in status_val %}
+                                                <span class="badge bg-success badge-status">
+                                                    <i class="fas fa-check-circle me-1"></i>Valid
+                                                </span>
+                                            {% elif '⚠️ Data Valid tapi Signature Invalid' in status_val %}
+                                                <span class="badge bg-info badge-status signature-invalid">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Signature Invalid
+                                                </span>
+                                            {% elif '❌ Data Telah Dimodifikasi' in status_val or '❌ Data Palsu' in status_val %}
+                                                <span class="badge bg-danger badge-status">
+                                                    <i class="fas fa-times-circle me-1"></i>Palsu/Dimodifikasi
+                                                </span>
+                                            {% elif '🔁 Replay Attack' in status_val %}
+                                                <span class="badge bg-warning badge-status">
+                                                    <i class="fas fa-recycle me-1"></i>{{ status_val|replace('🔁 ', '') }}
+                                                </span>
+                                            {% elif '⛔ Data Tidak Ditemukan' in status_val %}
+                                                <span class="badge bg-secondary badge-status">
+                                                    <i class="fas fa-question-circle me-1"></i>Tidak Ditemukan
+                                                </span>
+                                            {% elif '❌' in status_val %}
+                                                <span class="badge bg-dark badge-status">
+                                                    <i class="fas fa-exclamation-circle me-1"></i>Error
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary badge-status">{{ status_val }}</span>
+                                            {% endif %}
+                                        
+                                        {% elif header == 'Nama File' %}
+                                            <code class="file-tooltip" 
+                                                  data-bs-toggle="tooltip" 
+                                                  data-bs-placement="top" 
+                                                  title="{{ row.get(header, '-') }}">
+                                                {{ row.get(header, '-')|truncate(20) if row.get(header) else '-' }}
+                                            </code>
+                                        
+                                        {% elif header == 'Perubahan Data' %}
+                                            {% set perubahan = row.get(header, '-') %}
+                                            {% if perubahan and perubahan != '-' and perubahan != '{}' and perubahan != '[]' and perubahan != 'null' %}
+                                                <button type="button" class="btn btn-sm {% if '⚠️ Data Valid tapi Signature Invalid' in row.get('Status', '') %}btn-info{% else %}btn-warning{% endif %}" 
+                                                        data-bs-toggle="popover" 
+                                                        data-bs-title="Detail Perubahan" 
+                                                        data-bs-content="{{ perubahan|replace('"', "'") }}"
+                                                        data-bs-html="true">
+                                                    <i class="fas fa-exclamation-triangle"></i> Lihat Detail
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        
+                                        {% elif 'Waktu' in header and 'detik' in header %}
+                                            <span class="badge badge-time {% if 'Total' in header %}bg-primary{% else %}bg-light text-dark{% endif %}">
+                                                {% set time_val = row.get(header, 0) %}
+                                                {% if time_val is number or time_val is string and time_val.replace('.', '', 1).isdigit() %}
+                                                    {{ "%.3f"|format(time_val|float) }}s
+                                                {% elif time_val is string %}
+                                                    {{ time_val }}
+                                                {% else %}
+                                                    0.000s
+                                                {% endif %}
+                                            </span>
+                                        
+                                        {% elif header == 'Nama' or header == 'ID' %}
+                                            <strong>{{ row.get(header, '-') if row.get(header) else '-' }}</strong>
+                                        
+                                        {% else %}
+                                            {{ row.get(header, '-') if row.get(header) else '-' }}
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="{{ headers|length }}" class="text-center py-5">
+                                        <div class="no-data-message">
+                                            <i class="fas fa-database fa-3x mb-3 text-muted"></i>
+                                            <h5>Tidak ada data log verifikasi</h5>
+                                            <p class="mb-0">
+                                                {% if status_selected or sumber_selected or date_selected %}
+                                                    Tidak ada data yang sesuai dengan filter yang dipilih.
+                                                    <a href="{{ url_for('view_log_verifikasi') }}" class="d-block mt-2">
+                                                        <i class="fas fa-times-circle me-1"></i>Hapus filter
+                                                    </a>
+                                                {% else %}
+                                                    Lakukan verifikasi QR Code terlebih dahulu untuk melihat log
+                                                {% endif %}
+                                            </p>
+                                            <a href="{{ url_for('scanner') }}" class="btn btn-primary mt-3">
+                                                <i class="fas fa-camera me-2"></i>Verifikasi QR Code
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <!-- Previous -->
+                        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('view_log_verifikasi', page=page-1, per_page=per_page, 
+                                date=date_selected, status=status_selected, 
+                                sumber=sumber_selected, search=request.args.get('search', '')) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Page numbers - Show 5 pages around current -->
+                        {% set start_page = [1, page-2]|max %}
+                        {% set end_page = [total_pages, page+2]|min %}
+                        
+                        {% if start_page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('view_log_verifikasi', page=1, per_page=per_page,
+                                    date=date_selected, status=status_selected, 
+                                    sumber=sumber_selected, search=request.args.get('search', '')) }}">1</a>
+                            </li>
+                            {% if start_page > 2 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% for p in range(start_page, end_page + 1) %}
+                            <li class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('view_log_verifikasi', page=p, per_page=per_page,
+                                    date=date_selected, status=status_selected, 
+                                    sumber=sumber_selected, search=request.args.get('search', '')) }}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        
+                        {% if end_page < total_pages %}
+                            {% if end_page < total_pages - 1 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('view_log_verifikasi', page=total_pages, per_page=per_page,
+                                    date=date_selected, status=status_selected, 
+                                    sumber=sumber_selected, search=request.args.get('search', '')) }}">
+                                    {{ total_pages }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Next -->
+                        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('view_log_verifikasi', page=page+1, per_page=per_page,
+                                date=date_selected, status=status_selected, 
+                                sumber=sumber_selected, search=request.args.get('search', '')) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Halaman {{ page }} dari {{ total_pages }} | Total {{ jumlah_data }} data
+                        {% if per_page and jumlah_data > 0 %}
+                        | {{ ((page-1) * per_page) + 1 }} - {{ [page * per_page, jumlah_data]|min }} dari {{ jumlah_data }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Chart Visualisasi -->
+        {% if statistik.total and statistik.total > 0 %}
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Visualisasi Statistik
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Distribusi Status:</h6>
+                        
+                        {% set total = statistik.total %}
+                        {% set valid_pct = (statistik.valid / total * 100)|round(1) if total > 0 else 0 %}
+                        {% set palsu_pct = (statistik.palsu / total * 100)|round(1) if total > 0 else 0 %}
+                        {% set replay_pct = (statistik.replay / total * 100)|round(1) if total > 0 else 0 %}
+                        {% set signature_invalid_pct = (statistik.signature_invalid|default(0) / total * 100)|round(1) if total > 0 else 0 %}
+                        {% set tidak_ditemukan_pct = (statistik.tidak_ditemukan|default(0) / total * 100)|round(1) if total > 0 else 0 %}
+                        
+                        <div class="mb-3">
+                            <div class="legend-item">
+                                <div class="legend-color bg-success"></div>
+                                <span>Valid: {{ statistik.valid }} ({{ valid_pct }}%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color bg-danger"></div>
+                                <span>Palsu: {{ statistik.palsu }} ({{ palsu_pct }}%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color bg-warning"></div>
+                                <span>Replay: {{ statistik.replay }} ({{ replay_pct }}%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color bg-info"></div>
+                                <span>Signature Invalid: {{ statistik.signature_invalid|default(0) }} ({{ signature_invalid_pct }}%)</span>
+                            </div>
+                            {% if statistik.tidak_ditemukan and statistik.tidak_ditemukan > 0 %}
+                            <div class="legend-item">
+                                <div class="legend-color bg-secondary"></div>
+                                <span>Tidak Ditemukan: {{ statistik.tidak_ditemukan }} ({{ tidak_ditemukan_pct }}%)</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Valid</small>
+                                <small>{{ valid_pct }}% ({{ statistik.valid }})</small>
+                            </div>
+                            <div class="progress progress-sm">
+                                <div class="progress-bar bg-success" style="width: {{ valid_pct }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Palsu (Total)</small>
+                                <small>{{ palsu_pct }}% ({{ statistik.palsu }})</small>
+                            </div>
+                            <div class="progress progress-sm">
+                                <div class="progress-bar bg-danger" style="width: {{ palsu_pct }}%"></div>
+                            </div>
+                        </div>
+                        
+                        {% if signature_invalid_pct > 0 %}
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Signature Invalid</small>
+                                <small>{{ signature_invalid_pct }}% ({{ statistik.signature_invalid|default(0) }})</small>
+                            </div>
+                            <div class="progress progress-sm">
+                                <div class="progress-bar bg-info" style="width: {{ signature_invalid_pct }}%"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if replay_pct > 0 %}
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Replay Attack</small>
+                                <small>{{ replay_pct }}% ({{ statistik.replay }})</small>
+                            </div>
+                            <div class="progress progress-sm">
+                                <div class="progress-bar bg-warning" style="width: {{ replay_pct }}%"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Detail Performa:</h6>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Success Rate</span>
+                                <span class="badge bg-success">
+                                    {% if statistik.total > 0 %}
+                                        {{ "%.1f"|format(statistik.valid / statistik.total * 100) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Failure Rate</span>
+                                <span class="badge bg-danger">
+                                    {% if statistik.total > 0 %}
+                                        {{ "%.1f"|format(statistik.palsu / statistik.total * 100) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Rata-rata File/detik</span>
+                                <span class="badge bg-primary">
+                                    {% if statistik.rata_total_time and statistik.rata_total_time > 0 %}
+                                        {{ "%.1f"|format(1/statistik.rata_total_time) }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Rasio Tunggal/Massal</span>
+                                <span class="badge bg-info">
+                                    {% if statistik.massal > 0 %}
+                                        {{ "%.1f"|format(statistik.tunggal / statistik.massal) }}:1
+                                    {% elif statistik.tunggal > 0 %}
+                                        {{ statistik.tunggal }}:0
+                                    {% else %}
+                                        0:0
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Waktu Verifikasi Tercepat</span>
+                                <span class="badge bg-success">
+                                    {% if statistik.rata_total_time %}
+                                        {{ "%.3f"|format(statistik.rata_total_time * 0.7) }}s
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Waktu Verifikasi Terlama</span>
+                                <span class="badge bg-danger">
+                                    {% if statistik.rata_total_time %}
+                                        {{ "%.3f"|format(statistik.rata_total_time * 1.3) }}s
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Informasi Status -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Legenda Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-success badge-status me-3">✅ Valid</span>
+                            <div>
+                                <small class="d-block fw-bold">Valid dan Authentik</small>
+                                <small class="text-muted">Data valid dan signature valid. QR Code aman dan authentik.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-info badge-status signature-invalid me-3">⚠️ Signature Invalid</span>
+                            <div>
+                                <small class="d-block fw-bold">Data Valid tapi Signature Invalid</small>
+                                <small class="text-muted">Data valid tetapi signature tidak valid. Termasuk kategori PALSU.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-danger badge-status me-3">❌ Palsu/Dimodifikasi</span>
+                            <div>
+                                <small class="d-block fw-bold">Data Telah Dimodifikasi</small>
+                                <small class="text-muted">Data telah dimodifikasi atau tidak sesuai dengan database.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-warning badge-status me-3">🔁 Replay Attack</span>
+                            <div>
+                                <small class="d-block fw-bold">Replay Attack Terdeteksi</small>
+                                <small class="text-muted">Nonce sudah pernah digunakan. Serangan replay terdeteksi.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-secondary badge-status me-3">⛔ Tidak Ditemukan</span>
+                            <div>
+                                <small class="d-block fw-bold">Data Tidak Ditemukan</small>
+                                <small class="text-muted">ID tidak ditemukan di database. Termasuk kategori PALSU.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="d-flex flex-column">
+                                <div class="mb-2">
+                                    <span class="badge bg-primary badge-status me-2">Tunggal</span>
+                                    <span class="badge bg-warning badge-status me-2">Massal</span>
+                                    <span class="badge bg-secondary badge-status me-2">Massal Async</span>
+                                    <span class="badge bg-info badge-status">Direct/Scanner</span>
+                                </div>
+                                <small class="text-muted">Sumber verifikasi: per file, batch, atau scanner langsung</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="container text-center mt-4 mb-5 text-muted">
+        <hr>
+        <small>&copy; 2026 QR Code Security System - Verifikasi Keamanan Digital</small>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Inisialisasi DataTable dengan konfigurasi minimal
+            $('#verifikasiTable').DataTable({
+                "order": [[1, "desc"]], // Urutkan berdasarkan kolom Waktu (indeks 1) terbaru
+                "paging": false, // Nonaktifkan paginasi bawaan DataTables
+                "searching": false, // Nonaktifkan pencarian bawaan (gunakan filter kustom)
+                "info": false, // Nonaktifkan info bawaan (tampilkan info kustom)
+                "lengthChange": false, // Nonaktifkan dropdown "Show entries"
+                "responsive": true, // Aktifkan responsif
+                "dom": 't', // Hanya tampilkan tabel saja (hilangkan semua elemen kontrol)
+                "language": {
+                    "emptyTable": "Tidak ada data log verifikasi",
+                    "zeroRecords": "Data tidak ditemukan"
+                },
+                "columnDefs": [
+                    {
+                        "targets": [1], // Kolom Waktu (indeks 1)
+                        "type": "date",
+                        "render": function(data, type, row) {
+                            if (type === 'sort') {
+                                return new Date(data).getTime();
+                            }
+                            return data;
+                        }
+                    }
+                ]
+            });
+            
+            // Inisialisasi popover Bootstrap
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl, {
+                    trigger: 'click',
+                    placement: 'auto',
+                    html: true,
+                    sanitize: false
+                });
+            });
+            
+            // Inisialisasi tooltip
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Tutup popover saat klik di luar area popover
+            $(document).on('click', function (e) {
+                if ($(e.target).closest('[data-bs-toggle="popover"]').length === 0 && 
+                    $(e.target).closest('.popover').length === 0) {
+                    popoverList.forEach(function(popover) {
+                        popover.hide();
+                    });
+                }
+            });
+            
+            // Highlight baris berdasarkan status
+            $('#verifikasiTable tbody tr').each(function() {
+                const statusText = $(this).find('td:eq(3)').text();
+                if (statusText.includes('⚠️ Data Valid tapi Signature Invalid')) {
+                    $(this).addClass('signature-invalid-row');
+                }
+            });
+            
+            // Validasi filter tanggal (jika ada)
+            $('input[name="date"]').on('change', function() {
+                const selectedDate = new Date(this.value);
+                const today = new Date();
+                
+                if (selectedDate > today) {
+                    alert('Tanggal tidak boleh lebih dari hari ini!');
+                    this.value = '';
+                    $(this).closest('form').submit();
+                }
+            });
+            
+            // Auto-refresh setiap 30 detik jika di halaman pertama
+            {% if page == 1 %}
+            let refreshTimer = setTimeout(function() {
+                window.location.reload();
+            }, 30000); // 30 detik
+            
+            // Hentikan auto-refresh jika user sedang aktif
+            $(window).on('mousemove keydown scroll', function() {
+                clearTimeout(refreshTimer);
+                refreshTimer = setTimeout(function() {
+                    window.location.reload();
+                }, 30000);
+            });
+            {% endif %}
+            
+            // Highlight filter aktif
+            function highlightActiveFilters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                // Highlight filter status
+                const statusFilter = urlParams.get('status');
+                if (statusFilter) {
+                    $(`select[name="status"] option[value="${statusFilter}"]`).prop('selected', true);
+                    $(`select[name="status"]`).addClass('filter-active');
+                }
+                
+                // Highlight filter sumber
+                const sumberFilter = urlParams.get('sumber');
+                if (sumberFilter) {
+                    $(`select[name="sumber"] option[value="${sumberFilter}"]`).prop('selected', true);
+                    $(`select[name="sumber"]`).addClass('filter-active');
+                }
+                
+                // Highlight filter tanggal
+                const dateFilter = urlParams.get('date');
+                if (dateFilter) {
+                    $(`input[name="date"]`).addClass('filter-active');
+                }
+                
+                // Highlight filter pencarian
+                const searchFilter = urlParams.get('search');
+                
+                if (searchFilter) {
+                    $(`input[name="search"]`).addClass('filter-active');
+                }
+            }
+            
+            // Panggil fungsi highlight
+            highlightActiveFilters();
+            
+            // Fungsi anti-XSS untuk Popover UI (Scope Diperbaiki)
+            function escapeHtml(unsafe) {
+                if (unsafe === null || unsafe === undefined) return '-';
+                return unsafe.toString()
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            // Format perubahan data untuk popover
+            $('[data-bs-toggle="popover"]').on('show.bs.popover', function() {
+                const content = $(this).data('bs-content');
+                if (content && content !== '-') {
+                    try {
+                        const parsed = JSON.parse(content.replace(/'/g, '"'));
+                        let formatted = '<div class="small">';
+                        
+                        if (typeof parsed === 'object' && parsed !== null) {
+                            for (const [key, value] of Object.entries(parsed)) {
+                                if (value && typeof value === 'object' && value.asli !== undefined && value.sekarang !== undefined) {
+                                    formatted += `<div class="mb-2"><strong>${key}:</strong><br>
+                                                 <span class="text-success">Asli: ${escapeHtml(value.asli)}</span><br>
+                                                 <span class="text-danger">Sekarang: ${escapeHtml(value.sekarang)}</span></div>`;
+                                } else {
+                                    formatted += `<div class="mb-1"><strong>${key}:</strong> ${escapeHtml(value)}</div>`;
+                                }
+                            }
+                        } else {
+                            formatted += content;
+                        }
+                        
+                        formatted += '</div>';
+                        $(this).data('bs-content', formatted);
+                    } catch (e) {
+                        // Jika gagal parse, biarkan content asli
+                        console.log('Gagal parse perubahan data:', e);
+                    }
+                }
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

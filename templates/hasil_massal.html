@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Generate Massal QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        .stat-card h6 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-card .unit {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .time-breakdown-item {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .btn-download-all {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .generate-table-shell {
+            position: relative;
+        }
+        .generate-table-loader {
+            padding: 28px;
+            text-align: center;
+            color: #6c757d;
+        }
+        .generate-table-shell.table-ready .generate-table-loader {
+            display: none;
+        }
+        #hasilTable {
+            min-width: 1120px;
+        }
+        table.dataTable {
+            border-collapse: collapse !important;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 20px;
+            padding: 5px 15px;
+            border: 1px solid #dee2e6;
+        }
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        .badge-time {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .dimension-badge {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-family: monospace;
+        }
+        .btn-action {
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="fas fa-qrcode me-2"></i>Hasil Generate Massal QR Code
+                        </h2>
+                        <p class="text-muted mb-0">QR Code berhasil digenerate dari file CSV</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Utama Massal -->
+        {% if massal_stats %}
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Statistik Generate Massal
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Total QR -->
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #007bff;">
+                            <h6><i class="fas fa-qrcode me-2"></i>Total QR Code</h6>
+                            <div class="value text-primary">{{ massal_stats.total_qr }}</div>
+                            <div class="unit">Dokumen</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Waktu -->
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #28a745;">
+                            <h6><i class="fas fa-stopwatch me-2"></i>Total Waktu</h6>
+                            <div class="value text-success">{{ "%.2f"|format(massal_stats.total_time) }}</div>
+                            <div class="unit">Detik</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rata-rata Waktu per QR -->
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #ffc107;">
+                            <h6><i class="fas fa-clock me-2"></i>Rata-rata per QR</h6>
+                            <div class="value text-warning">{{ "%.3f"|format(massal_stats.avg_time_per_qr) }}</div>
+                            <div class="unit">Detik/QR</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Success Rate -->
+                    <div class="col-md-3">
+                        <div class="stat-card" style="border-left-color: #17a2b8;">
+                            <h6><i class="fas fa-check-circle me-2"></i>Success Rate</h6>
+                            <div class="value text-info">{{ "%.1f"|format(massal_stats.success_rate) }}%</div>
+                            <div class="unit">
+                                {{ massal_stats.success_count }} berhasil / {{ massal_stats.error_count }} error
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Breakdown Waktu -->
+                <div class="row mt-4">
+                    <div class="col-md-8">
+                        <h6 class="text-muted mb-3"><i class="fas fa-tasks me-2"></i>Breakdown Waktu Proses:</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="time-breakdown-item" style="border-left-color: #007bff;">
+                                    <small class="text-muted">Pembuatan Data</small>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">{{ "%.3f"|format(massal_stats.total_data_time) }}s</span>
+                                        <span class="badge bg-primary badge-time">
+                                            {{ "%.1f"|format((massal_stats.total_data_time/massal_stats.total_time)*100) if massal_stats.total_time > 0 else 0 }}%
+                                        </span>
+                                    </div>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-primary" 
+                                             style="width: {{ (massal_stats.total_data_time/massal_stats.total_time)*100 if massal_stats.total_time > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="time-breakdown-item" style="border-left-color: #dc3545;">
+                                    <small class="text-muted">Digital Signature</small>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">{{ "%.3f"|format(massal_stats.total_sign_time) }}s</span>
+                                        <span class="badge bg-danger badge-time">
+                                            {{ "%.1f"|format((massal_stats.total_sign_time/massal_stats.total_time)*100) if massal_stats.total_time > 0 else 0 }}%
+                                        </span>
+                                    </div>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-danger" 
+                                             style="width: {{ (massal_stats.total_sign_time/massal_stats.total_time)*100 if massal_stats.total_time > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="time-breakdown-item" style="border-left-color: #ffc107;">
+                                    <small class="text-muted">Render QR Code</small>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">{{ "%.3f"|format(massal_stats.total_qr_time) }}s</span>
+                                        <span class="badge bg-warning badge-time">
+                                            {{ "%.1f"|format((massal_stats.total_qr_time/massal_stats.total_time)*100) if massal_stats.total_time > 0 else 0 }}%
+                                        </span>
+                                    </div>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-warning" 
+                                             style="width: {{ (massal_stats.total_qr_time/massal_stats.total_time)*100 if massal_stats.total_time > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="time-breakdown-item" style="border-left-color: #28a745;">
+                                    <small class="text-muted">Penyimpanan File</small>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">{{ "%.3f"|format(massal_stats.total_save_time) }}s</span>
+                                        <span class="badge bg-success badge-time">
+                                            {{ "%.1f"|format((massal_stats.total_save_time/massal_stats.total_time)*100) if massal_stats.total_time > 0 else 0 }}%
+                                        </span>
+                                    </div>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ (massal_stats.total_save_time/massal_stats.total_time)*100 if massal_stats.total_time > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Waktu Detail -->
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-3"><i class="fas fa-chart-line me-2"></i>Detail Performa:</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Waktu Minimum per QR
+                                <span class="badge bg-secondary rounded-pill badge-time">
+                                    {{ "%.3f"|format(massal_stats.min_time) }}s
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Waktu Maksimum per QR
+                                <span class="badge bg-secondary rounded-pill badge-time">
+                                    {{ "%.3f"|format(massal_stats.max_time) }}s
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Total Ukuran File
+                                <span class="badge bg-info rounded-pill">
+                                    {{ "%.2f"|format(massal_stats.total_file_size/1024) if massal_stats.total_file_size else 0 }} MB
+                                </span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Dimensi Rata-rata
+                                <span class="badge dimension-badge rounded-pill">
+                                    {{ massal_stats.avg_dimension }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Aksi Hasil Generate -->
+        {% if generated_file_count %}
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Aksi Hasil Generate
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Semua QR Code telah disimpan di server. 
+                            Verifikasi dapat dijalankan langsung dari hasil generate tanpa upload ulang.
+                        </p>
+                    </div>
+                    <div class="col-md-5 text-end">
+                        <form action="{{ url_for('verify_generated_task', task_id=task_id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-success btn-action me-2">
+                                <i class="fas fa-shield-alt me-2"></i>Verifikasi Semua ({{ generated_file_count }} file)
+                            </button>
+                        </form>
+                        <a href="{{ url_for('download_qr_massal', task_id=task_id) }}" class="btn btn-download-all">
+                            <i class="fas fa-file-archive me-2"></i>Download ZIP
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tabel Hasil Generate -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Daftar QR Code yang Digenerate
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="generate-table-shell">
+                    <div class="generate-table-loader" id="generateTableLoader">
+                        <div class="spinner-border spinner-border-sm text-info me-2" role="status" aria-hidden="true"></div>
+                        Memuat data hasil generate...
+                    </div>
+                <div class="table-responsive">
+                    <table id="hasilTable" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>ID</th>
+                                <th>File</th>
+                                <th>Ukuran</th>
+                                <th>Resolusi</th>
+                                <th>Versi</th>
+                                <th>Modul</th>
+                                <th>Signature</th>
+                                <th>Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ringkasan task yang sedang dibuka -->
+        {% if task_display_stats %}
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Ringkasan Task Generate Ini
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stat-card" style="border-left-color: #6610f2;">
+                            <h6><i class="fas fa-qrcode me-2"></i>Total QR Code</h6>
+                            <div class="value text-primary">{{ task_display_stats.total_qr }}</div>
+                            <div class="unit">Dihasilkan dalam task ini</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card" style="border-left-color: #20c997;">
+                            <h6><i class="fas fa-stopwatch me-2"></i>Rata-rata Waktu Generate</h6>
+                            <div class="value text-success">{{ "%.3f"|format(task_display_stats.avg_time_per_qr) }}</div>
+                            <div class="unit">Detik per QR</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card" style="border-left-color: #fd7e14;">
+                            <h6><i class="fas fa-weight me-2"></i>Rata-rata Ukuran File</h6>
+                            <div class="value text-warning">{{ "%.2f"|format(task_display_stats.avg_file_size_kb) }}</div>
+                            <div class="unit">Kilobytes</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dimensi QR Code -->
+                {% set dim_stats = task_display_stats.dim_stats %}
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-expand-alt me-2"></i>Statistik Dimensi QR Code:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-arrow-down text-success fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Dimensi Minimum</small>
+                                        <div class="h5 mb-0">{{ dim_stats.min }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-arrow-up text-danger fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Dimensi Maksimum</small>
+                                        <div class="h5 mb-0">{{ dim_stats.max }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-balance-scale text-info fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Dimensi Rata-rata</small>
+                                        <div class="h5 mb-0">{{ dim_stats.avg }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+			<div class="row mt-4">
+            <div class="col-md-3 mb-2">
+                <a href="{{ url_for('generate_csv') }}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-file-csv me-2"></i>Generate CSV Lagi
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{{ url_for('scanner') }}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-camera me-2"></i>Verifikasi QR Code
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-info w-100">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{{ url_for('view_log') }}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-history me-2"></i>Log Generate
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            const taskId = "{{ task_id }}";
+
+            function escapeHtml(value) {
+                return String(value === null || typeof value === 'undefined' ? '' : value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function firstToken(value) {
+                const text = String(value === null || typeof value === 'undefined' ? '-' : value);
+                return text.split(' ')[0] || '-';
+            }
+
+            function renderTimeBreakdown(row, type) {
+                const totalTime = row.total_time || '-';
+                if (type !== 'display') {
+                    return totalTime;
+                }
+
+                return `
+                    <div class="d-flex flex-column">
+                        <small>Total: <strong>${escapeHtml(totalTime)}</strong></small>
+                        <div class="d-flex">
+                            <small class="me-2 text-primary" title="Data">D:${escapeHtml(firstToken(row.data_time))}</small>
+                            <small class="me-2 text-danger" title="Signature">S:${escapeHtml(firstToken(row.sign_time))}</small>
+                            <small class="me-2 text-warning" title="QR">Q:${escapeHtml(firstToken(row.qr_time))}</small>
+                            <small class="text-success" title="Save">F:${escapeHtml(firstToken(row.save_time))}</small>
+                        </div>
+                    </div>
+                `;
+            }
+
+            $('#hasilTable').DataTable({
+                processing: true,
+                serverSide: true,
+                deferRender: true,
+                order: [[0, "asc"]],
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, 250, 500], [10, 25, 50, 100, 250, 500]],
+                responsive: false,
+                autoWidth: false,
+                ajax: {
+                    url: "{{ url_for('get_generate_results_page') }}",
+                    type: "GET",
+                    data: function(data) {
+                        data.task_id = taskId;
+                    },
+                    error: function(xhr) {
+                        const message = xhr.responseJSON && xhr.responseJSON.error
+                            ? xhr.responseJSON.error
+                            : 'Gagal memuat data hasil generate';
+                        $('#generateTableLoader').html(`<span class="text-danger">${escapeHtml(message)}</span>`);
+                    }
+                },
+                columns: [
+                    {
+                        data: 'no',
+                        className: 'text-center',
+                        render: function(data, type) {
+                            return type === 'display' ? escapeHtml(data || '-') : (data || 0);
+                        }
+                    },
+                    {
+                        data: 'nama',
+                        render: function(data, type) {
+                            return type === 'display' ? escapeHtml(data || '-') : (data || '');
+                        }
+                    },
+                    {
+                        data: 'id',
+                        render: function(data, type) {
+                            return type === 'display' ? `<code>${escapeHtml(data || '-')}</code>` : (data || '');
+                        }
+                    },
+                    {
+                        data: 'filename',
+                        render: function(data, type) {
+                            const filename = data || '-';
+                            return type === 'display'
+                                ? `<span class="badge bg-light text-dark">${escapeHtml(filename)}</span>`
+                                : filename;
+                        }
+                    },
+                    {
+                        data: 'size',
+                        render: function(data, type) {
+                            return type === 'display'
+                                ? `<span class="badge bg-secondary">${escapeHtml(data || '-')}</span>`
+                                : (data || '');
+                        }
+                    },
+                    {
+                        data: 'resolution',
+                        render: function(data, type) {
+                            return type === 'display'
+                                ? `<span class="badge dimension-badge">${escapeHtml(data || '-')}</span>`
+                                : (data || '');
+                        }
+                    },
+                    {
+                        data: 'version',
+                        render: function(data, type) {
+                            return type === 'display'
+                                ? `<span class="badge bg-info">V${escapeHtml(data || '-')}</span>`
+                                : (data || '');
+                        }
+                    },
+                    {
+                        data: 'modules',
+                        render: function(data, type) {
+                            return type === 'display'
+                                ? `<span class="badge bg-warning text-dark">${escapeHtml(data || '-')}</span>`
+                                : (data || '');
+                        }
+                    },
+                    {
+                        data: 'signature_length',
+                        render: function(data, type) {
+                            return type === 'display'
+                                ? `<span class="badge bg-dark">${escapeHtml(data || '-')} chars</span>`
+                                : (data || '');
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: true,
+                        render: function(_data, type, row) {
+                            return renderTimeBreakdown(row, type);
+                        }
+                    }
+                ],
+                initComplete: function() {
+                    $('.generate-table-shell').addClass('table-ready');
+                },
+                language: {
+                    search: "Cari:",
+                    lengthMenu: "Tampilkan _MENU_ data per halaman",
+                    zeroRecords: "Data tidak ditemukan",
+                    info: "Menampilkan _START_ hingga _END_ dari _TOTAL_ data",
+                    infoEmpty: "Tidak ada data",
+                    infoFiltered: "(disaring dari _MAX_ total data)",
+                    processing: "Memuat data...",
+                    paginate: {
+                        first: "Pertama",
+                        last: "Terakhir",
+                        next: "Berikutnya",
+                        previous: "Sebelumnya"
+                    }
+                }
+            });
+            
+            // Animasi untuk stat cards
+            $('.stat-card').each(function(index) {
+                $(this).css('animation-delay', (index * 0.1) + 's');
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

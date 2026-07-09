@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="650" viewBox="0 0 1280 650">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="650"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">DFD Level 2 - Verifikasi QR</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Aliran data verifikasi dengan pemisahan crypto dan state</tspan></text>
+<rect x="70" y="190" width="170" height="90" class="soft"/>
+<text x="155.0" y="220" text-anchor="middle" class="label"><tspan x="155.0" dy="0">Input QR</tspan></text>
+<text x="155.0" y="246" text-anchor="middle" class="small"><tspan x="155.0" dy="0">file / HP / USB</tspan></text>
+<path d="M240 235 L270 235" class="flow"/>
+<rect x="275" y="190" width="170" height="90" class="soft"/>
+<text x="360.0" y="220" text-anchor="middle" class="label"><tspan x="360.0" dy="0">Decode Payload</tspan></text>
+<text x="360.0" y="246" text-anchor="middle" class="small"><tspan x="360.0" dy="0">image/token/url</tspan></text>
+<path d="M445 235 L475 235" class="flow"/>
+<rect x="480" y="190" width="170" height="90" class="orange"/>
+<text x="565.0" y="220" text-anchor="middle" class="label"><tspan x="565.0" dy="0">Lapis 1 Crypto</tspan></text>
+<text x="565.0" y="246" text-anchor="middle" class="small"><tspan x="565.0" dy="0">verify signature</tspan></text>
+<path d="M650 235 L680 235" class="flow"/>
+<rect x="685" y="190" width="170" height="90" class="orange"/>
+<text x="770.0" y="220" text-anchor="middle" class="label"><tspan x="770.0" dy="0">Lapis 2 State</tspan></text>
+<text x="770.0" y="246" text-anchor="middle" class="small"><tspan x="770.0" dy="0">original + nonce</tspan></text>
+<path d="M855 235 L885 235" class="flow"/>
+<rect x="890" y="190" width="170" height="90" class="soft"/>
+<text x="975.0" y="220" text-anchor="middle" class="label"><tspan x="975.0" dy="0">Klasifikasi</tspan></text>
+<text x="975.0" y="246" text-anchor="middle" class="small"><tspan x="975.0" dy="0">valid/replay/palsu</tspan></text>
+<path d="M1060 235 L1090 235" class="flow"/>
+<rect x="1095" y="190" width="170" height="90" class="soft"/>
+<text x="1180.0" y="220" text-anchor="middle" class="label"><tspan x="1180.0" dy="0">Render + Log</tspan></text>
+<text x="1180.0" y="246" text-anchor="middle" class="small"><tspan x="1180.0" dy="0">hasil + CSV</tspan></text>
+<rect x="440" y="390" width="160" height="70" class="green"/>
+<text x="520.0" y="420" text-anchor="middle" class="label"><tspan x="520.0" dy="0">Public Key</tspan></text>
+<rect x="650" y="390" width="160" height="70" class="green"/>
+<text x="730.0" y="420" text-anchor="middle" class="label"><tspan x="730.0" dy="0">Data Original</tspan></text>
+<rect x="860" y="390" width="160" height="70" class="green"/>
+<text x="940.0" y="420" text-anchor="middle" class="label"><tspan x="940.0" dy="0">Nonce SQLite</tspan></text>
+<rect x="1070" y="390" width="160" height="70" class="green"/>
+<text x="1150.0" y="420" text-anchor="middle" class="label"><tspan x="1150.0" dy="0">Verify Log CSV</tspan></text>
+<path d="M525 390 L560 280" class="flow"/>
+<path d="M730 390 L765 280" class="flow"/>
+<path d="M940 390 L970 280" class="flow"/>
+<path d="M1150 390 L1115 280" class="flow"/>
+</svg>

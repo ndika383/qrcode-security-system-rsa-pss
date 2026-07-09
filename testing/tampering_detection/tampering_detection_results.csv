@@ -1,0 +1,9 @@
+Jenis_Tampering,Total,Terdeteksi,Terlewat,Akurasi
+field_modification,500,500,0,100.0%
+field_addition,500,500,0,100.0%
+field_removal,500,500,0,100.0%
+timestamp_tampering,500,500,0,100.0%
+data_type_change,500,500,0,100.0%
+signature_injection,500,500,0,100.0%
+encryption_bypass,500,500,0,100.0%
+TOTAL,3500,3500,0,100.0%

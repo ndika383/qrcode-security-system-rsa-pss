@@ -1,0 +1,757 @@
+<!-- templates/test_results.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Results - {{ session.session_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .metric-card {
+            border-left: 4px solid #0d6efd;
+            transition: transform 0.2s;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        .result-badge {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('testing.testing_dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Testing Dashboard
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            Test Results: {{ session.session_id[:15] }}...
+                        </li>
+                    </ol>
+                </nav>
+                
+                <h2 class="mb-0">
+                    <i class="bi bi-clipboard-data text-primary"></i> Test Results
+                </h2>
+                <p class="text-muted">Session ID: {{ session.session_id }}</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('testing.testing_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Session Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Session Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Test Type:</strong><br>
+                                <span class="badge 
+                                    {% if session.test_type == 'normal_operations' %}bg-primary
+                                    {% elif session.test_type == 'replay_attack' %}bg-warning
+                                    {% elif session.test_type == 'data_tampering' %}bg-danger
+                                    {% elif session.test_type == 'signature_forgery' %}bg-info
+                                    {% elif session.test_type == 'stress_test' %}bg-success
+                                    {% elif session.test_type == 'real_http_stress_test' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ session.test_type|replace('_', ' ')|title }}
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Status:</strong><br>
+                                {% if session.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif session.status == 'running' %}
+                                <span class="badge bg-warning">Running</span>
+                                {% elif session.status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ session.status }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Progress:</strong><br>
+                                {{ session.progress|round|int }}%
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Test Name:</strong><br>
+                                {{ session.test_name }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-3">
+                                <strong>Start Time:</strong><br>
+                                {{ session.start_time }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>End Time:</strong><br>
+                                {{ session.end_time or 'N/A' }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Operations:</strong><br>
+                                {{ session.completed_operations or 0 }} / {{ session.total_operations or 0 }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Duration:</strong><br>
+                                {{ session.durasi_formatted }}
+                            </div>
+                        </div>
+                        
+                        {% if session.error_message %}
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Error:</strong> {{ session.error_message }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        {% if session.results %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Test Results & Metrics</h5>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Normal Operations Results -->
+                        {% if session.test_type == 'normal_operations' and session.results %}
+                        <h6 class="border-bottom pb-2 mb-3">Normal Operations Metrics</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary">
+                                            <i class="bi bi-clock"></i> Signing Time
+                                        </h6>
+                                        <p class="display-6">{{ session.results.avg_signing_time|round(3) if session.results.avg_signing_time else 0 }}s</p>
+                                        <small class="text-muted">
+                                            Min: {{ session.results.min_signing_time|round(3) if session.results.min_signing_time else 0 }}s<br>
+                                            Max: {{ session.results.max_signing_time|round(3) if session.results.max_signing_time else 0 }}s
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary">
+                                            <i class="bi bi-clock-history"></i> Verification Time
+                                        </h6>
+                                        <p class="display-6">{{ session.results.avg_verification_time|round(3) if session.results.avg_verification_time else 0 }}s</p>
+                                        <small class="text-muted">
+                                            Min: {{ session.results.min_verification_time|round(3) if session.results.min_verification_time else 0 }}s<br>
+                                            Max: {{ session.results.max_verification_time|round(3) if session.results.max_verification_time else 0 }}s
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary">
+                                            <i class="bi bi-check2-circle"></i> Success Rate
+                                        </h6>
+                                        <p class="display-6">{{ session.results.signing_success_rate|round(1) if session.results.signing_success_rate else 0 }}%</p>
+                                        <small class="text-muted">
+                                            Signing: {{ session.results.signing_success }}<br>
+                                            Verification: {{ session.results.verification_success }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Replay Attack Results -->
+                        {% elif session.test_type == 'replay_attack' and session.results %}
+                        <h6 class="border-bottom pb-2 mb-3">Replay Attack Detection Metrics</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="bi bi-shield-check"></i> Detection Rate
+                                        </h6>
+                                        <p class="display-6">{{ session.results.detection_rate|round(1) if session.results.detection_rate else 0 }}%</p>
+                                        <small class="text-muted">
+                                            Detected: {{ session.results.detected_replays }}<br>
+                                            Missed: {{ session.results.missed_replays }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="bi bi-clock"></i> Detection Time
+                                        </h6>
+                                        <p class="display-6">{{ session.results.avg_detection_time|round(3) if session.results.avg_detection_time else 0 }}s</p>
+                                        <small class="text-muted">Average time to detect replay attacks</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="bi bi-exclamation-triangle"></i> Error Rates
+                                        </h6>
+                                        <p class="display-6">{{ session.results.false_negative_rate|round(1) if session.results.false_negative_rate else 0 }}%</p>
+                                        <small class="text-muted">
+                                            False Negative: {{ session.results.false_negative_rate|round(1) if session.results.false_negative_rate else 0 }}%<br>
+                                            False Positive: {{ session.results.false_positive_rate|round(1) if session.results.false_positive_rate else 0 }}%
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Data Tampering Results -->
+                        {% elif session.test_type == 'data_tampering' and session.results %}
+                        <h6 class="border-bottom pb-2 mb-3">Data Tampering Detection Metrics</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-danger">
+                                            <i class="bi bi-shield-check"></i> Detection Rate
+                                        </h6>
+                                        <p class="display-6">{{ session.results.detection_rate|round(1) if session.results.detection_rate else 0 }}%</p>
+                                        <small class="text-muted">
+                                            Detected: {{ session.results.detected_tampering }}<br>
+                                            Missed: {{ session.results.missed_tampering }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-danger">
+                                            <i class="bi bi-clock"></i> Detection Time
+                                        </h6>
+                                        <p class="display-6">{{ session.results.avg_detection_time|round(3) if session.results.avg_detection_time else 0 }}s</p>
+                                        <small class="text-muted">Average time to detect tampering</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-danger">
+                                            <i class="bi bi-pie-chart"></i> Tampering Types
+                                        </h6>
+                                        <div class="mt-2">
+                                            {% for type, count in session.results.tampering_types.items() %}
+                                            <span class="badge bg-secondary me-1 mb-1">
+                                                {{ type|replace('_', ' ')|title }}: {{ count }}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Signature Forgery Results -->
+                        {% elif session.test_type == 'signature_forgery' and session.results %}
+                        <h6 class="border-bottom pb-2 mb-3">Signature Forgery Detection Metrics</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info">
+                                            <i class="bi bi-shield-check"></i> Rejection Accuracy
+                                        </h6>
+                                        <p class="display-6">{{ session.results.rejection_accuracy|round(1) if session.results.rejection_accuracy else 0 }}%</p>
+                                        <small class="text-muted">
+                                            Rejected: {{ session.results.rejected_forgeries }}<br>
+                                            Accepted: {{ session.results.accepted_forgeries }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info">
+                                            <i class="bi bi-clock"></i> Verification Time
+                                        </h6>
+                                        <p class="display-6">{{ session.results.avg_verification_time|round(3) if session.results.avg_verification_time else 0 }}s</p>
+                                        <small class="text-muted">Average time to verify signatures</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stress Test Results -->
+                        {% elif session.test_type in ['stress_test', 'real_http_stress_test'] and session.results %}
+                        <h6 class="border-bottom pb-2 mb-3">
+                            {% if session.test_type == 'real_http_stress_test' %}Real HTTP Stress Testing Metrics{% else %}Stress Testing Metrics{% endif %}
+                        </h6>
+                        {% if session.test_type == 'real_http_stress_test' %}
+                        <div class="alert alert-info py-2">
+                            <small>
+                                <strong>Mode:</strong> Real HTTP self-load dari server yang sama.<br>
+                                <strong>Target:</strong> {% if session.results.target_endpoint == 'generate_verify' %}Generate + Verify QR{% else %}{{ session.results.target_endpoint }}{% endif %} at {{ session.results.base_url }}
+                                {% if session.results.http_status_counts %}<br><strong>HTTP Status:</strong> {{ session.results.http_status_counts }}{% endif %}
+                                {% if session.results.stage_status_counts %}<br><strong>Stage Status:</strong> {{ session.results.stage_status_counts }}{% endif %}
+                                {% if session.results.workflow_counts and session.results.target_endpoint == 'generate_verify' %}
+                                <br><strong>Workflow:</strong>
+                                Generate {{ session.results.workflow_counts.generate_success }}/{{ session.results.total_operations }},
+                                Verify {{ session.results.workflow_counts.verify_success }}/{{ session.results.total_operations }},
+                                End-to-end {{ session.results.workflow_counts.workflow_success }}/{{ session.results.total_operations }}
+                                {% endif %}
+                                <br><strong>Throughput:</strong> request sukses HTTP 2xx/3xx per detik; Offered Load menghitung semua request termasuk 429/timeout.
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success">
+                                            <i class="bi bi-speedometer2"></i> {% if session.test_type == 'real_http_stress_test' %}Successful Throughput{% else %}Throughput{% endif %}
+                                        </h6>
+                                        <p class="display-6">
+                                            {% if session.test_type == 'real_http_stress_test' and session.results.successful_throughput is defined %}
+                                                {{ session.results.successful_throughput|round(1) }}
+                                            {% elif session.results.throughput_per_user_count %}
+                                                {{ (session.results.throughput_per_user_count.values()|list|sort|last)|round if session.results.throughput_per_user_count else 0 }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                            ops/s
+                                        </p>
+                                        <small class="text-muted">
+                                            {% if session.test_type == 'real_http_stress_test' %}
+                                                Successful responses per second
+                                                {% if session.results.max_observed_request_rate is defined %}<br>Offered load: {{ session.results.max_observed_request_rate|round(1) }} req/s{% endif %}
+                                            {% else %}
+                                                Maximum operations per second
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success">
+                                            <i class="bi bi-clock"></i> Response Time
+                                        </h6>
+                                        <p class="display-6">{{ session.results.overall_avg_response_time|round(3) if session.results.overall_avg_response_time else 0 }}s</p>
+                                        <small class="text-muted">
+                                            Average: {{ session.results.overall_avg_response_time|round(3) if session.results.overall_avg_response_time else 0 }}s<br>
+                                            P95: {{ session.results.overall_p95_response_time|round(3) if session.results.overall_p95_response_time else 0 }}s
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card metric-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success">
+                                            <i class="bi bi-check2-circle"></i> Success Rate
+                                        </h6>
+                                        <p class="display-6">{{ session.results.overall_success_rate|round(1) if session.results.overall_success_rate else 0 }}%</p>
+                                        <small class="text-muted">
+                                            Successful: {{ session.results.successful_operations }}<br>
+                                            Failed: {{ session.results.failed_operations }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Concurrent Users Table -->
+                        <h6 class="mt-4 mb-3">Performance by Concurrent Users</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+	                                    <tr>
+	                                        <th>Concurrent Users</th>
+	                                        <th>{% if session.test_type == 'real_http_stress_test' %}Successful Throughput{% else %}Throughput{% endif %} (ops/s)</th>
+	                                        {% if session.test_type == 'real_http_stress_test' %}<th>Offered Load (req/s)</th>{% endif %}
+	                                        <th>Avg Response Time (s)</th>
+	                                        <th>P95 Response Time (s)</th>
+	                                        <th>Error Rate</th>
+	                                        {% if session.test_type == 'real_http_stress_test' %}<th>HTTP 429</th>{% endif %}
+	                                    </tr>
+	                                </thead>
+	                                <tbody>
+	                                    {% for test in session.results.concurrent_tests %}
+	                                    <tr>
+	                                        <td>{{ test.user_count }}</td>
+	                                        <td>
+	                                            {% if session.test_type == 'real_http_stress_test' and test.successful_throughput is defined %}
+	                                                {{ test.successful_throughput|round(1) }}
+	                                            {% else %}
+	                                                {{ test.throughput|round(1) if test.throughput else 0 }}
+	                                            {% endif %}
+	                                        </td>
+	                                        {% if session.test_type == 'real_http_stress_test' %}<td>{{ test.request_rate|round(1) if test.request_rate is defined else 0 }}</td>{% endif %}
+	                                        <td>{{ test.avg_response_time|round(3) if test.avg_response_time else 0 }}</td>
+	                                        <td>{{ test.p95_response_time|round(3) if test.p95_response_time else 0 }}</td>
+	                                        <td>{{ test.error_rate|round(1) if test.error_rate else 0 }}%</td>
+	                                        {% if session.test_type == 'real_http_stress_test' %}<td>{{ test.status_counts.get('429', 0) if test.status_counts else 0 }}</td>{% endif %}
+	                                    </tr>
+	                                    {% endfor %}
+	                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- TAMBAHKAN BAGIAN INI UNTUK ANALISIS REALISTIS -->
+                        <!-- Untuk Replay Attack Test -->
+                        {% if session.test_type == 'replay_attack' and session.results %}
+                        <div class="card mt-3">
+                            <div class="card-header bg-warning text-white">
+                                <h6 class="mb-0"><i class="bi bi-shield-check"></i> Realistic Replay Attack Analysis</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>Detection Performance</h6>
+                                        <table class="table table-sm">
+                                            <tr><td>Detection Rate:</td><td>{{ session.results.detection_rate|round(1) }}%</td></tr>
+                                            <tr><td>False Positive:</td><td>{{ session.results.false_positive_rate|round(2) }}%</td></tr>
+                                            <tr><td>False Negative:</td><td>{{ session.results.false_negative_rate|round(2) }}%</td></tr>
+                                            <tr><td>Avg Latency:</td><td>{{ session.results.avg_detection_latency_ms|round(1) if session.results.avg_detection_latency_ms else 0 }}ms</td></tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h6>Detection by Attack Pattern</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Pattern</th>
+                                                        <th>Samples</th>
+                                                        <th>Detected</th>
+                                                        <th>Detection Rate</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for pattern, data in session.results.detection_by_pattern.items() %}
+                                                    <tr>
+                                                        <td>{{ pattern|replace('_', ' ')|title }}</td>
+                                                        <td>{{ data.samples }}</td>
+                                                        <td>{{ data.detected }}/{{ data.total_operations }}</td>
+                                                        <td>{{ data.detection_rate|round(1) }}%</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Untuk Data Tampering Test -->
+                        {% if session.test_type == 'data_tampering' and session.results %}
+                        <div class="card mt-3">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Realistic Tampering Detection Analysis</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>Detection Performance</h6>
+                                        <table class="table table-sm">
+                                            <tr><td>Detection Rate:</td><td>{{ session.results.detection_rate|round(1) }}%</td></tr>
+                                            <tr><td>Critical Detection:</td><td>{{ session.results.critical_detection_rate|round(1) }}%</td></tr>
+                                            <tr><td>Integrity Violations:</td><td>{{ session.results.integrity_violations }}</td></tr>
+                                            <tr><td>Avg Detection Time:</td><td>{{ session.results.tampering_detection_stats.mean_ms|round(1) if session.results.tampering_detection_stats else 0 }}ms</td></tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Severity Distribution</h6>
+                                        <table class="table table-sm">
+                                            {% for severity, count in session.results.severity_distribution.items() %}
+                                            <tr>
+                                                <td>{{ severity|title }}:</td>
+                                                <td>{{ count }} ({{ (count/session.results.detected_tampering*100)|round(1) if session.results.detected_tampering > 0 else 0 }}%)</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Resource Usage</h6>
+                                        {% if session.results.resource_summary %}
+                                        <table class="table table-sm">
+                                            <tr><td>Avg Memory:</td><td>{{ session.results.resource_summary.avg_memory_mb|round(1) }} MB</td></tr>
+                                            <tr><td>Max Memory:</td><td>{{ session.results.resource_summary.max_memory_mb|round(1) }} MB</td></tr>
+                                            <tr><td>Avg CPU:</td><td>{{ session.results.resource_summary.avg_cpu_percent|round(1) }}%</td></tr>
+                                        </table>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Untuk Signature Forgery Test -->
+                        {% if session.test_type == 'signature_forgery' and session.results %}
+                        <div class="card mt-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-shield-lock"></i> Realistic Forgery Detection Analysis</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>Verification Performance</h6>
+                                        <table class="table table-sm">
+                                            <tr><td>Rejection Accuracy:</td><td>{{ session.results.rejection_accuracy|round(2) }}%</td></tr>
+                                            <tr><td>Acceptance Error:</td><td>{{ session.results.acceptance_error|round(3) }}%</td></tr>
+                                            <tr><td>Security Score:</td><td>{{ session.results.security_effectiveness.overall_score|round(1) }}/100</td></tr>
+                                            <tr><td>Critical Failures:</td><td>{{ session.results.security_effectiveness.critical_failures }} ({{ session.results.security_effectiveness.critical_failure_rate|round(3) }}%)</td></tr>
+                                            <tr><td>Attempts:</td><td>{{ session.results.total_operations }}</td></tr>
+                                            <tr><td>Rejected:</td><td>{{ session.results.rejected_forgeries }}</td></tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h6>Forgery Types Tested</h6>
+                                        {% if session.results.forgery_types %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Type</th>
+                                                        <th>Count</th>
+                                                        <th>Rejected</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% set total = session.results.total_operations %}
+                                                    {% for forgery_type, count in session.results.forgery_types.items() %}
+                                                    <tr>
+                                                        <td>{{ forgery_type|replace('_', ' ')|title }}</td>
+                                                        <td>{{ count }} ({{ ((count / total) * 100)|round(1) if total > 0 else 0 }}%)</td>
+                                                        <td>{{ session.results.forgery_type_rejected.get(forgery_type, 0) }} ({{ ((session.results.forgery_type_rejected.get(forgery_type, 0) / count) * 100)|round(1) if count > 0 else 0 }}%)</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <p class="text-muted">No forgery type data available</p>
+                                        {% endif %}
+
+                                        {% if session.results.rejection_timeline %}
+                                        <h6 class="mt-3">Rejection Timeline</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Time Window</th>
+                                                        <th>Attempts</th>
+                                                        <th>Rejected</th>
+                                                        <th>Rate</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for timeline in session.results.rejection_timeline %}
+                                                    <tr>
+                                                        <td>{{ timeline.time_window }}</td>
+                                                        <td>{{ timeline.attempts }}</td>
+                                                        <td>{{ timeline.rejected }}</td>
+                                                        <td>{{ timeline.rejection_rate|round(1) if timeline.rejection_rate else 0 }}%</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Untuk Stress Test -->
+                        {% if session.test_type in ['stress_test', 'real_http_stress_test'] and session.results %}
+                        <div class="card mt-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-speedometer2"></i> {% if session.test_type == 'real_http_stress_test' %}Real HTTP Stress Test Analysis{% else %}Realistic Stress Test Analysis{% endif %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+	                                        <h6>Optimal Configuration</h6>
+	                                        <table class="table table-sm">
+	                                            <tr><td>Optimal Users:</td><td>{{ session.results.optimal_user_count }}</td></tr>
+	                                            <tr><td>{% if session.test_type == 'real_http_stress_test' %}Max Successful Throughput{% else %}Max Throughput{% endif %}:</td><td>{{ session.results.max_sustainable_throughput|round(1) }} ops/s</td></tr>
+	                                            {% if session.test_type == 'real_http_stress_test' and session.results.max_observed_request_rate is defined %}
+	                                            <tr><td>Max Offered Load:</td><td>{{ session.results.max_observed_request_rate|round(1) }} req/s</td></tr>
+	                                            {% endif %}
+	                                            <tr><td>Capacity @ 100ms:</td><td>{{ session.results.capacity_at_100ms|round(1) if session.results.capacity_at_100ms else 0 }}%</td></tr>
+	                                            <tr><td>Capacity @ 200ms:</td><td>{{ session.results.capacity_at_200ms|round(1) if session.results.capacity_at_200ms else 0 }}%</td></tr>
+	                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Resource Utilization</h6>
+                                        {% if session.results.resource_utilization.cpu %}
+                                        <table class="table table-sm">
+                                            <tr><td>Avg CPU:</td><td>{{ (session.results.resource_utilization.cpu|sum / session.results.resource_utilization.cpu|length)|round(1) if session.results.resource_utilization.cpu else 0 }}%</td></tr>
+                                            <tr><td>Avg Memory:</td><td>{{ (session.results.resource_utilization.memory|sum / session.results.resource_utilization.memory|length)|round(1) if session.results.resource_utilization.memory else 0 }} MB</td></tr>
+                                            <tr><td>Max Memory:</td><td>{{ session.results.resource_utilization.memory|max if session.results.resource_utilization.memory else 0 }} MB</td></tr>
+                                        </table>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if session.results.bottleneck_analysis %}
+                                <h6>Bottleneck Analysis</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Concurrent Users</th>
+                                                <th>Bottlenecks</th>
+                                                <th>Avg Response</th>
+                                                <th>Error Rate</th>
+                                                <th>CPU Usage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for analysis in session.results.bottleneck_analysis %}
+                                            <tr class="{% if 'high_response_time' in analysis.indicators or 'high_error_rate' in analysis.indicators %}table-warning{% endif %}">
+                                                <td>{{ analysis.user_count }}</td>
+                                                <td>
+                                                    {% for indicator in analysis.indicators %}
+                                                    <span class="badge bg-danger me-1">{{ indicator|replace('_', ' ') }}</span>
+                                                    {% endfor %}
+                                                </td>
+                                                <td>{{ analysis.avg_response_ms|round(1) }}ms</td>
+                                                <td>{{ analysis.error_rate_percent|round(1) }}%</td>
+                                                <td>{{ analysis.cpu_percent|round(1) }}%</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <!-- AKHIR DARI BAGIAN ANALISIS REALISTIS -->
+                        
+                        <!-- Raw Results -->
+                        <div class="mt-4">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#rawResults">
+                                <i class="bi bi-code-slash"></i> Show Raw Results JSON
+                            </button>
+                            <div class="collapse mt-2" id="rawResults">
+                                <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow: auto;">
+                                    {{ session.results|tojson(indent=2) }}
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            No results available yet. Test might still be running or failed to produce results.
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('testing.download_report', session_id=session.session_id) }}" 
+                               class="btn btn-success">
+                                <i class="bi bi-download"></i> Download Report (CSV)
+                            </a>
+                            <a href="{{ url_for('testing.testing_dashboard') }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button class="btn btn-outline-danger ms-auto" onclick="deleteTestSession()">
+                                <i class="bi bi-trash"></i> Delete Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Helper function to calculate duration
+        function calculate_duration(start, end) {
+            if (!start || !end) return 'N/A';
+            
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            const diffMs = endDate - startDate;
+            
+            const seconds = Math.floor(diffMs / 1000) % 60;
+            const minutes = Math.floor(diffMs / (1000 * 60)) % 60;
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+        
+        // Apply duration calculation if not done server-side
+        document.addEventListener('DOMContentLoaded', function() {
+            const durationElement = document.querySelector('[data-duration]');
+            if (durationElement) {
+                const start = durationElement.dataset.start;
+                const end = durationElement.dataset.end;
+                if (start && end) {
+                    durationElement.textContent = calculate_duration(start, end);
+                }
+            }
+        });
+        
+        // Function to delete test session
+        function deleteTestSession() {
+            if (confirm('Are you sure you want to delete this test session? This action cannot be undone.')) {
+                // Redirect to dashboard for now (actual deletion would need API endpoint)
+                window.location.href = "{{ url_for('testing.testing_dashboard') }}";
+            }
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

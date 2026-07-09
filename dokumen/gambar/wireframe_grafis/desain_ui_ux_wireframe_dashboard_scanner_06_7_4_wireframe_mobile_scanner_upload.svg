@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1642" viewBox="0 0 1500 1642"><defs><linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#ecfeff"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/></filter></defs><rect width="100%" height="100%" fill="url(#top)"/>
+<rect x="24" y="24" width="1452" height="1594" rx="30" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<rect x="48" y="48" width="1404" height="72" rx="20" fill="#0f172a" filter="url(#shadow)"/>
+<text x="78" y="93" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">7.4 Wireframe Mobile Scanner Upload</text>
+<rect x="48" y="122" width="1404" height="130" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="122" width="14" height="130" rx="7" fill="#2563eb"/>
+<text x="84" y="160" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Verifikasi QR Code</text>
+<rect x="84" y="168" width="100" height="38" rx="19" fill="#2563eb"/>
+<text x="134.0" y="193" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Home</text>
+<rect x="48" y="276" width="1404" height="100" rx="20" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="276" width="14" height="100" rx="7" fill="#059669"/>
+<rect x="84" y="290" width="100" height="38" rx="19" fill="#059669"/>
+<text x="134.0" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Tunggal</text>
+<rect x="196" y="290" width="100" height="38" rx="19" fill="#d97706"/>
+<text x="246.0" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Massal</text>
+<rect x="48" y="400" width="1404" height="108" rx="20" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="400" width="14" height="108" rx="7" fill="#d97706"/>
+<text x="84" y="438" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Drag &amp; Drop / Pilih File</text>
+<text x="86" y="470" font-family="Arial, sans-serif" font-size="18" fill="#334155">Format file</text>
+<rect x="48" y="532" width="1404" height="152" rx="20" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="532" width="14" height="152" rx="7" fill="#7c3aed"/>
+<rect x="84" y="546" width="208" height="38" rx="19" fill="#7c3aed"/>
+<text x="188.0" y="571" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Verifikasi QR Code</text>
+<rect x="84" y="598" width="128" height="38" rx="19" fill="#7c3aed"/>
+<text x="148.0" y="623" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Pilih File</text>
+<rect x="48" y="708" width="1404" height="90" rx="20" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="708" width="14" height="90" rx="7" fill="#dc2626"/>
+<text x="84" y="746" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Informasi singkat</text>
+<rect x="48" y="822" width="1404" height="90" rx="20" fill="#ffffff" stroke="#0891b2" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="822" width="14" height="90" rx="7" fill="#0891b2"/>
+<text x="84" y="860" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Jika ada hasil:</text>
+<rect x="48" y="936" width="1404" height="108" rx="20" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="936" width="14" height="108" rx="7" fill="#2563eb"/>
+<text x="84" y="974" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Hasil Verifikasi</text>
+<text x="86" y="1006" font-family="Arial, sans-serif" font-size="18" fill="#334155">Badge status</text>
+<rect x="48" y="1068" width="1404" height="90" rx="20" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1068" width="14" height="90" rx="7" fill="#059669"/>
+<text x="84" y="1106" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Data QR Code</text>
+<rect x="48" y="1182" width="1404" height="90" rx="20" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1182" width="14" height="90" rx="7" fill="#d97706"/>
+<text x="84" y="1220" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Analisis Waktu</text>
+<rect x="48" y="1296" width="1404" height="90" rx="20" fill="#ffffff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1296" width="14" height="90" rx="7" fill="#7c3aed"/>
+<text x="84" y="1334" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Status Signature</text>
+<rect x="48" y="1410" width="1404" height="256" rx="20" fill="#ffffff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="1410" width="14" height="256" rx="7" fill="#dc2626"/>
+<rect x="84" y="1424" width="128" height="38" rx="19" fill="#dc2626"/>
+<text x="148.0" y="1449" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Scanner HP</text>
+<rect x="84" y="1476" width="138" height="38" rx="19" fill="#dc2626"/>
+<text x="153.0" y="1501" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Scanner USB</text>
+<rect x="84" y="1528" width="228" height="38" rx="19" fill="#dc2626"/>
+<text x="198.0" y="1553" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Lihat Log Verifikasi</text>
+<rect x="84" y="1580" width="118" height="38" rx="19" fill="#dc2626"/>
+<text x="143.0" y="1605" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Dashboard</text>
+</svg>

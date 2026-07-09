@@ -1,0 +1,31 @@
+{
+  "title": "QR Code Security System RSA-PSS",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Slameto, Andika Agus",
+      "affiliation": "Program Studi Informatika, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia",
+      "orcid": "0000-0002-6842-4163"
+    },
+    {
+      "name": "Sutanto, Yudi",
+      "affiliation": "Program Studi Informatika, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    },
+    {
+      "name": "Kurniawan, Hendra",
+      "affiliation": "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    }
+  ],
+  "description": "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu.",
+  "keywords": [
+    "QR Code",
+    "RSA-PSS",
+    "ECDSA",
+    "digital signature",
+    "Flask",
+    "verification"
+  ],
+  "version": "1.0.0",
+  "publication_date": "2026-07-09",
+  "access_right": "open"
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprehensive Test Runner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5">Comprehensive Scenario Validation</h1>
+        <a href="{{ url_for('testing.testing_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Testing Dashboard
+        </a>
+    </div>
+    <div class="card shadow-lg">
+        <div class="card-header bg-dark text-white">
+            <h2 class="mb-0"><i class="bi bi-robot"></i> Full System Validation</h2>
+        </div>
+        <div class="card-body text-center p-5">
+            <p class="lead">
+                This will run the full testing suite of <strong>125,000 operations</strong> across all 5 security scenarios.
+            </p>
+            <p class="text-muted">
+                The process may take several minutes to complete. Please do not close this window.
+            </p>
+            <div id="test-runner">
+                <form action="{{ url_for('testing.run_comprehensive_test') }}" method="POST">
+                    <div class="mb-4 text-start d-inline-block p-3 border rounded bg-light">
+                        <label class="form-label fw-bold mb-3"><i class="bi bi-cpu"></i> Select Cryptographic Algorithm:</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="algorithm" id="algo_ecdsa" value="ECDSA" checked>
+                            <label class="form-check-label" for="algo_ecdsa">
+                                <strong>ECDSA P-256</strong> (Default - Fast Signing, Small Key)
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="algorithm" id="algo_rsa" value="RSA">
+                            <label class="form-check-label" for="algo_rsa">
+                                <strong>RSA 2048</strong> (Fast Verification, Large Key)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="algorithm" id="algo_both" value="BOTH">
+                            <label class="form-check-label" for="algo_both">
+                                <strong class="text-primary"><i class="bi bi-arrow-left-right"></i> Compare Both (ECDSA vs RSA)</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-lg btn-danger mt-3">
+                        <i class="bi bi-play-circle-fill"></i> Start Full Validation Test
+                    </button>
+                </form>
+            </div>
+            <div id="loading-spinner" style="display: none;">
+                <div class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3"><strong>Running tests... Please wait.</strong></p>
+                <p class="text-muted">This could take up to 5 minutes.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function() {
+        document.getElementById('test-runner').style.display = 'none';
+        document.getElementById('loading-spinner').style.display = 'block';
+    });
+</script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

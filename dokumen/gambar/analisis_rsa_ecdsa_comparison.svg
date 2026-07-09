@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="760"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Perbandingan RSA-PSS dan ECDSA P-256</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Kajian algoritma untuk QR Code bertanda tangan digital</tspan></text>
+<rect x="90" y="130" width="500" height="430" class="soft"/>
+<text x="340" y="165" text-anchor="middle" class="label"><tspan x="340" dy="0">RSA-PSS 2048-bit</tspan></text>
+<text x="340" y="200" text-anchor="middle" class="small"><tspan x="340" dy="0">Kuat dan matang untuk tanda tangan digital</tspan><tspan x="340" dy="28">Ukuran signature besar</tspan><tspan x="340" dy="28">Cocok sebagai baseline keamanan sistem</tspan><tspan x="340" dy="28">Saat ini memakai SHA-256 dan salt 8 byte</tspan></text>
+<rect x="690" y="130" width="500" height="430" class="green"/>
+<text x="940" y="165" text-anchor="middle" class="label"><tspan x="940" dy="0">ECDSA P-256</tspan></text>
+<text x="940" y="200" text-anchor="middle" class="small"><tspan x="940" dy="0">Signature lebih ringkas untuk QR</tspan><tspan x="940" dy="28">Perlu nonce internal algoritma yang aman</tspan><tspan x="940" dy="28">Cocok untuk payload kecil dan mobile scan</tspan><tspan x="940" dy="28">Alternatif ketika ukuran QR menjadi masalah</tspan></text>
+<rect x="250" y="610" width="780" height="90" class="orange"/>
+<text x="640" y="642" text-anchor="middle" class="label"><tspan x="640" dy="0">Rekomendasi Sistem</tspan></text>
+<text x="640" y="670" text-anchor="middle" class="small"><tspan x="640" dy="0">RSA-PSS tetap menjadi mode utama. ECDSA dapat dipertahankan sebagai opsi efisiensi ukuran QR.</tspan><tspan x="640" dy="22">Keduanya perlu key_id, rotasi kunci, dan certificate chain untuk roadmap kepatuhan.</tspan></text>
+</svg>

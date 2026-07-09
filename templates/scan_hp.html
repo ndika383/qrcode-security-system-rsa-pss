@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner HP Otomatis - QR Code Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            --surface: #ffffff;
+            --page: #f4f7fb;
+            --text: #162033;
+            --muted: #637083;
+            --line: #d9e1ea;
+            --accent: #16825f;
+            --accent-dark: #0e6d50;
+            --danger: #c53535;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: var(--page);
+            color: var(--text);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .scanner-shell {
+            width: min(100%, 560px);
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .title-block h1 {
+            margin: 0;
+            font-size: clamp(1.3rem, 6vw, 1.85rem);
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        .title-block p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.35;
+        }
+
+        .icon-link {
+            min-width: 78px;
+            height: 44px;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--text);
+            background: var(--surface);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .scanner-panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 16px 34px rgba(24, 43, 77, 0.08);
+        }
+
+        .usage-box {
+            margin: 14px 0;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--surface);
+        }
+
+        .usage-box h2 {
+            margin: 0 0 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        .usage-box ul {
+            margin: 0;
+            padding-left: 1.15rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .usage-box li + li {
+            margin-top: 4px;
+        }
+
+        .scan-page-url {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .scan-page-url-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .scan-page-url a {
+            display: block;
+            margin-top: 4px;
+            color: var(--accent-dark);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.9rem;
+            overflow-wrap: anywhere;
+            text-decoration: none;
+        }
+
+        .scan-page-url-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .camera-frame {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #0b1220;
+            overflow: hidden;
+        }
+
+        #reader {
+            width: 100%;
+            min-height: 100%;
+        }
+
+        #reader video {
+            object-fit: cover !important;
+        }
+
+        .scan-guide {
+            position: absolute;
+            inset: 13%;
+            border: 2px solid rgba(255, 255, 255, 0.88);
+            border-radius: 10px;
+            pointer-events: none;
+            box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.28);
+        }
+
+        .scan-guide::before,
+        .scan-guide::after {
+            content: "";
+            position: absolute;
+            left: 12%;
+            right: 12%;
+            height: 2px;
+            background: rgba(22, 130, 95, 0.95);
+            box-shadow: 0 0 12px rgba(22, 130, 95, 0.8);
+        }
+
+        .scan-guide::before {
+            top: 24%;
+        }
+
+        .scan-guide::after {
+            bottom: 24%;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .btn-scan {
+            min-height: 46px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .btn-start {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-start:hover,
+        .btn-start:focus {
+            background: var(--accent-dark);
+            border-color: var(--accent-dark);
+            color: #fff;
+        }
+
+        .status-box {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--muted);
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.35;
+        }
+
+        .status-box strong {
+            color: var(--text);
+        }
+
+        .status-box.success {
+            border-color: rgba(22, 130, 95, 0.35);
+            background: #eef9f4;
+            color: #175f48;
+        }
+
+        .status-box.error {
+            border-color: rgba(197, 53, 53, 0.32);
+            background: #fff0f0;
+            color: var(--danger);
+        }
+
+        .status-icon {
+            width: 24px;
+            text-align: center;
+            flex: 0 0 24px;
+        }
+
+        .manual-box {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--surface);
+        }
+
+        .manual-box label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .manual-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        @media (min-width: 480px) {
+            .manual-actions {
+                grid-template-columns: 1fr auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="scanner-shell">
+        <header class="topbar">
+            <a href="{{ url_for('index') }}" class="icon-link" aria-label="Home" title="Home">
+                <i class="fas fa-home"></i><span>Home</span>
+            </a>
+            <div class="title-block flex-grow-1">
+                <h1>Scanner HP Otomatis</h1>
+                <p>Hasil verifikasi terbuka otomatis setelah QR terbaca.</p>
+            </div>
+        </header>
+
+        <section class="scanner-panel" aria-label="Scanner kamera HP">
+            <div class="camera-frame">
+                <div id="reader"></div>
+                <div class="scan-guide" aria-hidden="true"></div>
+            </div>
+            <div class="controls">
+                <button id="startBtn" type="button" class="btn btn-scan btn-start">
+                    <i class="fas fa-video me-2"></i>Mulai
+                </button>
+                <button id="stopBtn" type="button" class="btn btn-scan btn-outline-danger" disabled>
+                    <i class="fas fa-video-slash me-2"></i>Stop
+                </button>
+            </div>
+        </section>
+
+        <div id="statusBox" class="status-box" role="status" aria-live="polite">
+            <span class="status-icon"><i class="fas fa-circle-notch fa-spin"></i></span>
+            <span><strong>Menyiapkan kamera.</strong> Izinkan akses kamera jika browser meminta izin.</span>
+        </div>
+
+        <section class="manual-box" aria-label="Input hasil scan manual">
+            <label for="manualInput">Input manual</label>
+            <div class="manual-actions">
+                <input id="manualInput" type="text" class="form-control" autocomplete="off" placeholder="Tempel URL atau data QR">
+                <button id="manualBtn" type="button" class="btn btn-outline-success">
+                    <i class="fas fa-location-arrow me-2"></i>Buka
+                </button>
+            </div>
+        </section>
+
+        <section class="usage-box" aria-label="Cara penggunaan kamera HP">
+            <h2><i class="fas fa-mobile-alt me-2"></i>Cara Penggunaan: Kamera HP</h2>
+            <ul>
+                <li>Buka halaman ini dari browser HP.</li>
+                <li>Izinkan akses kamera jika browser meminta izin.</li>
+                <li>Pindai QR Code yang berisi URL verifikasi.</li>
+                <li>Browser otomatis membuka halaman hasil verifikasi.</li>
+            </ul>
+            <div class="scan-page-url">
+                <div class="scan-page-url-label"><i class="fas fa-link me-2"></i>Link halaman</div>
+                <div class="scan-page-url-row">
+                    <a id="scanPageUrl" href="{{ request.url_root.rstrip('/') }}/mobile_scan">{{ request.url_root.rstrip('/') }}/mobile_scan</a>
+                    <button id="copyPageUrlBtn" type="button" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const statusBox = document.getElementById('statusBox');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const manualInput = document.getElementById('manualInput');
+        const manualBtn = document.getElementById('manualBtn');
+        const copyPageUrlBtn = document.getElementById('copyPageUrlBtn');
+        const scanPageUrl = document.getElementById('scanPageUrl');
+
+        let scanner = null;
+        let scannerRunning = false;
+        let scannerStarting = false;
+        let scanLocked = false;
+        let redirecting = false;
+        let lastScanText = '';
+        let lastScanAt = 0;
+
+        function setStatus(type, title, message, spinning = false) {
+            statusBox.className = `status-box ${type || ''}`.trim();
+            const icon = spinning
+                ? '<i class="fas fa-circle-notch fa-spin"></i>'
+                : type === 'success'
+                    ? '<i class="fas fa-check-circle"></i>'
+                    : type === 'error'
+                        ? '<i class="fas fa-exclamation-circle"></i>'
+                        : '<i class="fas fa-info-circle"></i>';
+            statusBox.innerHTML = `<span class="status-icon">${icon}</span><span><strong>${title}</strong> ${message}</span>`;
+        }
+
+        function updateButtons() {
+            startBtn.disabled = scannerStarting || scannerRunning || redirecting;
+            stopBtn.disabled = scannerStarting || !scannerRunning || redirecting;
+            manualBtn.disabled = redirecting;
+        }
+
+        function getQrbox(viewfinderWidth, viewfinderHeight) {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.max(190, Math.floor(minEdge * 0.72));
+            return { width: size, height: size };
+        }
+
+        async function startScanner() {
+            if (scannerStarting || scannerRunning || redirecting) {
+                return;
+            }
+
+            if (!window.Html5Qrcode) {
+                setStatus('error', 'Scanner gagal dimuat.', 'Periksa koneksi internet lalu muat ulang halaman.');
+                return;
+            }
+
+            setStatus('', 'Mengaktifkan kamera.', 'Mohon tunggu sebentar.', true);
+            scannerStarting = true;
+            updateButtons();
+
+            try {
+                scanner = scanner || new Html5Qrcode('reader');
+                const config = {
+                    fps: 12,
+                    qrbox: getQrbox,
+                    aspectRatio: 1,
+                    disableFlip: false,
+                    rememberLastUsedCamera: true
+                };
+
+                try {
+                    await scanner.start({ facingMode: { exact: 'environment' } }, config, onScanSuccess, () => {});
+                } catch (firstError) {
+                    try {
+                        await scanner.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
+                    } catch (secondError) {
+                        const cameras = await Html5Qrcode.getCameras();
+                        if (!cameras || cameras.length === 0) {
+                            throw secondError;
+                        }
+                        const backCamera = cameras.find(camera => /back|rear|environment|belakang/i.test(camera.label)) || cameras[cameras.length - 1];
+                        await scanner.start(backCamera.id, config, onScanSuccess, () => {});
+                    }
+                }
+
+                scannerRunning = true;
+                setStatus('success', 'Kamera aktif.', 'Arahkan QR ke area scan.');
+            } catch (error) {
+                scannerRunning = false;
+                setStatus('error', 'Kamera belum aktif.', 'Tekan Mulai dan pastikan izin kamera sudah diberikan.');
+            } finally {
+                scannerStarting = false;
+                updateButtons();
+            }
+        }
+
+        async function stopScanner() {
+            if (!scanner || !scannerRunning) {
+                return;
+            }
+
+            try {
+                await scanner.stop();
+                await scanner.clear();
+            } catch (error) {
+                // Kamera mungkin sudah dihentikan oleh browser.
+            } finally {
+                scannerRunning = false;
+                scanLocked = false;
+                updateButtons();
+                if (!redirecting) {
+                    setStatus('', 'Kamera berhenti.', 'Tekan Mulai untuk scan lagi.');
+                }
+            }
+        }
+
+        async function resolveAndOpen(qrText) {
+            const text = (qrText || '').trim();
+            if (!text || redirecting) {
+                return;
+            }
+
+            const now = Date.now();
+            if (text === lastScanText && now - lastScanAt < 1800) {
+                return;
+            }
+            lastScanText = text;
+            lastScanAt = now;
+
+            if (scanLocked) {
+                return;
+            }
+
+            scanLocked = true;
+            setStatus('', 'QR terbaca.', 'Membuka halaman verifikasi...', true);
+
+            try {
+                const response = await fetch('{{ url_for("resolve_scan_target") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ qr_string: text })
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success || !result.target_url) {
+                    throw new Error(result.error || 'QR tidak dapat diproses');
+                }
+
+                redirecting = true;
+                updateButtons();
+                setStatus('success', 'QR valid.', 'Mengalihkan ke hasil verifikasi...', true);
+
+                if (scannerRunning) {
+                    try {
+                        await scanner.stop();
+                        await scanner.clear();
+                    } catch (error) {
+                        // Redirect tetap dilanjutkan.
+                    }
+                }
+
+                window.location.assign(result.target_url);
+            } catch (error) {
+                setStatus('error', 'QR tidak bisa dibuka.', error.message || 'Silakan scan ulang.');
+                setTimeout(() => {
+                    scanLocked = false;
+                }, 1600);
+            }
+        }
+
+        function onScanSuccess(decodedText) {
+            resolveAndOpen(decodedText);
+        }
+
+        startBtn.addEventListener('click', startScanner);
+        stopBtn.addEventListener('click', stopScanner);
+        manualBtn.addEventListener('click', () => resolveAndOpen(manualInput.value));
+        copyPageUrlBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(scanPageUrl.textContent.trim());
+                copyPageUrlBtn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    copyPageUrlBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 1200);
+            } catch (error) {
+                setStatus('error', 'Gagal menyalin.', 'Salin link secara manual dari teks yang tampil.');
+            }
+        });
+        manualInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                resolveAndOpen(manualInput.value);
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && scannerRunning && !redirecting) {
+                stopScanner();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (scanner && scannerRunning) {
+                scanner.stop().catch(() => {});
+            }
+        });
+
+        window.addEventListener('load', () => {
+            startScanner();
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

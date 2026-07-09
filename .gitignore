@@ -1,0 +1,56 @@
+# Python/runtime
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Local configuration and private keys
+.env
+.env.*
+!.env.example
+!.env.ubuntu.example
+!.env.production.rsa-pss.example
+*.pem
+*.key
+*.crt
+
+# Runtime data, logs, uploads, and generated QR output
+logs/
+data/
+backups/
+backup-sistem/
+temp/
+*.log
+*.db
+*.sqlite
+*.sqlite3
+static/uploads/
+static/qr/
+static/qr_massal/
+static/qr_fake/
+static/data/
+static/testing/reports/
+static/testing/exports/
+static/testing_reports/
+
+# Temporary/generated reports
+temp_*.txt
+session_details.txt
+testing_results_summary_*.png
+hasil.html
+generate_csv.html
+scanner.html
+
+# Local editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

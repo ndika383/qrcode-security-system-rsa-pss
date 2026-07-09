@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="760"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Alur Admin dan Audit</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Monitoring dashboard, pembacaan log, export, dan audit trail</tspan></text>
+<rect x="70" y="160" width="220" height="100" class="soft"/>
+<text x="180.0" y="190" text-anchor="middle" class="label"><tspan x="180.0" dy="0">Admin</tspan></text>
+<text x="180.0" y="216" text-anchor="middle" class="small"><tspan x="180.0" dy="0">dashboard</tspan><tspan x="180.0" dy="18">reset statistik</tspan><tspan x="180.0" dy="18">job massal</tspan></text>
+<rect x="370" y="110" width="230" height="90" class="green"/>
+<text x="485.0" y="140" text-anchor="middle" class="label"><tspan x="485.0" dy="0">Dashboard</tspan></text>
+<text x="485.0" y="166" text-anchor="middle" class="small"><tspan x="485.0" dy="0">KPI</tspan><tspan x="485.0" dy="18">P95</tspan><tspan x="485.0" dy="18">valid rate</tspan></text>
+<rect x="370" y="260" width="230" height="90" class="green"/>
+<text x="485.0" y="290" text-anchor="middle" class="label"><tspan x="485.0" dy="0">Log Generate</tspan></text>
+<text x="485.0" y="316" text-anchor="middle" class="small"><tspan x="485.0" dy="0">preview QR</tspan><tspan x="485.0" dy="18">export Excel</tspan></text>
+<rect x="680" y="260" width="230" height="90" class="green"/>
+<text x="795.0" y="290" text-anchor="middle" class="label"><tspan x="795.0" dy="0">Log Verifikasi</tspan></text>
+<text x="795.0" y="316" text-anchor="middle" class="small"><tspan x="795.0" dy="0">filter sumber</tspan><tspan x="795.0" dy="18">status keamanan</tspan></text>
+<rect x="990" y="260" width="230" height="90" class="gray"/>
+<text x="1105.0" y="290" text-anchor="middle" class="label"><tspan x="1105.0" dy="0">Audit Log</tspan></text>
+<text x="1105.0" y="316" text-anchor="middle" class="small"><tspan x="1105.0" dy="0">aksi admin</tspan><tspan x="1105.0" dy="18">IP/user agent</tspan></text>
+<rect x="680" y="450" width="230" height="90" class="yellow"/>
+<text x="795.0" y="480" text-anchor="middle" class="label"><tspan x="795.0" dy="0">Laporan</tspan></text>
+<text x="795.0" y="506" text-anchor="middle" class="small"><tspan x="795.0" dy="0">CSV/Excel</tspan><tspan x="795.0" dy="18">bukti pengujian</tspan></text>
+<path d="M290 200 L370 155" class="flow"/>
+<path d="M290 210 L370 305" class="flow"/>
+<path d="M600 305 L680 305" class="flow"/>
+<path d="M910 305 L990 305" class="flow"/>
+<path d="M795 350 L795 450" class="flow"/>
+<path d="M1105 350 L795 450" class="flow"/>
+<path d="M485 350 L795 450" class="flow"/>
+<rect x="245" y="610" width="790" height="70" class="gray"/>
+<text x="640" y="640" text-anchor="middle" class="label"><tspan x="640" dy="0">Audit trail dibaca dari log generate, log verifikasi, dan audit log untuk kebutuhan pemeriksaan.</tspan></text>
+</svg>

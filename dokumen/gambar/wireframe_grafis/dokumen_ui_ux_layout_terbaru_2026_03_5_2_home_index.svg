@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="520" viewBox="0 0 1500 520"><defs><linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#ecfeff"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/></filter></defs><rect width="100%" height="100%" fill="url(#top)"/>
+<rect x="24" y="24" width="1452" height="472" rx="30" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<rect x="48" y="48" width="1404" height="72" rx="20" fill="#0f172a" filter="url(#shadow)"/>
+<text x="78" y="93" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">5.2 Home / Index</text>
+<rect x="48" y="122" width="456" height="242" rx="18" fill="#ffffff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+<rect x="48" y="122" width="456" height="12" rx="6" fill="#2563eb"/>
+<text x="70" y="162" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Navbar: QR Security System</text>
+<text x="70" y="186" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Hero: nama sistem + badge fitur</text>
+<text x="70" y="210" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">keamanan</text>
+<text x="70" y="234" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Feature cards: RSA, Scanner, Kamera</text>
+<text x="70" y="258" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">HP, Logging</text>
+<text x="70" y="282" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Main actions: QR Generator</text>
+<text x="70" y="306" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Scanner shortcuts: Scanner USB</text>
+<text x="70" y="330" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Quick access grid: Dashboard, Log,</text>
+<text x="70" y="354" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">CSV, Modify, Testing, Jobs, Audit</text>
+<rect x="522" y="122" width="456" height="242" rx="18" fill="#ffffff" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+<rect x="522" y="122" width="456" height="12" rx="6" fill="#059669"/>
+<text x="544" y="162" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Benchmark</text>
+<text x="544" y="186" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Verifikasi QR</text>
+<text x="544" y="210" font-family="Arial, sans-serif" font-size="17" font-weight="400" fill="#0f172a">Kamera HP</text>
+<rect x="996" y="122" width="456" height="242" rx="18" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+<rect x="996" y="122" width="456" height="12" rx="6" fill="#d97706"/>
+<text x="1018" y="162" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Logout</text>
+</svg>

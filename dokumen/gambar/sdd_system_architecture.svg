@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="700" viewBox="0 0 1280 700">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="700"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Arsitektur Sistem Tingkat Tinggi</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Komponen aplikasi, engine, dan storage utama</tspan></text>
+<rect x="70" y="140" width="220" height="100" class="soft"/>
+<text x="180.0" y="170" text-anchor="middle" class="label"><tspan x="180.0" dy="0">Browser</tspan></text>
+<text x="180.0" y="196" text-anchor="middle" class="small"><tspan x="180.0" dy="0">admin/operator</tspan><tspan x="180.0" dy="18">desktop/mobile</tspan></text>
+<rect x="390" y="140" width="230" height="100" class="orange"/>
+<text x="505.0" y="170" text-anchor="middle" class="label"><tspan x="505.0" dy="0">Flask App</tspan></text>
+<text x="505.0" y="196" text-anchor="middle" class="small"><tspan x="505.0" dy="0">routes</tspan><tspan x="505.0" dy="18">templates</tspan><tspan x="505.0" dy="18">services</tspan></text>
+<rect x="720" y="95" width="220" height="85" class="green"/>
+<text x="830.0" y="125" text-anchor="middle" class="label"><tspan x="830.0" dy="0">Crypto Engine</tspan></text>
+<text x="830.0" y="151" text-anchor="middle" class="small"><tspan x="830.0" dy="0">RSA-PSS</tspan><tspan x="830.0" dy="18">ECDSA SHA-256</tspan></text>
+<rect x="720" y="220" width="220" height="85" class="green"/>
+<text x="830.0" y="250" text-anchor="middle" class="label"><tspan x="830.0" dy="0">QR Engine</tspan></text>
+<text x="830.0" y="276" text-anchor="middle" class="small"><tspan x="830.0" dy="0">qrcode</tspan><tspan x="830.0" dy="18">decode QR</tspan></text>
+<rect x="1020" y="80" width="200" height="80" class="yellow"/>
+<text x="1120.0" y="110" text-anchor="middle" class="label"><tspan x="1120.0" dy="0">SQLite</tspan></text>
+<text x="1120.0" y="136" text-anchor="middle" class="small"><tspan x="1120.0" dy="0">nonce_state</tspan></text>
+<rect x="1020" y="190" width="200" height="80" class="soft"/>
+<text x="1120.0" y="220" text-anchor="middle" class="label"><tspan x="1120.0" dy="0">JSON/PNG</tspan></text>
+<text x="1120.0" y="246" text-anchor="middle" class="small"><tspan x="1120.0" dy="0">payload</tspan><tspan x="1120.0" dy="18">QR artifact</tspan></text>
+<rect x="1020" y="300" width="200" height="80" class="gray"/>
+<text x="1120.0" y="330" text-anchor="middle" class="label"><tspan x="1120.0" dy="0">CSV Logs</tspan></text>
+<text x="1120.0" y="356" text-anchor="middle" class="small"><tspan x="1120.0" dy="0">generate</tspan><tspan x="1120.0" dy="18">verify</tspan><tspan x="1120.0" dy="18">audit</tspan></text>
+<path d="M290 190 L390 190" class="flow"/>
+<path d="M620 170 L720 137" class="flow"/>
+<path d="M620 190 L720 262" class="flow"/>
+<path d="M940 137 L1020 120" class="flow"/>
+<path d="M940 262 L1020 230" class="flow"/>
+<path d="M620 220 L1020 340" class="flow"/>
+<rect x="245" y="500" width="790" height="90" class="gray"/>
+<text x="640" y="535" text-anchor="middle" class="label"><tspan x="640" dy="0">Pola arsitektur: server-side rendered Flask monolith dengan storage hybrid.</tspan></text>
+<text x="640" y="562" text-anchor="middle" class="small"><tspan x="640" dy="0">Task massal diproses via background thread dan snapshot JSON.</tspan></text>
+</svg>

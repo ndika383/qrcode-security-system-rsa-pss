@@ -1,0 +1,20 @@
+{
+  "title": "QR Code Security System RSA-PSS",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Tim Pengelola QR Code Security System"
+    }
+  ],
+  "description": "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu.",
+  "keywords": [
+    "QR Code",
+    "RSA-PSS",
+    "ECDSA",
+    "digital signature",
+    "Flask",
+    "verification"
+  ],
+  "version": "1.0.0",
+  "access_right": "open"
+}

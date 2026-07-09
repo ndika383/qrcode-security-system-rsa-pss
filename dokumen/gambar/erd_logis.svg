@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1040" viewBox="0 0 1500 1040">
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}.entity{fill:#fff;stroke:#2563eb;stroke-width:3;rx:12}.security{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:12}.log{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:12}.task{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:12}.head{font:700 16px Arial,sans-serif;fill:#111827}.field{font:400 12.5px Arial,sans-serif;fill:#374151}.pk{font:700 12.5px Arial,sans-serif;fill:#111827}.rel{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.relText{font:400 12px Arial,sans-serif;fill:#334155}.legend{fill:#fff;stroke:#cbd5e1;stroke-width:2;rx:10}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+  </defs>
+  <rect class="bg" width="1500" height="1040"/>
+  <text x="750" y="48" text-anchor="middle" class="title">ERD Logis QR Code Security System</text>
+  <text x="750" y="76" text-anchor="middle" class="subtitle">Representasi entitas walaupun storage fisik berupa JSON, CSV, PNG, dan SQLite</text>
+
+  <rect x="580" y="130" width="260" height="170" class="entity"/>
+  <text x="710" y="160" text-anchor="middle" class="head">QR_DATA</text>
+  <line x1="580" y1="174" x2="840" y2="174" stroke="#cbd5e1"/>
+  <text x="600" y="198" class="pk">PK id</text>
+  <text x="600" y="220" class="field">nama</text>
+  <text x="600" y="242" class="field">timestamp</text>
+  <text x="600" y="264" class="field">FK nonce</text>
+  <text x="600" y="286" class="field">qr_version, qr_modules</text>
+
+  <rect x="160" y="130" width="250" height="145" class="entity"/>
+  <text x="285" y="160" text-anchor="middle" class="head">QR_ARTIFACT</text>
+  <line x1="160" y1="174" x2="410" y2="174" stroke="#cbd5e1"/>
+  <text x="180" y="198" class="pk">PK file_path</text>
+  <text x="180" y="220" class="field">FK qr_data_id</text>
+  <text x="180" y="242" class="field">artifact_type, resolution</text>
+  <text x="180" y="264" class="field">file_size_kb</text>
+
+  <rect x="1050" y="130" width="260" height="165" class="entity"/>
+  <text x="1180" y="160" text-anchor="middle" class="head">VERIFY_PAYLOAD</text>
+  <line x1="1050" y1="174" x2="1310" y2="174" stroke="#cbd5e1"/>
+  <text x="1070" y="198" class="pk">PK token</text>
+  <text x="1070" y="220" class="field">FK qr_data_id</text>
+  <text x="1070" y="242" class="field">alg, signature_b64</text>
+  <text x="1070" y="264" class="field">payload_path, expires_at</text>
+
+  <rect x="580" y="390" width="260" height="140" class="security"/>
+  <text x="710" y="420" text-anchor="middle" class="head">NONCE_STATE</text>
+  <line x1="580" y1="434" x2="840" y2="434" stroke="#fed7aa"/>
+  <text x="600" y="458" class="pk">PK nonce</text>
+  <text x="600" y="480" class="field">first_used_at</text>
+  <text x="600" y="502" class="field">last_used_at</text>
+  <text x="600" y="524" class="field">usage_count</text>
+
+  <rect x="900" y="400" width="250" height="118" class="security"/>
+  <text x="1025" y="430" text-anchor="middle" class="head">SECURITY_METADATA</text>
+  <line x1="900" y1="444" x2="1150" y2="444" stroke="#fed7aa"/>
+  <text x="920" y="468" class="pk">PK key</text>
+  <text x="920" y="490" class="field">value</text>
+  <text x="920" y="512" class="field">updated_at</text>
+
+  <rect x="95" y="420" width="280" height="170" class="log"/>
+  <text x="235" y="450" text-anchor="middle" class="head">GENERATE_LOG</text>
+  <line x1="95" y1="464" x2="375" y2="464" stroke="#bbf7d0"/>
+  <text x="115" y="488" class="pk">PK log_id logical</text>
+  <text x="115" y="510" class="field">waktu, sumber</text>
+  <text x="115" y="532" class="field">nama, user_id</text>
+  <text x="115" y="554" class="field">versi_qr, resolusi</text>
+  <text x="115" y="576" class="field">total_waktu_detik</text>
+
+  <rect x="1190" y="420" width="280" height="180" class="log"/>
+  <text x="1330" y="450" text-anchor="middle" class="head">VERIFY_LOG</text>
+  <line x1="1190" y1="464" x2="1470" y2="464" stroke="#bbf7d0"/>
+  <text x="1210" y="488" class="pk">PK log_id logical</text>
+  <text x="1210" y="510" class="field">waktu, sumber</text>
+  <text x="1210" y="532" class="field">status, nama_file</text>
+  <text x="1210" y="554" class="field">nama, user_id</text>
+  <text x="1210" y="576" class="field">perubahan_data, timing</text>
+
+  <rect x="95" y="730" width="265" height="140" class="log"/>
+  <text x="228" y="760" text-anchor="middle" class="head">AUDIT_LOG</text>
+  <line x1="95" y1="774" x2="360" y2="774" stroke="#bbf7d0"/>
+  <text x="115" y="798" class="pk">PK audit_id logical</text>
+  <text x="115" y="820" class="field">waktu, aksi, actor</text>
+  <text x="115" y="842" class="field">ip, user_agent</text>
+  <text x="115" y="864" class="field">detail_json</text>
+
+  <rect x="500" y="715" width="250" height="140" class="task"/>
+  <text x="625" y="745" text-anchor="middle" class="head">TASK_METADATA</text>
+  <line x1="500" y1="759" x2="750" y2="759" stroke="#fbcfe8"/>
+  <text x="520" y="783" class="pk">PK task_id</text>
+  <text x="520" y="805" class="field">task_type, status</text>
+  <text x="520" y="827" class="field">total_files</text>
+  <text x="520" y="849" class="field">start_time, end_time</text>
+
+  <rect x="840" y="715" width="250" height="140" class="task"/>
+  <text x="965" y="745" text-anchor="middle" class="head">TASK_RESULT</text>
+  <line x1="840" y1="759" x2="1090" y2="759" stroke="#fbcfe8"/>
+  <text x="860" y="783" class="pk">PK task_id</text>
+  <text x="860" y="805" class="field">result_path</text>
+  <text x="860" y="827" class="field">processed, success_count</text>
+  <text x="860" y="849" class="field">error_count, total_time</text>
+
+  <rect x="1205" y="735" width="230" height="120" class="log"/>
+  <text x="1320" y="765" text-anchor="middle" class="head">QR_STATS</text>
+  <line x1="1205" y1="779" x2="1435" y2="779" stroke="#bbf7d0"/>
+  <text x="1225" y="803" class="pk">PK stats_id logical</text>
+  <text x="1225" y="825" class="field">qr_count, verify_count</text>
+  <text x="1225" y="847" class="field">total times, updated_at</text>
+
+  <path d="M580 210 L410 205" class="rel"/><text x="452" y="196" class="relText">produces</text>
+  <path d="M840 210 L1050 210" class="rel"/><text x="930" y="196" class="relText">encoded as</text>
+  <path d="M710 300 L710 390" class="rel"/><text x="722" y="350" class="relText">uses nonce</text>
+  <path d="M580 250 C420 295 310 360 235 420" class="rel"/><text x="355" y="340" class="relText">logged by</text>
+  <path d="M840 250 C1035 310 1240 360 1330 420" class="rel"/><text x="1085" y="340" class="relText">verified by</text>
+  <path d="M750 785 L840 785" class="rel"/><text x="772" y="772" class="relText">has result</text>
+  <path d="M965 715 C1050 650 1200 610 1330 600" class="rel"/><text x="1098" y="665" class="relText">records</text>
+  <path d="M840 825 C650 900 410 905 285 870" class="rel"/><text x="545" y="930" class="relText">batch artifact/log evidence</text>
+  <path d="M1320 735 C1285 670 1300 635 1330 600" class="rel"/><text x="1342" y="680" class="relText">summarizes</text>
+  <path d="M1205 805 C965 645 590 530 375 505" class="rel"/><text x="745" y="620" class="relText">summarizes</text>
+  <path d="M228 730 C330 610 440 520 580 470" class="rel"/><text x="345" y="628" class="relText">admin actions</text>
+
+  <rect x="580" y="915" width="360" height="82" class="legend"/>
+  <text x="760" y="942" text-anchor="middle" class="head">Legenda Storage</text>
+  <text x="605" y="966" class="field">Biru: data/payload/artefak</text>
+  <text x="605" y="986" class="field">Oranye: SQLite security state</text>
+  <text x="790" y="966" class="field">Hijau: CSV/JSON log summary</text>
+  <text x="790" y="986" class="field">Merah muda: task massal</text>
+</svg>

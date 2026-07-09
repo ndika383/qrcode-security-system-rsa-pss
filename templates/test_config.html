@@ -1,0 +1,90 @@
+<!-- templates/test_config.html -->
+<form id="testConfigForm">
+    <div class="mb-3">
+        <label for="testName" class="form-label">Test Name</label>
+        <input type="text" class="form-control" id="testName"
+               value="{{ config.name }} - {{ now().strftime('%Y-%m-%d %H:%M') }}"
+               required>
+        <div class="form-text">Give a descriptive name for this test</div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> {{ config.description }}
+    </div>
+
+    <div class="alert alert-success mb-3">
+        <i class="bi bi-sliders"></i> <strong>Tip:</strong> 
+        Pastikan sistem sudah dikalibrasi untuk hasil testing yang realistis.
+        <a href="{{ url_for('testing.calibration_page') }}" target="_blank" class="alert-link">
+            <i class="bi bi-box-arrow-up-right"></i> Buka Kalibrasi Performa
+        </a>
+    </div>
+    
+    {% for field in config.fields %}
+    <div class="mb-3">
+        <label for="{{ field.name }}" class="form-label">{{ field.label }}</label>
+        
+        {% if field.type == 'number' %}
+        <input type="number" class="form-control" id="{{ field.name }}" 
+               name="{{ field.name }}" 
+               value="{{ field.default }}"
+               min="{{ field.min }}" 
+               max="{{ field.max }}"
+               required>
+        
+        {% elif field.type == 'text' %}
+        <input type="text" class="form-control" id="{{ field.name }}" 
+               name="{{ field.name }}" 
+               value="{{ field.default }}"
+               required>
+        
+        {% elif field.type == 'textarea' %}
+        <textarea class="form-control" id="{{ field.name }}" 
+                  name="{{ field.name }}" 
+                  rows="3">{{ field.default }}</textarea>
+        
+        {% elif field.type == 'select' %}
+        <select class="form-control" id="{{ field.name }}" name="{{ field.name }}">
+            {% for option in field.options %}
+            <option value="{{ option.value }}" {% if option.value == field.default %}selected{% endif %}>
+                {{ option.label }}
+            </option>
+            {% endfor %}
+        </select>
+        {% endif %}
+        
+        {% if field.help %}
+        <div class="form-text">{{ field.help }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Perhatian:</strong> Test dengan jumlah operasi besar dapat memakan waktu beberapa menit hingga jam.
+        Pastikan server memiliki resource yang cukup.
+    </div>
+    
+    <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-play-circle"></i> Start Test
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> Cancel
+        </button>
+    </div>
+</form>
+
+<script>
+    // Tambahkan now function untuk template
+    function now() {
+        return new Date();
+    }
+    
+    // Format tanggal untuk default test name
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const formattedDate = now.toISOString().slice(0, 16).replace('T', ' ');
+        document.getElementById('testName').value = '{{ config.name }} - ' + formattedDate;
+    });
+</script> 

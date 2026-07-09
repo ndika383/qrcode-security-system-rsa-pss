@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Langsung QR Code - QR Code Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .scanner-area {
+            border: 3px dashed #007bff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        .result-card {
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .result-valid {
+            border-left: 5px solid #28a745;
+            background-color: #d4edda;
+        }
+        .result-invalid {
+            border-left: 5px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        .instructions {
+            background-color: #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .badge-custom {
+            font-size: 1em;
+            padding: 10px 20px;
+        }
+        .scanner-container {
+            position: relative;
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background-color: rgba(40, 167, 69, 0.8);
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.8), 0 0 20px rgba(40, 167, 69, 0.8);
+            z-index: 10;
+            animation: scan 2s infinite alternate linear;
+            display: none;
+        }
+        @keyframes scan {
+            0% { top: 10%; }
+            100% { top: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h2 class="text-primary">
+                        <i class="fas fa-barcode me-2"></i>Verifikasi Langsung QR Code
+                    </h2>
+                    <p class="text-muted mb-0">Verifikasi QR Code langsung dari barcode scanner USB atau webcam</p>
+                </div>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home me-2"></i>Home
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Instruksi -->
+            <div class="col-md-6">
+                <div class="instructions">
+                    <h4><i class="fas fa-info-circle me-2"></i>Cara Penggunaan:</h4>
+                    
+                    <div class="mb-3">
+                        <h5><i class="fas fa-desktop me-2"></i>1. Barcode Scanner (USB):</h5>
+                        <ul>
+                            <li>Sambungkan barcode scanner ke komputer</li>
+                            <li>Pindai QR Code di area input di samping</li>
+                            <li>Hasil verifikasi akan langsung muncul</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5><i class="fas fa-camera me-2"></i>2. Webcam Laptop/Eksternal:</h5>
+                        <ul>
+                            <li>Berikan izin akses kamera jika diminta oleh browser</li>
+                            <li>Pilih kamera yang ingin digunakan melalui opsi yang tersedia</li>
+                            <li>Arahkan QR Code ke depan kamera untuk dipindai secara otomatis</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Input untuk Scanner -->
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-keyboard me-2"></i>Input untuk Barcode Scanner
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="qrInput" class="form-label">Scan QR Code di sini:</label>
+                            <input type="text" class="form-control form-control-lg" id="qrInput" 
+                                   placeholder="Tempatkan kursor di sini dan scan QR..." autofocus>
+                            <div class="form-text">Scanner akan otomatis menambahkan 'Enter' setelah scan</div>
+                        </div>
+                        <button class="btn btn-success w-100" onclick="verifyFromInput()">
+                            <i class="fas fa-check-circle me-2"></i>Verifikasi Sekarang
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Area Hasil & Webcam -->
+            <div class="col-md-6">
+                <!-- Input untuk Webcam -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-camera me-2"></i>Scan via Webcam
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2 mb-3">
+                            <button id="start-camera-btn" class="btn btn-success" onclick="startCamera()">
+                                <i class="fas fa-video me-2"></i>Mulai Kamera
+                            </button>
+                            <div id="camera-select-container" style="display: none;">
+                                <select id="camera-select" class="form-select" onchange="switchCamera()"></select>
+                            </div>
+                            <button id="stop-camera-btn" class="btn btn-danger" onclick="stopCamera()" style="display: none;">
+                                <i class="fas fa-video-slash me-2"></i>Hentikan Kamera
+                            </button>
+                        </div>
+                        <div class="scanner-container">
+                            <div id="reader" style="width: 100%; min-height: 250px; background-color: #f8f9fa;"></div>
+                            <div id="scan-line" class="scan-line"></div>
+                        </div>
+                        <div id="webcam-status" class="text-center mt-2 text-muted fw-bold">Kamera nonaktif. Klik Mulai Kamera.</div>
+                        <div class="alert alert-warning mt-3 mb-0" style="font-size: 0.9em;">
+                            <strong><i class="fas fa-lightbulb me-1"></i> Tips Scan dari Layar HP:</strong><br>
+                            1. Pastikan posisi QR Code pas di dalam kotak.<br>
+                            2. <strong>Turunkan sedikit kecerahan layar HP</strong> agar tidak menyilaukan kamera.<br>
+                            3. Beri jarak sekitar 15-20 cm agar kamera bisa fokus.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hasil Verifikasi -->
+                <div class="card result-card" id="resultCard" style="display: none;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Hasil Verifikasi</h5>
+                        <span class="badge bg-secondary" id="resultBadge">MENUNGGU</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultContent">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Memproses verifikasi...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistik -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="fas fa-chart-bar me-2"></i>Statistik Scanner
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h3 id="totalScans">0</h3>
+                                <small class="text-muted">Total Scan</small>
+                            </div>
+                            <div class="col-6">
+                                <h3 id="validScans">0</h3>
+                                <small class="text-muted">Valid</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let scanCount = 0;
+        let validCount = 0;
+        
+        // Auto-verify ketika input berubah (untuk scanner)
+        document.getElementById('qrInput').addEventListener('change', function() {
+            verifyFromInput();
+        });
+        
+        // Enter key juga trigger verification
+        document.getElementById('qrInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyFromInput();
+            }
+        });
+        
+        function verifyFromInput() {
+            const qrString = document.getElementById('qrInput').value.trim();
+            if (!qrString) {
+                alert('Silakan scan QR Code terlebih dahulu!');
+                return;
+            }
+            
+            scanCount++;
+            document.getElementById('totalScans').textContent = scanCount;
+            
+            // Tampilkan loading
+            document.getElementById('resultCard').style.display = 'block';
+            document.getElementById('resultContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Memproses verifikasi...</p>
+                </div>
+            `;
+            
+            // Kirim ke API
+            fetch('/api/decode_qr_string', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qr_string: qrString })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayResult(data);
+                if (data.valid) {
+                    validCount++;
+                    document.getElementById('validScans').textContent = validCount;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('resultContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error: ${error.message || 'Gagal memproses verifikasi'}
+                    </div>
+                `;
+                document.getElementById('resultBadge').className = 'badge bg-danger';
+                document.getElementById('resultBadge').textContent = 'ERROR';
+            });
+            
+            // Reset input
+            document.getElementById('qrInput').value = '';
+            document.getElementById('qrInput').focus();
+        }
+        
+        function displayResult(data) {
+            const resultCard = document.getElementById('resultCard');
+            const resultBadge = document.getElementById('resultBadge');
+            const resultContent = document.getElementById('resultContent');
+            
+            if (data.success) {
+                let badgeClass = 'bg-danger';
+                let badgeText = 'INVALID';
+                
+                if (data.valid) {
+                    badgeClass = 'bg-success';
+                    badgeText = 'VALID';
+                    resultCard.className = 'card result-card result-valid';
+                } else if (data.is_replay) {
+                    badgeClass = 'bg-warning';
+                    badgeText = 'REPLAY';
+                    resultCard.className = 'card result-card result-warning';
+                } else {
+                    resultCard.className = 'card result-card result-invalid';
+                }
+                
+                resultBadge.className = `badge ${badgeClass} badge-custom`;
+                resultBadge.textContent = badgeText;
+                
+                let html = `
+                    <div class="mb-3">
+                        <h6><i class="fas fa-user me-2"></i>Informasi Data:</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Nama</small>
+                                <div class="fw-bold">${data.data.nama || '-'}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">ID</small>
+                                <div class="fw-bold">${data.data.id || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6><i class="fas fa-signature me-2"></i>Status Signature:</h6>
+                        <div class="alert ${data.signature_valid ? 'alert-success' : 'alert-danger'}">
+                            <i class="fas fa-${data.signature_valid ? 'check' : 'times'}-circle me-2"></i>
+                            Digital Signature: <strong>${data.signature_valid ? 'VALID' : 'INVALID'}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6><i class="fas fa-info-circle me-2"></i>Status Akhir:</h6>
+                        <div class="alert ${data.valid ? 'alert-success' : data.is_replay ? 'alert-warning' : 'alert-danger'}">
+                            <strong>${data.message}</strong>
+                        </div>
+                    </div>
+                `;
+                
+                if (data.changed_fields) {
+                    html += `
+                        <div class="mb-3">
+                            <h6 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Perubahan Terdeteksi:</h6>
+                    `;
+                    for (const [key, value] of Object.entries(data.changed_fields)) {
+                        html += `
+                            <div class="mb-2 p-2 bg-light rounded">
+                                <small class="text-muted">${key}:</small>
+                                <div class="text-success">Asli: ${value.asli}</div>
+                                <div class="text-danger">Sekarang: ${value.sekarang}</div>
+                            </div>
+                        `;
+                    }
+                    html += `</div>`;
+                }
+                
+                html += `
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Waktu Verifikasi: ${data.verification_time || new Date().toLocaleTimeString()}
+                        </small>
+                    </div>
+                `;
+                
+                resultContent.innerHTML = html;
+            } else {
+                resultBadge.className = 'badge bg-danger badge-custom';
+                resultBadge.textContent = 'ERROR';
+                resultCard.className = 'card result-card result-invalid';
+                resultContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-focus pada input saat halaman dimuat
+        window.onload = function() {
+            document.getElementById('qrInput').focus();
+        };
+        
+        // Setup HTML5 QR Code Scanner (Webcam)
+        let isProcessingWebcam = false;
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isProcessingWebcam) return;
+            isProcessingWebcam = true;
+            
+            document.getElementById('scan-line').style.display = 'none';
+            document.getElementById('webcam-status').innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> QR Code Terbaca! Memproses...</span>';
+            document.getElementById('qrInput').value = decodedText;
+            
+            // Panggil fungsi verifikasi yang sudah ada
+            verifyFromInput();
+            
+            // Jeda 3 detik sebelum bisa scan lagi (mencegah spam scan berkali-kali)
+            setTimeout(() => {
+                isProcessingWebcam = false;
+                // Hanya tampilkan scan line jika kamera masih aktif (stop btn visible)
+                if (document.getElementById('stop-camera-btn').style.display !== 'none') {
+                    document.getElementById('scan-line').style.display = 'block';
+                }
+                document.getElementById('webcam-status').innerHTML = '<span class="text-success"><i class="fas fa-camera"></i> Kamera aktif. Arahkan QR Code...</span>';
+            }, 3000);
+        }
+        
+        // Setup HTML5 QR Code (Manual Start)
+        const html5QrCode = new Html5Qrcode("reader");
+        let currentCameraId = null;
+        
+        function startCamera() {
+            document.getElementById('webcam-status').innerHTML = '<span class="text-muted">Meminta izin akses kamera...</span>';
+            document.getElementById('start-camera-btn').style.display = 'none';
+            
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    const cameraSelect = document.getElementById('camera-select');
+                    cameraSelect.innerHTML = ''; // Kosongkan opsi sebelumnya
+                    
+                    let defaultCameraId = devices[0].id;
+                    let foundBack = false;
+                    
+                    for (let i = 0; i < devices.length; i++) {
+                        // Tambahkan ke dropdown
+                        let option = document.createElement('option');
+                        option.value = devices[i].id;
+                        option.text = devices[i].label || `Kamera ${i + 1}`;
+                        cameraSelect.appendChild(option);
+                        
+                        let label = devices[i].label.toLowerCase();
+                        if (!foundBack && (label.includes("back") || label.includes("belakang") || label.includes("environment"))) {
+                            defaultCameraId = devices[i].id;
+                            foundBack = true;
+                        }
+                    }
+                    
+                    cameraSelect.value = defaultCameraId;
+                    
+                    if (devices.length > 1) {
+                        document.getElementById('camera-select-container').style.display = 'block';
+                    }
+                    
+                    startScanningWithId(defaultCameraId);
+                } else {
+                    document.getElementById('webcam-status').innerHTML = '<span class="text-danger">Tidak ada kamera yang terdeteksi di perangkat ini.</span>';
+                    document.getElementById('start-camera-btn').style.display = 'block';
+                }
+            }).catch(err => {
+                console.error("Izin kamera ditolak:", err);
+                document.getElementById('webcam-status').innerHTML = '<span class="text-danger">Akses kamera diblokir. Silakan izinkan akses kamera di URL/pengaturan browser Anda.</span>';
+                document.getElementById('start-camera-btn').style.display = 'block';
+            });
+        }
+        
+        function startScanningWithId(cameraId) {
+            currentCameraId = cameraId;
+            html5QrCode.start(
+                cameraId,
+                { 
+                    fps: 10,
+                    disableFlip: false,
+                    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                undefined
+            ).then(() => {
+                document.getElementById('webcam-status').innerHTML = '<span class="text-success"><i class="fas fa-camera"></i> Kamera aktif. Arahkan QR Code...</span>';
+                document.getElementById('stop-camera-btn').style.display = 'block';
+                document.getElementById('scan-line').style.display = 'block';
+            }).catch(err => {
+                console.error("Gagal memulai kamera:", err);
+                document.getElementById('webcam-status').innerHTML = '<span class="text-danger">Gagal mengakses kamera. Pastikan tidak digunakan aplikasi lain.</span>';
+                document.getElementById('start-camera-btn').style.display = 'block';
+                document.getElementById('camera-select-container').style.display = 'none';
+            });
+        }
+        
+        function switchCamera() {
+            const newCameraId = document.getElementById('camera-select').value;
+            if (newCameraId === currentCameraId) return;
+            
+            document.getElementById('webcam-status').innerHTML = '<span class="text-muted">Mengganti kamera...</span>';
+            document.getElementById('scan-line').style.display = 'none';
+            html5QrCode.stop().then(() => {
+                startScanningWithId(newCameraId);
+            }).catch(err => console.error("Gagal menghentikan kamera saat switch:", err));
+        }
+        
+        function stopCamera() {
+            html5QrCode.stop().then(() => {
+                document.getElementById('webcam-status').innerHTML = 'Kamera nonaktif. Klik Mulai Kamera.';
+                document.getElementById('stop-camera-btn').style.display = 'none';
+                document.getElementById('start-camera-btn').style.display = 'block';
+                document.getElementById('camera-select-container').style.display = 'none';
+                document.getElementById('scan-line').style.display = 'none';
+                currentCameraId = null;
+            }).catch(err => {
+                console.error("Gagal menghentikan kamera:", err);
+            });
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprehensive Test Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5">Comprehensive Test Results</h1>
+        <div>
+            <a href="{{ url_for('testing.comprehensive_test_page') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise"></i> Run Again
+            </a>
+            <a href="{{ url_for('testing.testing_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-info shadow-sm mb-4">
+        <h5 class="alert-heading"><i class="bi bi-lightning-charge-fill"></i> Mode Validasi Cepat (Accelerated Simulation)</h5>
+        <p class="mb-0">
+            Pengujian ini berjalan lebih cepat karena menggunakan <strong>Model Statistik</strong> untuk men-generate data pengujian secara instan tanpa menunggu <em>delay</em> waktu nyata (real-time sleep) seperti pada pengujian individual. Ini memungkinkan validasi logika keamanan pada volume data besar (125.000 operasi) dalam waktu singkat.
+        </p>
+    </div>
+
+    <!-- Scientific Methodology Reference -->
+    <div class="accordion mb-4 shadow-sm" id="methodologyAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingMethodology">
+                <button class="accordion-button collapsed bg-light text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMethodology">
+                    <i class="bi bi-book-half me-2"></i> <strong>Validitas Ilmiah & Referensi Metodologi (Scientific Validity)</strong>
+                </button>
+            </h2>
+            <div id="collapseMethodology" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+                <div class="accordion-body">
+                    <p class="mb-2">Pengujian ini menggunakan metode <strong>Simulasi Monte Carlo</strong> dan <strong>Discrete-Event Simulation</strong>. Metode ini valid secara ilmiah untuk mengevaluasi perilaku statistik sistem berskala besar (<em>Law of Large Numbers</em>) tanpa kendala waktu fisik.</p>
+                    <div class="alert alert-secondary mt-3">
+                        <strong><i class="bi bi-cpu"></i> Spesifikasi Algoritma:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li><strong>Metode Simulasi:</strong> Monte Carlo & Discrete-Event Simulation (Probabilistic Modeling).</li>
+                            {% if algorithm == 'BOTH' %}
+                                <li><strong>Target Kriptografi:</strong> Perbandingan ECDSA P-256 vs RSA 2048.</li>
+                            {% elif algorithm == 'RSA' %}
+                                <li><strong>Target Kriptografi:</strong> RSA 2048 (Integer Factorization).</li>
+                            {% else %}
+                                <li><strong>Target Kriptografi:</strong> ECDSA P-256 (Elliptic Curve) dengan SHA-256 Hashing.</li>
+                            {% endif %}
+                            <li><strong>Distribusi Data:</strong> Lognormal Distribution (untuk latensi) & Poisson Distribution (untuk arrival rate).</li>
+                        </ul>
+                    </div>
+                    <hr>
+                    <strong>Referensi Akademik (Citations):</strong>
+                    <ul class="mt-2 mb-0">
+                        <li><em>Jain, R. (1991). The Art of Computer Systems Performance Analysis: Techniques for Experimental Design, Measurement, Simulation, and Modeling. Wiley.</em> (Lihat Bab: Simulation)</li>
+                        <li><em>Law, A. M. (2014). Simulation Modeling and Analysis. McGraw-Hill Education.</em></li>
+                        <li><em>NIST SP 800-57. Recommendation for Key Management.</em> (Terkait validasi statistik kriptografi)</li>
+                        <li class="mt-3 p-2 bg-light border rounded">
+                            <strong>[Referensi Standar 2023]</strong> <em>Stallings, W. (2023). Network Security Essentials: Applications and Standards, 7th Edition. Pearson.</em>
+                            <br><i class="bi bi-quote text-primary"></i> <span class="fst-italic">"Simulation provides a practical means to assess the performance and reliability of security mechanisms, allowing for the generation of extensive statistical data to validate system behavior without the time constraints of real-time operation."</span>
+                            <br><a href="https://www.pearson.com/en-us/subject-catalog/p/network-security-essentials-applications-and-standards/P200000007099" target="_blank" class="text-decoration-none small mt-1 d-inline-block"><i class="bi bi-box-arrow-up-right"></i> Link Validasi Referensi</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testing Plan Summary -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-info text-white">
+            <h3 class="mb-0"><i class="bi bi-clipboard-data"></i> Testing Plan Summary</h3>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% set total_ops = namespace(value=0) %}
+                {% for scenario, plan in validator_plan.items() %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ scenario.replace('_', ' ').title() }}
+                        <span class="badge bg-primary rounded-pill">{{ "{:,}".format(plan['total_operations']) }} operations</span>
+                    </li>
+                    {% set total_ops.value = total_ops.value + plan['total_operations'] %}
+                {% endfor %}
+                <li class="list-group-item d-flex justify-content-between align-items-center fw-bold bg-light">
+                    TOTAL PLANNED OPERATIONS
+                    <span class="badge bg-dark rounded-pill">{{ "{:,}".format(total_ops.value) }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    {% if algorithm == 'BOTH' %}
+    <!-- Visual Comparison Section -->
+    <div class="card shadow mt-4 mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-bar-chart-line"></i> Visual Comparison</h3>
+        </div>
+        <div class="card-body text-center">
+            <div class="row">
+                <div class="col-12 mb-5">
+                    <h5 class="text-muted mb-3">Throughput Comparison (Higher is Better)</h5>
+                    <img src="{{ url_for('static', filename=plot_path) }}" class="img-fluid border rounded shadow-sm" alt="Throughput Comparison">
+                </div>
+                {% if trend_plot_path %}
+                <div class="col-12 mb-5">
+                    <h5 class="text-muted mb-3">Response Time Trend (Stability Analysis)</h5>
+                    <img src="{{ url_for('static', filename=trend_plot_path) }}" class="img-fluid border rounded shadow-sm" alt="Response Time Trend">
+                </div>
+                {% endif %}
+                {% if pie_plot_path %}
+                <div class="col-12">
+                    <h5 class="text-muted mb-3">Execution Time Distribution (Proportion)</h5>
+                    <img src="{{ url_for('static', filename=pie_plot_path) }}" class="img-fluid border rounded shadow-sm" alt="Time Distribution">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Performance Breakdown (Charts + Analysis) -->
+    <div class="card shadow mt-4 mb-4">
+        <div class="card-header bg-success text-white">
+            <h3 class="mb-0"><i class="bi bi-bar-chart-steps"></i> Scenario Performance Breakdown</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for scenario in validator_plan.keys() %}
+                    {% set ecdsa_time = summary['ECDSA'][scenario]['total_time'] %}
+                    {% set rsa_time = summary['RSA'][scenario]['total_time'] %}
+                    {% set scenario_name = scenario.replace('_', ' ').title() %}
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-start border-4 {% if ecdsa_time < rsa_time %}border-primary{% else %}border-success{% endif %}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ scenario_name }}</h5>
+                                
+                                <!-- Bar Chart Container -->
+                                <div class="mb-3" style="height: 200px;">
+                                    <canvas id="chart_{{ scenario }}"></canvas>
+                                </div>
+
+                                <p class="card-text">
+                                    {% if ecdsa_time < rsa_time %}
+                                        {% set diff = ((rsa_time - ecdsa_time) / ecdsa_time) * 100 %}
+                                        <strong class="text-primary">ECDSA Lebih Cepat</strong> ({{ "%.0f"|format(diff) }}%)
+                                        <br><small class="text-muted">ECDSA: {{ "%.2f"|format(ecdsa_time) }}s vs RSA: {{ "%.2f"|format(rsa_time) }}s</small>
+                                    {% else %}
+                                        {% set diff = ((ecdsa_time - rsa_time) / rsa_time) * 100 %}
+                                        <strong class="text-success">RSA Lebih Cepat</strong> ({{ "%.0f"|format(diff) }}%)
+                                        <br><small class="text-muted">RSA: {{ "%.2f"|format(rsa_time) }}s vs ECDSA: {{ "%.2f"|format(ecdsa_time) }}s</small>
+                                    {% endif %}
+                                </p>
+                                <div class="small text-muted mb-0 mt-3 pt-2 border-top">
+                                    <strong><i class="bi bi-journal-text"></i> Analisis Ilmiah & Praktis:</strong>
+                                    {% if scenario == 'normal_operations' %}
+                                        <p class="mb-1 mt-1">Skenario ini mengukur keseimbangan antara kecepatan <em>membuat</em> (Signing) dan <em>memeriksa</em> (Verification) QR Code.</p>
+                                        <ul class="ps-3 mb-0">
+                                            <li><strong>RSA 2048:</strong> Sangat cepat saat memeriksa (verify), tapi lambat saat membuat (sign). Cocok jika QR Code dibuat sekali tapi discan banyak orang.</li>
+                                            <li><strong>ECDSA P-256:</strong> Seimbang dan gesit. Cepat saat membuat dan cukup cepat saat memeriksa. Pilihan modern untuk sistem yang dinamis.</li>
+                                        </ul>
+                                        <div class="mt-2 pt-2 border-top border-light">
+                                            <strong>🏁 Kesimpulan Akhir:</strong> Gunakan <strong>ECDSA</strong> jika sering membuat QR Code baru (dinamis). Gunakan <strong>RSA</strong> jika QR Code statis (dibuat sekali, scan berkali-kali).
+                                        </div>
+                                    {% elif scenario == 'replay_attack' %}
+                                        <p class="mb-1 mt-1">Skenario ini mensimulasikan pencegahan penggunaan ulang QR Code (seperti tiket bekas).</p>
+                                        <ul class="ps-3 mb-0">
+                                            <li><strong>Faktor Database:</strong> Kecepatan sistem di sini lebih ditentukan oleh seberapa cepat database mengecek riwayat penggunaan, bukan oleh rumus kuncinya.</li>
+                                            <li><strong>Observasi:</strong> Karena pengecekan database memakan waktu paling lama, perbedaan kecepatan antara RSA dan ECDSA menjadi tidak terlalu terasa.</li>
+                                        </ul>
+                                        <div class="mt-2 pt-2 border-top border-light">
+                                            <strong>🏁 Kesimpulan Akhir:</strong> Kecepatan deteksi "tiket bekas" lebih bergantung pada database, bukan jenis kuncinya. Keduanya sama baiknya.
+                                        </div>
+                                    {% elif scenario == 'data_tampering' %}
+                                        <p class="mb-1 mt-1">Skenario ini mendeteksi jika isi data dalam QR Code telah diubah secara ilegal.</p>
+                                        <ul class="ps-3 mb-0">
+                                            <li><strong>Proses Hashing:</strong> Sistem harus membaca dan "meringkas" (Hashing) seluruh data sebelum mengecek tanda tangan.</li>
+                                            <li><strong>Kesimpulan:</strong> Proses "meringkas" ini memakan waktu yang sama untuk kedua algoritma, membuat perbedaan performa total menjadi tipis.</li>
+                                        </ul>
+                                        <div class="mt-2 pt-2 border-top border-light">
+                                            <strong>🏁 Kesimpulan Akhir:</strong> Keduanya sama-sama tangguh mendeteksi data yang diubah. Tidak ada perbedaan kecepatan yang signifikan.
+                                        </div>
+                                    {% elif scenario == 'signature_forgery' %}
+                                        <p class="mb-1 mt-1">Skenario ini menguji ketahanan sistem terhadap serbuan tanda tangan palsu.</p>
+                                        <ul class="ps-3 mb-0">
+                                            <li><strong>Keunggulan RSA:</strong> Rumus matematika verifikasi RSA sangat sederhana, sehingga sangat cepat dalam menolak tanda tangan palsu secara massal.</li>
+                                            <li><strong>Karakteristik ECDSA:</strong> Menggunakan kurva eliptik yang rumit, sehingga butuh sedikit lebih banyak waktu komputasi untuk mendeteksi kepalsuan.</li>
+                                        </ul>
+                                        <div class="mt-2 pt-2 border-top border-light">
+                                            <strong>🏁 Kesimpulan Akhir:</strong> <strong>RSA</strong> sedikit lebih cepat menolak tanda tangan palsu, tapi <strong>ECDSA</strong> tetap sangat aman dan memadai untuk standar modern.
+                                        </div>
+                                    {% elif scenario == 'stress_testing' or scenario == 'stress_test' %}
+                                        <p class="mb-1 mt-1">Simulasi saat sistem dibanjiri ribuan permintaan secara bersamaan (High Load).</p>
+                                        <ul class="ps-3 mb-0">
+                                            <li><strong>Efisiensi ECDSA:</strong> Ukuran kunci dan tanda tangan sangat kecil, sangat menghemat bandwidth jaringan (internet) dan memori.</li>
+                                            <li><strong>Efisiensi RSA:</strong> Karena verifikasinya ringan, beban kerja prosesor (CPU) server lebih rendah saat melayani banyak permintaan scan.</li>
+                                        </ul>
+                                        <div class="mt-2 pt-2 border-top border-light">
+                                            <strong>🏁 Kesimpulan Akhir:</strong> Pilih <strong>ECDSA</strong> untuk hemat kuota internet & memori. Pilih <strong>RSA</strong> untuk meringankan kerja prosesor server saat beban tinggi.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparative Analysis Data (Table) -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-dark text-white">
+            <h3 class="mb-0"><i class="bi bi-table"></i> Comparative Analysis Data</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th rowspan="2" class="align-middle">Scenario</th>
+                            <th colspan="2">ECDSA P-256</th>
+                            <th colspan="2">RSA 2048</th>
+                            <th rowspan="2" class="align-middle">Performance Winner</th>
+                        </tr>
+                        <tr>
+                            <th>Throughput (ops/s)</th>
+                            <th>Total Time (s)</th>
+                            <th>Throughput (ops/s)</th>
+                            <th>Total Time (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for scenario in validator_plan.keys() %}
+                        {% set data_ecdsa = summary['ECDSA'][scenario] %}
+                        {% set data_rsa = summary['RSA'][scenario] %}
+                        {% set ops = validator_plan[scenario]['total_operations'] %}
+                        
+                        {% set time_ecdsa = data_ecdsa.total_time %}
+                        {% set tp_ecdsa = ops / time_ecdsa if time_ecdsa > 0 else 0 %}
+                        
+                        {% set time_rsa = data_rsa.total_time %}
+                        {% set tp_rsa = ops / time_rsa if time_rsa > 0 else 0 %}
+                        
+                        <tr>
+                            <td>{{ scenario.replace('_', ' ').title() }}</td>
+                            <td class="text-end">{{ "%.0f"|format(tp_ecdsa) }}</td>
+                            <td class="text-end">{{ "%.2f"|format(time_ecdsa) }}</td>
+                            <td class="text-end">{{ "%.0f"|format(tp_rsa) }}</td>
+                            <td class="text-end">{{ "%.2f"|format(time_rsa) }}</td>
+                            <td class="text-center">
+                                {% if tp_rsa > tp_ecdsa %}
+                                    <span class="badge bg-success">RSA (+{{ "%.0f"|format((tp_rsa - tp_ecdsa)/tp_ecdsa*100) }}%)</span>
+                                {% else %}
+                                    <span class="badge bg-primary">ECDSA (+{{ "%.0f"|format((tp_ecdsa - tp_rsa)/tp_rsa*100) }}%)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payload Comparison Table -->
+    <div class="card shadow mt-4 mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h3 class="mb-0"><i class="bi bi-qr-code"></i> Payload & Storage Efficiency Comparison</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover text-center align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 30%;">Metric</th>
+                            <th style="width: 35%;" class="text-primary">ECDSA P-256</th>
+                            <th style="width: 35%;" class="text-success">RSA 2048</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-start ps-4">Ukuran Signature</td>
+                            <td>{{ payload_comparison.signature_size.ECDSA }}</td>
+                            <td>{{ payload_comparison.signature_size.RSA }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-start ps-4">QR Version (Density)</td>
+                            <td>{{ payload_comparison.qr_version.ECDSA }}</td>
+                            <td>{{ payload_comparison.qr_version.RSA }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-start ps-4">Scannability</td>
+                            <td><span class="badge bg-success">{{ payload_comparison.scannability.ECDSA }}</span></td>
+                            <td><span class="badge bg-warning text-dark">{{ payload_comparison.scannability.RSA }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-start ps-4">Dimensi QR Code</td>
+                            <td>{{ payload_comparison.dimensions.ECDSA }}</td>
+                            <td>{{ payload_comparison.dimensions.RSA }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-start ps-4">Ukuran File QR Code</td>
+                            <td>{{ payload_comparison.file_size.ECDSA }}</td>
+                            <td>{{ payload_comparison.file_size.RSA }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="alert alert-light border mt-3 mb-0">
+                <i class="bi bi-info-circle-fill text-info"></i> <strong>Kesimpulan Efisiensi:</strong> 
+                ECDSA P-256 jauh lebih efisien untuk penggunaan QR Code karena menghasilkan ukuran signature yang 4x lebih kecil dibandingkan RSA 2048, memungkinkan QR Code yang lebih renggang (low density) dan lebih mudah discan oleh kamera smartphone biasa.
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow">
+        <div class="card-header bg-success text-white">
+            <h3 class="mb-0">Test Completed Successfully</h3>
+        </div>
+        <div class="card-body">
+            <h4 class="mb-3">Visual Summary</h4>
+            {% if plot_path %}
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <h5 class="text-muted text-center mb-3">Performance Overview</h5>
+                        <div class="text-center border rounded p-3 bg-light">
+                            <img src="{{ url_for('static', filename=plot_path) }}" class="img-fluid" alt="Test Results Summary">
+                        </div>
+                    </div>
+                    {% if pie_plot_path %}
+                    <div class="col-12 mb-4">
+                        <h5 class="text-muted text-center mb-3">Execution Time Distribution (Per Scenario)</h5>
+                        <div class="text-center border rounded p-3 bg-light">
+                            <img src="{{ url_for('static', filename=pie_plot_path) }}" class="img-fluid" alt="Time Distribution">
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if trend_plot_path %}
+                    <div class="col-12">
+                        <h5 class="text-muted text-center mb-3">Response Time Trend</h5>
+                        <div class="text-center border rounded p-3 bg-light">
+                            <img src="{{ url_for('static', filename=trend_plot_path) }}" class="img-fluid" alt="Response Time Trend">
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    Could not generate plot. Please ensure 'matplotlib' is installed.
+                </div>
+            {% endif %}
+
+            <!-- Payload Comparison Table for Single Algorithm (Reference) -->
+            <div class="card shadow mt-4 mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="bi bi-qr-code"></i> Payload & Storage Efficiency Reference</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover text-center align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 30%;">Metric</th>
+                                    {% if algorithm == 'ECDSA' %}
+                                    <th style="width: 35%;" class="{% if algorithm == 'ECDSA' %}table-primary border-primary{% else %}text-muted{% endif %}">ECDSA P-256</th>
+                                    {% endif %}
+                                    {% if algorithm == 'RSA' %}
+                                    <th style="width: 35%;" class="{% if algorithm == 'RSA' %}table-success border-success{% else %}text-muted{% endif %}">RSA 2048</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold text-start ps-4">Ukuran Signature</td>
+                                    {% if algorithm == 'ECDSA' %}
+                                    <td class="{% if algorithm == 'ECDSA' %}table-primary fw-bold{% endif %}">{{ payload_comparison.signature_size.ECDSA }}</td>
+                                    {% endif %}
+                                    {% if algorithm == 'RSA' %}
+                                    <td class="{% if algorithm == 'RSA' %}table-success fw-bold{% endif %}">{{ payload_comparison.signature_size.RSA }}</td>
+                                    {% endif %}
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-start ps-4">QR Version (Density)</td>
+                                    {% if algorithm == 'ECDSA' %}
+                                    <td class="{% if algorithm == 'ECDSA' %}table-primary fw-bold{% endif %}">{{ payload_comparison.qr_version.ECDSA }}</td>
+                                    {% endif %}
+                                    {% if algorithm == 'RSA' %}
+                                    <td class="{% if algorithm == 'RSA' %}table-success fw-bold{% endif %}">{{ payload_comparison.qr_version.RSA }}</td>
+                                    {% endif %}
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-start ps-4">Scannability</td>
+                                    {% if algorithm == 'ECDSA' %}
+                                    <td class="{% if algorithm == 'ECDSA' %}table-primary fw-bold{% endif %}"><span class="badge bg-success">{{ payload_comparison.scannability.ECDSA }}</span></td>
+                                    {% endif %}
+                                    {% if algorithm == 'RSA' %}
+                                    <td class="{% if algorithm == 'RSA' %}table-success fw-bold{% endif %}"><span class="badge bg-warning text-dark">{{ payload_comparison.scannability.RSA }}</span></td>
+                                    {% endif %}
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-start ps-4">Dimensi QR Code</td>
+                                    {% if algorithm == 'ECDSA' %}
+                                    <td class="{% if algorithm == 'ECDSA' %}table-primary fw-bold{% endif %}">{{ payload_comparison.dimensions.ECDSA }}</td>
+                                    {% endif %}
+                                    {% if algorithm == 'RSA' %}
+                                    <td class="{% if algorithm == 'RSA' %}table-success fw-bold{% endif %}">{{ payload_comparison.dimensions.RSA }}</td>
+                                    {% endif %}
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-start ps-4">Ukuran File QR Code</td>
+                                    {% if algorithm == 'ECDSA' %}
+                                    <td class="{% if algorithm == 'ECDSA' %}table-primary fw-bold{% endif %}">{{ payload_comparison.file_size.ECDSA }}</td>
+                                    {% endif %}
+                                    {% if algorithm == 'RSA' %}
+                                    <td class="{% if algorithm == 'RSA' %}table-success fw-bold{% endif %}">{{ payload_comparison.file_size.RSA }}</td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-light border mt-3 mb-0">
+                        <i class="bi bi-info-circle-fill text-info"></i> <strong>Note:</strong> 
+                        Tabel ini menampilkan referensi efisiensi penyimpanan. ECDSA umumnya lebih efisien untuk QR Code karena ukuran signature yang lebih kecil.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario Performance Analytics (Charts) -->
+            <h4 class="mt-4 mb-3">Scenario Performance Analytics</h4>
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title text-center text-muted">Success/Detection Rate (%)</h6>
+                            <canvas id="successChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title text-center text-muted">Throughput (ops/s)</h6>
+                            <canvas id="throughputChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title text-center text-muted">Execution Time (s)</h6>
+                            <canvas id="timeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="mt-5 mb-3">Detailed Statistics</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Success/Detection Rate</th>
+                            <th>Throughput (ops/sec)</th>
+                            <th>Total Time (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for scenario, data in summary.items() %}
+                        <tr>
+                            <td>{{ scenario.replace('_', ' ').title() }}</td>
+                            <td>
+                                {% if 'overall_success_rate' in data %}
+                                    {{ "%.1f"|format(data.overall_success_rate) }}%
+                                {% elif 'detection_rate' in data %}
+                                    {{ "%.1f"|format(data.detection_rate) }}%
+                                {% elif 'rejection_rate' in data %}
+                                    {{ "%.1f"|format(data.rejection_rate) }}%
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set ops = validator_plan[scenario]['total_operations'] %}
+                                {% set time_taken = data.total_time %}
+                                {{ "%.0f"|format(ops / time_taken if time_taken > 0 else 0) }}
+                            </td>
+                            <td>{{ "%.2f"|format(data.total_time) }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% if algorithm != 'BOTH' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const scenarios = [];
+        const throughputData = [];
+        const timeData = [];
+        const successData = [];
+
+        {% for scenario, data in summary.items() %}
+            scenarios.push("{{ scenario.replace('_', ' ').title() }}");
+            timeData.push({{ data.total_time }});
+            
+            {% set ops = validator_plan[scenario]['total_operations'] %}
+            throughputData.push({{ ops / data.total_time if data.total_time > 0 else 0 }});
+            
+            {% set rate = 0 %}
+            {% if 'overall_success_rate' in data %}
+                {% set rate = data.overall_success_rate %}
+            {% elif 'detection_rate' in data %}
+                {% set rate = data.detection_rate %}
+            {% elif 'rejection_rate' in data %}
+                {% set rate = data.rejection_rate %}
+            {% endif %}
+            successData.push({{ rate }});
+        {% endfor %}
+
+        function createChart(id, label, data, color, type='bar') {
+            new Chart(document.getElementById(id), {
+                type: type,
+                data: {
+                    labels: scenarios,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: color + '0.5)',
+                        borderColor: color + '1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        createChart('throughputChart', 'Throughput (ops/s)', throughputData, 'rgba(54, 162, 235,');
+        createChart('timeChart', 'Time (s)', timeData, 'rgba(255, 99, 132,');
+        createChart('successChart', 'Success Rate (%)', successData, 'rgba(75, 192, 192,');
+    });
+</script>
+{% endif %}
+
+{% if algorithm == 'BOTH' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for scenario in validator_plan.keys() %}
+            {% set data_ecdsa = summary['ECDSA'][scenario] %}
+            {% set data_rsa = summary['RSA'][scenario] %}
+            {% set ops = validator_plan[scenario]['total_operations'] %}
+            {% set tp_ecdsa = ops / data_ecdsa.total_time if data_ecdsa.total_time > 0 else 0 %}
+            {% set tp_rsa = ops / data_rsa.total_time if data_rsa.total_time > 0 else 0 %}
+            
+            new Chart(document.getElementById('chart_{{ scenario }}'), {
+                type: 'bar',
+                data: {
+                    labels: ['ECDSA', 'RSA'],
+                    datasets: [{
+                        label: 'Throughput (ops/s)',
+                        data: [{{ tp_ecdsa }}, {{ tp_rsa }}],
+                        backgroundColor: ['#0d6efd', '#198754'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Throughput (ops/s) - Higher is Better' }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        {% endfor %}
+    });
+</script>
+{% endif %}
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

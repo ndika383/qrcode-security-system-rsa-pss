@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="730" viewBox="0 0 1280 730">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="730"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Paket Serah Terima Source Code</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Komponen yang harus diserahkan dari pengembang kepada pemilik sistem</tspan></text>
+<rect x="45" y="190" width="220" height="165" class="soft"/>
+<text x="155.0" y="220" text-anchor="middle" class="label"><tspan x="155.0" dy="0">Source Code</tspan></text>
+<text x="155.0" y="246" text-anchor="middle" class="small"><tspan x="155.0" dy="0">app.py</tspan><tspan x="155.0" dy="18">routes/modules</tspan><tspan x="155.0" dy="18">templates/static</tspan></text>
+<rect x="290" y="190" width="220" height="165" class="orange"/>
+<text x="400.0" y="220" text-anchor="middle" class="label"><tspan x="400.0" dy="0">Konfigurasi</tspan></text>
+<text x="400.0" y="246" text-anchor="middle" class="small"><tspan x="400.0" dy="0">.env.example</tspan><tspan x="400.0" dy="18">nginx</tspan><tspan x="400.0" dy="18">systemd</tspan></text>
+<rect x="535" y="190" width="220" height="165" class="red"/>
+<text x="645.0" y="220" text-anchor="middle" class="label"><tspan x="645.0" dy="0">Kunci &amp; Secret</tspan></text>
+<text x="645.0" y="246" text-anchor="middle" class="small"><tspan x="645.0" dy="0">rsa_key.pem</tspan><tspan x="645.0" dy="18">ecdsa_key.pem</tspan><tspan x="645.0" dy="18">.env produksi</tspan></text>
+<rect x="780" y="190" width="220" height="165" class="green"/>
+<text x="890.0" y="220" text-anchor="middle" class="label"><tspan x="890.0" dy="0">Data &amp; Log</tspan></text>
+<text x="890.0" y="246" text-anchor="middle" class="small"><tspan x="890.0" dy="0">logs</tspan><tspan x="890.0" dy="18">static/data</tspan><tspan x="890.0" dy="18">data/task_*</tspan></text>
+<rect x="1025" y="190" width="220" height="165" class="yellow"/>
+<text x="1135.0" y="220" text-anchor="middle" class="label"><tspan x="1135.0" dy="0">Dokumentasi</tspan></text>
+<text x="1135.0" y="246" text-anchor="middle" class="small"><tspan x="1135.0" dy="0">SDD</tspan><tspan x="1135.0" dy="18">deployment</tspan><tspan x="1135.0" dy="18">manual</tspan></text>
+<rect x="180" y="500" width="920" height="110" class="gray"/>
+<text x="640" y="535" text-anchor="middle" class="label"><tspan x="640" dy="0">Prinsip serah terima</tspan></text>
+<text x="640" y="565" text-anchor="middle" class="small"><tspan x="640" dy="0">Source code diserahkan bersama dependency, konfigurasi contoh, dokumentasi, dan checklist uji.</tspan><tspan x="640" dy="22">Secret produksi dan private key diserahkan melalui kanal aman, bukan ditempel di laporan publik.</tspan></text>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs>
+<style>
+.bg{fill:#f8fafc}.title{font:700 30px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 16px Arial,sans-serif;fill:#475569}
+.box{fill:#fff;stroke:#2563eb;stroke-width:3;rx:14}.soft{fill:#eff6ff;stroke:#1d4ed8;stroke-width:3;rx:14}
+.green{fill:#f0fdf4;stroke:#16a34a;stroke-width:3;rx:14}.orange{fill:#fff7ed;stroke:#ea580c;stroke-width:3;rx:14}
+.pink{fill:#fdf2f8;stroke:#db2777;stroke-width:3;rx:14}.red{fill:#fee2e2;stroke:#dc2626;stroke-width:3;rx:14}
+.yellow{fill:#fef9c3;stroke:#ca8a04;stroke-width:3;rx:14}.gray{fill:#f1f5f9;stroke:#64748b;stroke-width:3;rx:14}
+.phone{fill:#111827;stroke:#020617;stroke-width:3;rx:34}.screen{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:24}
+.label{font:700 16px Arial,sans-serif;fill:#111827}.small{font:400 13px Arial,sans-serif;fill:#374151}.tiny{font:400 11px Arial,sans-serif;fill:#475569}
+.flow{stroke:#334155;stroke-width:2.3;fill:none;marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+.lane{fill:#e0f2fe;stroke:#0284c7;stroke-width:2;rx:18;opacity:.55}.lane2{fill:#ffedd5;stroke:#fb923c;stroke-width:2;rx:18;opacity:.55}
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+</defs>
+<rect class="bg" width="1280" height="720"/>
+<text x="640.0" y="44" text-anchor="middle" class="title"><tspan x="640.0" dy="0">Checklist Serah Terima dan Penerimaan Sistem</tspan></text>
+<text x="640.0" y="72" text-anchor="middle" class="subtitle"><tspan x="640.0" dy="0">Poin pemeriksaan akhir untuk user manual, teknis, deployment, dan source code</tspan></text>
+<rect x="55" y="170" width="220" height="250" class="green"/>
+<text x="165.0" y="200" text-anchor="middle" class="label"><tspan x="165.0" dy="0">Fungsi Utama</tspan></text>
+<text x="165.0" y="226" text-anchor="middle" class="small"><tspan x="165.0" dy="0">generate QR</tspan><tspan x="165.0" dy="18">verify QR</tspan><tspan x="165.0" dy="18">mobile scan</tspan></text>
+<rect x="300" y="170" width="220" height="250" class="green"/>
+<text x="410.0" y="200" text-anchor="middle" class="label"><tspan x="410.0" dy="0">Keamanan</tspan></text>
+<text x="410.0" y="226" text-anchor="middle" class="small"><tspan x="410.0" dy="0">signature</tspan><tspan x="410.0" dy="18">replay</tspan><tspan x="410.0" dy="18">data palsu</tspan></text>
+<rect x="545" y="170" width="220" height="250" class="green"/>
+<text x="655.0" y="200" text-anchor="middle" class="label"><tspan x="655.0" dy="0">Operasi</tspan></text>
+<text x="655.0" y="226" text-anchor="middle" class="small"><tspan x="655.0" dy="0">dashboard</tspan><tspan x="655.0" dy="18">log</tspan><tspan x="655.0" dy="18">export</tspan></text>
+<rect x="790" y="170" width="220" height="250" class="green"/>
+<text x="900.0" y="200" text-anchor="middle" class="label"><tspan x="900.0" dy="0">Deployment</tspan></text>
+<text x="900.0" y="226" text-anchor="middle" class="small"><tspan x="900.0" dy="0">systemd</tspan><tspan x="900.0" dy="18">nginx</tspan><tspan x="900.0" dy="18">ssl</tspan></text>
+<rect x="1035" y="170" width="220" height="250" class="green"/>
+<text x="1145.0" y="200" text-anchor="middle" class="label"><tspan x="1145.0" dy="0">Serah Terima</tspan></text>
+<text x="1145.0" y="226" text-anchor="middle" class="small"><tspan x="1145.0" dy="0">source</tspan><tspan x="1145.0" dy="18">dokumen</tspan><tspan x="1145.0" dy="18">backup</tspan></text>
+<rect x="225" y="540" width="830" height="90" class="yellow"/>
+<text x="640" y="573" text-anchor="middle" class="label"><tspan x="640" dy="0">Kriteria penerimaan</tspan></text>
+<text x="640" y="602" text-anchor="middle" class="small"><tspan x="640" dy="0">Seluruh fungsi kritis diuji, dokumen tersedia, source code bisa dijalankan ulang, dan risiko tersisa dicatat.</tspan></text>
+</svg>
