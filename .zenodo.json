@@ -27,5 +27,6 @@
   ],
   "version": "1.0.0",
   "publication_date": "2026-07-09",
-  "access_right": "open"
+  "access_right": "open",
+  "license": "MIT"
 }

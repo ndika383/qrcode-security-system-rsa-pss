@@ -1,6 +1,7 @@
 # QR Code Security System RSA-PSS
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21271012.svg)](https://doi.org/10.5281/zenodo.21271012)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Sistem ini adalah aplikasi Flask untuk membuat, memindai, dan memverifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA. Aplikasi menyertakan dashboard, log audit, pengujian keamanan, deteksi replay/tampering, dan panduan deployment Ubuntu 24.04.
 
@@ -55,3 +56,7 @@ Metadata sitasi lengkap tersedia di [CITATION.cff](CITATION.cff); konfigurasi ar
 - `deploy/`: contoh konfigurasi Nginx dan systemd.
 - `dokumen/`: dokumentasi teknis dan panduan operasional.
 - `testing/`: data dan ringkasan pengujian keamanan.
+
+## Lisensi
+
+Dirilis di bawah [MIT License](LICENSE). © 2026 Andika Agus Slameto, Yudi Sutanto, Hendra Kurniawan — Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta.

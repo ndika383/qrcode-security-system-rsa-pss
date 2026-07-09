@@ -17,6 +17,7 @@ authors:
     affiliation: "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
     email: "hendrakurniawan@amikom.ac.id"
 version: "1.0.0"
+license: MIT
 doi: "10.5281/zenodo.21271012"
 date-released: "2026-07-09"
 repository-code: "https://github.com/ndika383/qrcode-security-system-rsa-pss"
