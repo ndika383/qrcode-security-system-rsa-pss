@@ -1,5 +1,7 @@
 # QR Code Security System RSA-PSS
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21271012.svg)](https://doi.org/10.5281/zenodo.21271012)
+
 Sistem ini adalah aplikasi Flask untuk membuat, memindai, dan memverifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA. Aplikasi menyertakan dashboard, log audit, pengujian keamanan, deteksi replay/tampering, dan panduan deployment Ubuntu 24.04.
 
 ## Fitur Utama
@@ -33,17 +35,15 @@ Sebelum deploy produksi, ganti minimal:
 - `BASE_URL`
 - private key RSA/ECDSA produksi
 
-## DOI Zenodo
+## Sitasi (DOI Zenodo)
 
-Untuk membuat DOI:
+Perangkat lunak ini diarsipkan di Zenodo dengan DOI: **[10.5281/zenodo.21271012](https://doi.org/10.5281/zenodo.21271012)**
 
-1. Push repository ini ke GitHub sebagai repository publik.
-2. Login ke Zenodo menggunakan GitHub.
-3. Aktifkan repository pada halaman GitHub di Zenodo.
-4. Buat GitHub Release, misalnya tag `v1.0.0`.
-5. Zenodo akan mengarsipkan release tersebut dan membuat DOI.
+Contoh sitasi:
 
-File [.zenodo.json](.zenodo.json) sudah disiapkan sebagai metadata utama Zenodo. File [CITATION.cff](CITATION.cff) tetap disertakan agar GitHub dapat menampilkan saran sitasi pada halaman repository. Periksa kembali nama penulis/organisasi, versi, tanggal rilis, dan lisensi sebelum membuat GitHub Release.
+> Slameto, A. A., Sutanto, Y., & Kurniawan, H. (2026). *QR Code Security System RSA-PSS* (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.21271012
+
+Metadata sitasi lengkap tersedia di [CITATION.cff](CITATION.cff); konfigurasi arsip Zenodo di [.zenodo.json](.zenodo.json).
 
 ## Struktur Penting
 

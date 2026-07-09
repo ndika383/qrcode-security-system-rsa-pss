@@ -17,7 +17,10 @@ authors:
     affiliation: "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
     email: "hendrakurniawan@amikom.ac.id"
 version: "1.0.0"
+doi: "10.5281/zenodo.21271012"
 date-released: "2026-07-09"
+repository-code: "https://github.com/ndika383/qrcode-security-system-rsa-pss"
+url: "https://doi.org/10.5281/zenodo.21271012"
 abstract: "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu."
 keywords:
   - QR Code
