@@ -198,12 +198,20 @@ def benchmark_crypto_operations(num_samples=1000, tier_name='quick_check',
     for algo_name in algorithms:
         results[algo_name] = {'signing': [], 'verification': []}
     
-    # Warmup phase (penting untuk Python JIT)
+    # Warmup phase (penting untuk Python JIT).
+    # Warm-up mengikuti algoritma yang benar-benar dipilih (jangan hardcode ecdsa_p256,
+    # karena user bisa memilih hanya RSA-PSS sehingga kunci 'ecdsa_p256' tidak ada
+    # -> KeyError). Dispatch sign mengikuti main loop: 'pss' -> PSS, selain itu -> DSS.
     print("\nWarming up (100 iterations)...")
     for i in range(100):
         test_data = f"warmup_{i}".encode()
-        hash_obj = algorithms['ecdsa_p256']['hash'].new(test_data)
-        DSS.new(keys['ecdsa_p256'], 'fips-186-3').sign(hash_obj)
+        for algo_name, algo_config in algorithms.items():
+            key = keys[algo_name]
+            hash_obj = algo_config['hash'].new(test_data)
+            if 'pss' in algo_name:
+                pss.new(key, salt_bytes=8).sign(hash_obj)
+            else:
+                DSS.new(key, 'fips-186-3').sign(hash_obj)
     
     # Main benchmark loop
     total_iterations = num_samples * len(algorithms) * 2  # ×2 untuk sign + verify
@@ -586,4 +594,4 @@ python calibrate_performance.py --tier production --output data/my_calibration.j
                 print(f"  Verify: {ci['mean']:.3f}ms (±{ci['relative_error_percent']:.1f}%) "
                       f"[{ci['ci_lower']:.3f} - {ci['ci_upper']:.3f}]")
         
-        print(f"\n✅ Calibration complete! Run with --compare to validate convergence.")
+        print(f"\n✅ Calibration complete! Run with --compare to validate convergence.")

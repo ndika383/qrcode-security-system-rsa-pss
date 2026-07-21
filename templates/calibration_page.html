@@ -617,7 +617,8 @@
                     html += `<td>${opName}</td>`;
                     html += `<td>${opData.mean_ms.toFixed(3)}</td>`;
                     html += `<td>${opData.std_ms.toFixed(3)}</td>`;
-                    html += `<td>[${opData.ci_lower.toFixed(3)}, ${opData.ci_upper.toFixed(3)}]</td>`;
+                    html += `<td>${opData.ci_lower.toFixed(3)}</td>`;
+                    html += `<td>${opData.ci_upper.toFixed(3)}</td>`;
                     html += '</tr>';
                     opIndex++;
                 }

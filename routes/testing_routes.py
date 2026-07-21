@@ -1075,13 +1075,28 @@ def run_calibration():
                         _calibration_state['current_operation'] = operation
                     _calibration_state['message'] = f'Mengkalibrasi {operation.replace("_", " ").title() if operation else "operasi kriptografi"}...'
 
-                # Jalankan benchmark
-                results = benchmark_crypto_operations(
-                    num_samples=SAMPLING_TIERS[tier].num_samples,
-                    tier_name=tier,
-                    algorithms=algorithms,
-                    progress_callback=progress_callback
-                )
+                # Jalankan benchmark.
+                # PENTING: benchmark_crypto_operations() banyak memakai print() ke stdout.
+                # Bila proses dijalankan manual dari terminal yang lalu ditutup, stdout
+                # menunjuk ke pty yang sudah mati sehingga print() melempar
+                # OSError: [Errno 5] Input/output error dan menggagalkan kalibrasi.
+                # Kita alihkan stdout ke buffer agar output progres tidak pernah bisa
+                # merusak kalibrasi, lalu teruskan ke logging.
+                import contextlib
+                import logging as _logging
+                _bench_stdout = io.StringIO()
+                try:
+                    with contextlib.redirect_stdout(_bench_stdout):
+                        results = benchmark_crypto_operations(
+                            num_samples=SAMPLING_TIERS[tier].num_samples,
+                            tier_name=tier,
+                            algorithms=algorithms,
+                            progress_callback=progress_callback
+                        )
+                finally:
+                    _bench_output = _bench_stdout.getvalue()
+                    if _bench_output:
+                        _logging.info("Calibration benchmark output:\n%s", _bench_output)
 
                 # Simpan hasil
                 calibration_path = 'data/calibration/multi_scenario_calibration.json'
