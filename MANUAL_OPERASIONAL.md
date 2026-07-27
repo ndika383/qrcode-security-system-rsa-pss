@@ -154,7 +154,7 @@ Keduanya bukan pembanding langsung.
 | Jaringan | Tidak ada | Ada (koneksi nyata) |
 | Rate limit | Tidak kena | Kena (kecuali beban lokal, lihat bawah) |
 | Artefak | Tidak membuat file | Membuat QR, menulis log generate/verifikasi |
-| Level user wajar | 100 – 1.500 | 10 – 100 (batas keras 500) |
+| Level user wajar | 100 – 1.500 | Bergantung endpoint (lihat 7b) |
 
 ### 7a. Kenapa level user Real HTTP lebih kecil
 Karena dibatasi kapasitas nyata server, bukan sekadar angka di form:
@@ -171,7 +171,40 @@ Karena dibatasi kapasitas nyata server, bukan sekadar angka di form:
 > mengenal task tersebut → progres task/kalibrasi rusak.
 > Untuk menambah kapasitas, naikkan **threads** (`GUNICORN_THREADS`), bukan workers.
 
-### 7b. Aturan penting: Requests per User Level
+### 7b. Kapasitas terukur (hasil pengukuran nyata di server ini)
+
+Angka berikut diukur langsung, bukan perkiraan. **Level user yang wajar sangat
+bergantung pada endpoint yang dipilih.**
+
+**Generate + Verify QR** (berat: RSA-PSS + render QR + tulis file & log):
+
+| Users | Sukses | Avg response | Throughput |
+|---|---|---|---|
+| 5 | 100% | 17,9 s | ~0,28 alur/s |
+| 10 | 100% | 36,5 s | ~0,27 alur/s |
+| 25 | 100% | 77,9 s | ~0,32 alur/s |
+
+Throughput **mendatar di ~0,3 alur/detik** — sistem sudah jenuh sejak 5 user.
+Menambah user **tidak** menambah throughput, hanya melipatgandakan latensi.
+Karena itu level di atas 25 tidak berguna untuk endpoint ini.
+
+**Server Metrics / Dashboard** (ringan: tanpa kriptografi & tanpa tulis file):
+
+| Users | Sukses | Avg response | Throughput |
+|---|---|---|---|
+| 25 | 100% | 82,9 ms | ~302 ops/s |
+| 50 | 100% | 153,1 ms | ~327 ops/s |
+| 100 | 100% | 264,7 ms | ~378 ops/s |
+
+Di sini level 100 user berjalan mulus tanpa satu pun HTTP 429. Jadi bila ingin
+menguji konkurensi tinggi, gunakan endpoint ringan.
+
+> **Timeout wajib besar untuk Generate + Verify.** Pada 25 user satu alur butuh
+> ~78 detik. Dengan timeout kecil (mis. 15 detik) hampir semua request gagal
+> sebagai timeout dan dilaporkan sebagai **status 0** — terlihat seperti
+> "throughput 0 dan HTTP 429 juga 0". Default sekarang: **120 detik**.
+
+### 7c. Aturan penting: Requests per User Level
 Konkurensi nyata per level = **min(concurrent users, operations)**.
 
 Artinya **Requests per User Level harus ≥ level user tertinggi**, kalau tidak
@@ -182,9 +215,9 @@ level tinggi tidak pernah benar-benar tercapai.
 | 100 | 20 | **20** ❌ (level 100 tidak tercapai) |
 | 100 | 200 | **100** ✅ |
 
-Nilai default sekarang: level `10,25,50,100` dengan `200` requests per level.
+Nilai default sekarang: level `5,10,25` dengan `30` requests per level dan timeout `120` detik.
 
-### 7c. Base URL: lokal vs publik
+### 7d. Base URL: lokal vs publik
 
 | Base URL | Efek |
 |---|---|
@@ -196,7 +229,20 @@ sekaligus: ber-`User-Agent: QRRealHTTPStress/1.0` **dan** berasal dari
 `127.0.0.1`. Klien dari luar tidak bisa memalsukannya, karena Nginx selalu
 menimpa `X-Forwarded-For` dengan IP asli pemanggil.
 
-### 7d. Catatan untuk penelitian
+> **Keterbatasan pada Generate + Verify.** URL verifikasi yang ditanam di dalam
+> QR selalu memakai `BASE_URL` dari `.env` (`https://rsa-pss.com/`). Jadi tahap
+> *verify* tetap melewati Nginx/HTTPS publik walaupun Base URL diisi localhost,
+> sehingga tahap itu **tidak** ikut dikecualikan dari rate limit. Hanya tahap
+> *generate* yang memakai jalur lokal.
+
+> **Catatan cookie (penyebab lama status 0).** Cookie sesi ber-flag `Secure`
+> karena `REQUIRE_HTTPS=true`. Karena itu proses login penembak beban sengaja
+> **tidak mengikuti redirect** dan mengambil `Set-Cookie` langsung dari respons
+> login. Bila redirect diikuti pada jalur HTTP lokal, cookie login yang valid
+> tertimpa cookie "belum login" sehingga seluruh request menjadi anonim dan
+> dilaporkan sebagai status 0.
+
+### 7e. Catatan untuk penelitian
 Sajikan kedua mode sebagai pengukuran yang berbeda, bukan perbandingan
 angka langsung:
 

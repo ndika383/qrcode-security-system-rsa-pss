@@ -398,19 +398,20 @@ def test_config(test_type):
             'name': 'Real HTTP Stress Test (Local Server)',
             'description': 'Menembak endpoint aplikasi nyata dari server yang sama melalui HTTP/HTTPS. Default menjalankan workflow Generate + Verify QR: membuat QR RSA-PSS, mengambil URL /v/<token>, lalu memverifikasi QR tersebut.',
             'default_params': {
-                'operations': 200,
-                'concurrent_users': '10,25,50,100',
+                'operations': 30,
+                'concurrent_users': '5,10,25',
                 'target_endpoint': 'generate_verify',
                 'base_url': 'http://127.0.0.1:5000/',
-                'request_timeout_seconds': 15
+                'request_timeout_seconds': 120
             },
             'fields': [
                 {'name': 'operations', 'label': 'Requests per User Level', 'type': 'number',
-                 'min': 1, 'max': 5000, 'default': 200, 'required': True,
+                 'min': 1, 'max': 5000, 'default': 30, 'required': True,
                  'help': 'Jumlah request nyata untuk setiap level. PENTING: konkurensi nyata = min(concurrent users, nilai ini), jadi isi minimal sebesar level user tertinggi (mis. level 100 butuh minimal 200 agar benar-benar 100 request bersamaan).'},
                 {'name': 'concurrent_users', 'label': 'Concurrent Users (comma-separated)',
-                 'type': 'text', 'default': '10,25,50,100', 'required': True,
-                 'placeholder': 'Contoh: 10,25,50,100 (maksimum 500 per level)'},
+                 'type': 'text', 'default': '5,10,25', 'required': True,
+                 'placeholder': 'Contoh: 5,10,25 (maksimum 500 per level)',
+                 'help': 'Hasil ukur di server ini: Generate+Verify jenuh pada ~0,3 alur/detik, sehingga level di atas 25 hanya menambah latensi (25 user = ~78 detik/alur). Endpoint ringan (Server Metrics/Dashboard) terbukti sanggup 25/50/100 user pada ~378 ops/detik.'},
                 {'name': 'target_endpoint', 'label': 'Target Endpoint', 'type': 'select',
                  'options': [
                      {'value': 'generate_verify', 'label': 'Generate + Verify QR (POST /generate_qr + GET /v/<token>)'},
@@ -423,7 +424,8 @@ def test_config(test_type):
                  'default': 'http://127.0.0.1:5000/', 'required': True,
                  'help': 'Default jalur lokal (langsung ke Gunicorn): rate limit dikecualikan untuk beban uji ini sehingga level user tinggi terukur, dan pengguna publik tidak terganggu. Isi domain publik bila ingin menyertakan overhead Nginx/HTTPS \u2014 tetapi rate limit 60/menit akan aktif.'},
                 {'name': 'request_timeout_seconds', 'label': 'Request Timeout (seconds)', 'type': 'number',
-                 'min': 2, 'max': 120, 'default': 15, 'required': True}
+                 'min': 2, 'max': 120, 'default': 120, 'required': True,
+                 'help': 'Generate+Verify butuh timeout besar: pada 25 user rata-rata ~78 detik per alur. Timeout kecil (15 detik) membuat hampir semua request gagal sebagai timeout (dilaporkan status 0).'}
             ]
         }
     }

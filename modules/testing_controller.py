@@ -1703,8 +1703,16 @@ class EnhancedTestingController:
 
     def _get_real_http_cookie_header(self, base_url: str, timeout_seconds: int) -> str:
         """Login once and return a reusable Flask session cookie header."""
-        cookie_jar = http.cookiejar.CookieJar()
-        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
+        # Jangan ikuti redirect. Cookie sesi ber-flag Secure (REQUIRE_HTTPS=true)
+        # tidak dikirim ulang pada jalur HTTP lokal, sehingga redirect ke /index
+        # akan gagal otentikasi dan menimpa cookie login yang valid dengan cookie
+        # flash 'belum login'. Akibatnya seluruh request uji jadi anonim dan
+        # dilaporkan sebagai status 0. Ambil Set-Cookie langsung dari respons login.
+        class _NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+
+        opener = urllib.request.build_opener(_NoRedirect)
         login_url = urllib.parse.urljoin(base_url, 'login')
         password = (
             os.environ.get('AUTH_PASSWORD')
@@ -1722,8 +1730,18 @@ class EnhancedTestingController:
             method='POST'
         )
 
-        opener.open(request, timeout=timeout_seconds).read(1024)
-        cookie_header = '; '.join(f'{cookie.name}={cookie.value}' for cookie in cookie_jar)
+        try:
+            response = opener.open(request, timeout=timeout_seconds)
+            response_headers = response.headers
+            response.read(1024)
+        except urllib.error.HTTPError as exc:
+            # Login sukses membalas 302; tanpa handler redirect ini muncul sebagai HTTPError.
+            response_headers = exc.headers
+            exc.read(1024)
+        cookie_header = '; '.join(
+            value.split(';', 1)[0]
+            for value in (response_headers.get_all('Set-Cookie') or [])
+        )
         if not cookie_header:
             raise RuntimeError('Login did not return a session cookie')
         return cookie_header
