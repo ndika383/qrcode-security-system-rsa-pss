@@ -2563,38 +2563,74 @@ def get_security_profile_context():
         }
     }
 
+# Serialisasi pembuatan grafik evaluasi.
+#
+# Fungsi ini dijalankan dari background thread setiap kali QR digenerate.
+# Sebelumnya ia memakai state global pyplot (plt.figure/plt.savefig), padahal
+# pyplot TIDAK aman untuk multi-thread: bila dua generate berjalan bersamaan,
+# plt.figure() milik thread kedua menjadi "figure aktif" sehingga thread
+# pertama menggambar lalu menyimpan figure yang salah - hasilnya PNG kosong.
+# Kejadian nyata: 2026-07-27 grafik tertimpa gambar putih 3,8 KB saat uji beban.
+#
+# Perbaikan: (1) API berorientasi objek tanpa state global, (2) lock agar hanya
+# satu pembuatan grafik berjalan, (3) lewati bila sudah ada yang berjalan supaya
+# thread tidak menumpuk, (4) tulis ke berkas sementara lalu os.replace() agar
+# pembaca tidak pernah menerima PNG separuh jadi.
+_chart_lock = threading.Lock()
+
 def _update_evaluation_chart():
+    # Bila satu pembuatan grafik sedang berjalan, lewati: hasilnya akan sama-sama
+    # memakai data CSV terbaru, jadi tidak ada gunanya mengantre.
+    if not _chart_lock.acquire(blocking=False):
+        app.logger.debug("Grafik evaluasi sedang dibuat, permintaan dilewati")
+        return
     try:
         if os.path.exists(app.config['CSV_LOG_GENERATE']):
             df = pd.read_csv(app.config['CSV_LOG_GENERATE'], engine='python', on_bad_lines='skip')
-            
+
             if len(df) > 0 and 'Panjang Signature' in df.columns and 'Ukuran File (KB)' in df.columns:
-                plt.figure(figsize=(10, 6))
-                
-                plt.scatter(df['Panjang Signature'], df['Ukuran File (KB)'], alpha=0.6)
-                
+                from matplotlib.figure import Figure
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+                fig = Figure(figsize=(10, 6))
+                FigureCanvasAgg(fig)
+                ax = fig.subplots()
+
+                ax.scatter(df['Panjang Signature'], df['Ukuran File (KB)'], alpha=0.6)
+
                 if len(df) > 1:
                     try:
                         z = np.polyfit(df['Panjang Signature'].astype(float), df['Ukuran File (KB)'].astype(float), 1)
                         p = np.poly1d(z)
                         x_range = np.linspace(df['Panjang Signature'].min(), df['Panjang Signature'].max(), 100)
-                        plt.plot(x_range, p(x_range), "r--", alpha=0.8)
-                    except:
+                        ax.plot(x_range, p(x_range), "r--", alpha=0.8)
+                    except Exception:
                         pass
-                
-                plt.xlabel("Panjang Signature (karakter)")
-                plt.ylabel("Ukuran File QR (KB)")
-                plt.title("Perbandingan Panjang Signature vs Ukuran QR Code")
-                plt.grid(True, alpha=0.3)
-                plt.tight_layout()
-                
+
+                ax.set_xlabel("Panjang Signature (karakter)")
+                ax.set_ylabel("Ukuran File QR (KB)")
+                ax.set_title("Perbandingan Panjang Signature vs Ukuran QR Code")
+                ax.grid(True, alpha=0.3)
+                fig.tight_layout()
+
                 chart_path = "static/grafik_evaluasi.png"
-                plt.savefig(chart_path, dpi=100)
-                plt.close()
-                
+                tmp_fd, tmp_path = tempfile.mkstemp(
+                    dir=os.path.dirname(chart_path) or ".", suffix=".png")
+                os.close(tmp_fd)
+                try:
+                    fig.savefig(tmp_path, dpi=100)
+                    os.chmod(tmp_path, 0o644)
+                    os.replace(tmp_path, chart_path)
+                except BaseException:
+                    if os.path.exists(tmp_path):
+                        os.unlink(tmp_path)
+                    raise
+
                 app.logger.debug("Grafik evaluasi diperbarui")
     except Exception as e:
         app.logger.error(f"Error update evaluation chart: {e}")
+    finally:
+        _chart_lock.release()
 
 # ==================== FUNGSI MODIFIKASI QR CODE ====================
 def log_modification(original_data, modified_data, modifications, fake_qr_path):
