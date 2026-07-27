@@ -16,7 +16,7 @@
       "affiliation": "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
     }
   ],
-  "description": "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu.",
+  "description": "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu. Versi 1.1.0 memuat perbaikan pada modul kalibrasi performa, pengujian beban HTTP nyata, dan pembuatan grafik evaluasi. Arsip ini berisi kode sumber sistem beserta data hasil sistem (log generate/verifikasi, hasil kalibrasi performa, dan berkas evidensi pengujian). Dokumentasi naratif dan tangkapan layar tidak disertakan dalam versi ini.",
   "keywords": [
     "QR Code",
     "RSA-PSS",
@@ -25,8 +25,8 @@
     "Flask",
     "verification"
   ],
-  "version": "1.0.0",
-  "publication_date": "2026-07-09",
+  "version": "1.1.0",
+  "publication_date": "2026-07-27",
   "access_right": "open",
   "license": "MIT"
 }
