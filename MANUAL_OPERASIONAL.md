@@ -15,7 +15,7 @@ Internet ──> Nginx (443/80) ──> Gunicorn (127.0.0.1:5000) ──> Aplika
 
 | Komponen | Service systemd | Peran |
 |---|---|---|
-| Aplikasi | `qrcode.service` | Gunicorn menjalankan `wsgi:app` (1 worker, 4 threads, port 5000) |
+| Aplikasi | `qrcode.service` | Gunicorn menjalankan `wsgi:app` (1 worker, 12 threads, port 5000) |
 | Reverse proxy | `nginx.service` | Meneruskan `https://rsa-pss.com` → `127.0.0.1:5000` |
 | Cache/state | `redis-server.service` | Dependensi aplikasi |
 
@@ -143,7 +143,73 @@ echo "CPU sesaat worker: $(( (b-a)*100/(CLK*3) ))%"
 
 ---
 
-## 7. Peringatan Penting
+## 7. Stress Testing (Simulated vs Real HTTP)
+
+Sistem punya **dua** mode uji beban yang menjawab pertanyaan **berbeda**.
+Keduanya bukan pembanding langsung.
+
+| | Simulated Stress Testing | Real HTTP Stress Test |
+|---|---|---|
+| Cara kerja | Model analitis di memori | Request HTTP sungguhan ke aplikasi |
+| Jaringan | Tidak ada | Ada (koneksi nyata) |
+| Rate limit | Tidak kena | Kena (kecuali beban lokal, lihat bawah) |
+| Artefak | Tidak membuat file | Membuat QR, menulis log generate/verifikasi |
+| Level user wajar | 100 – 1.500 | 10 – 100 (batas keras 500) |
+
+### 7a. Kenapa level user Real HTTP lebih kecil
+Karena dibatasi kapasitas nyata server, bukan sekadar angka di form:
+
+- **CPU 2 core**, Gunicorn **1 worker × 12 threads**.
+- Generator beban berjalan **di dalam proses aplikasi yang sama**, sehingga
+  penembak dan yang ditembak berebut CPU yang sama.
+- Di atas ±100 user, yang terukur adalah **antrean dan timeout**, bukan
+  performa kriptografi RSA-PSS.
+
+> **Workers wajib tetap 1.** `background_tasks` (`app.py`) dan
+> `_calibration_state` (`routes/testing_routes.py`) disimpan di memori proses.
+> Menambah worker membuat polling progres mendarat di worker yang tidak
+> mengenal task tersebut → progres task/kalibrasi rusak.
+> Untuk menambah kapasitas, naikkan **threads** (`GUNICORN_THREADS`), bukan workers.
+
+### 7b. Aturan penting: Requests per User Level
+Konkurensi nyata per level = **min(concurrent users, operations)**.
+
+Artinya **Requests per User Level harus ≥ level user tertinggi**, kalau tidak
+level tinggi tidak pernah benar-benar tercapai.
+
+| Level user | Requests per level | Konkurensi nyata |
+|---|---|---|
+| 100 | 20 | **20** ❌ (level 100 tidak tercapai) |
+| 100 | 200 | **100** ✅ |
+
+Nilai default sekarang: level `10,25,50,100` dengan `200` requests per level.
+
+### 7c. Base URL: lokal vs publik
+
+| Base URL | Efek |
+|---|---|
+| `http://127.0.0.1:5000/` (default) | Langsung ke Gunicorn. **Rate limit dikecualikan**, pengguna publik tidak terganggu. Dipakai untuk level user tinggi. |
+| `https://rsa-pss.com/` | Menyertakan overhead Nginx/HTTPS, tetapi **rate limit 60/menit aktif** → banyak HTTP 429. |
+
+Pengecualian rate limit hanya berlaku bila request memenuhi **dua** syarat
+sekaligus: ber-`User-Agent: QRRealHTTPStress/1.0` **dan** berasal dari
+`127.0.0.1`. Klien dari luar tidak bisa memalsukannya, karena Nginx selalu
+menimpa `X-Forwarded-For` dengan IP asli pemanggil.
+
+### 7d. Catatan untuk penelitian
+Sajikan kedua mode sebagai pengukuran yang berbeda, bukan perbandingan
+angka langsung:
+
+- **Simulated** → model skala besar (100–1.500 user).
+- **Real HTTP** → validasi empiris end-to-end pada kapasitas server nyata.
+
+Bila butuh konkurensi tinggi yang sahih secara metodologis, beban harus
+ditembakkan dari **mesin terpisah** (mis. k6/locust dari host lain), bukan
+dari server yang sama.
+
+---
+
+## 8. Peringatan Penting
 
 - ❌ **Jangan** `python app.py` manual → memicu `[Errno 5] Input/output error` pada kalibrasi.
 - ⚠️ **Restart service saat batch jalan** → batch berhenti di tengah, tidak resume.
@@ -154,7 +220,7 @@ echo "CPU sesaat worker: $(( (b-a)*100/(CLK*3) ))%"
 
 ---
 
-## 8. Troubleshooting Cepat
+## 9. Troubleshooting Cepat
 
 | Gejala | Kemungkinan sebab | Tindakan |
 |---|---|---|
@@ -166,7 +232,7 @@ echo "CPU sesaat worker: $(( (b-a)*100/(CLK*3) ))%"
 
 ---
 
-## 9. Ringkasan Perintah (Cheat Sheet)
+## 10. Ringkasan Perintah (Cheat Sheet)
 
 ```bash
 sudo systemctl start   qrcode     # nyalakan
