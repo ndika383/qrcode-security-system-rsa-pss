@@ -158,6 +158,15 @@ def exempt_testing_progress():
     if request.path and '/testing/cleanup_calibration' in request.path:
         return True
 
+    # Pengecualian untuk beban Real HTTP Stress Test yang ditembakkan dari server
+    # ini sendiri. Digate GANDA: harus User-Agent penembak DAN berasal dari
+    # localhost, sehingga klien eksternal tidak dapat memalsukan header ini untuk
+    # menembus rate limit produksi (request publik selalu lewat Nginx sehingga
+    # remote_addr-nya bukan 127.0.0.1).
+    if (request.headers.get('User-Agent', '') == 'QRRealHTTPStress/1.0'
+            and request.remote_addr in ('127.0.0.1', '::1')):
+        return True
+
     # TAMBAHKAN: Pengecualian untuk dashboard
     if request.path and '/dashboard' in request.path:
         return True

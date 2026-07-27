@@ -1889,7 +1889,11 @@ class EnhancedTestingController:
         concurrent_users = params.get('concurrent_users', [2, 5, 10])
         if isinstance(concurrent_users, str):
             concurrent_users = [int(x.strip()) for x in concurrent_users.split(',') if x.strip().isdigit()]
-        concurrent_users = [max(1, min(int(user_count), 100)) for user_count in concurrent_users] or [2, 5, 10]
+        # Batas atas dinaikkan 100 -> 500. Catatan kapasitas: server ini 2 core
+        # dengan gunicorn 1 worker (wajib 1, karena background_tasks/_calibration_state
+        # disimpan di memori proses). Level di atas ~100 akan didominasi antrean,
+        # bukan performa kriptografi.
+        concurrent_users = [max(1, min(int(user_count), 500)) for user_count in concurrent_users] or [10, 25, 50, 100]
 
         base_url = str(params.get('base_url') or os.environ.get('BASE_URL') or 'http://127.0.0.1:5000/').strip()
         if not base_url.endswith('/'):

@@ -398,19 +398,19 @@ def test_config(test_type):
             'name': 'Real HTTP Stress Test (Local Server)',
             'description': 'Menembak endpoint aplikasi nyata dari server yang sama melalui HTTP/HTTPS. Default menjalankan workflow Generate + Verify QR: membuat QR RSA-PSS, mengambil URL /v/<token>, lalu memverifikasi QR tersebut.',
             'default_params': {
-                'operations': 20,
-                'concurrent_users': '2,5,10',
+                'operations': 200,
+                'concurrent_users': '10,25,50,100',
                 'target_endpoint': 'generate_verify',
-                'base_url': os.environ.get('BASE_URL', 'https://rsa-pss.com/'),
+                'base_url': 'http://127.0.0.1:5000/',
                 'request_timeout_seconds': 15
             },
             'fields': [
                 {'name': 'operations', 'label': 'Requests per User Level', 'type': 'number',
-                 'min': 1, 'max': 2000, 'default': 20, 'required': True,
-                 'help': 'Jumlah request nyata untuk setiap level concurrent users.'},
+                 'min': 1, 'max': 5000, 'default': 200, 'required': True,
+                 'help': 'Jumlah request nyata untuk setiap level. PENTING: konkurensi nyata = min(concurrent users, nilai ini), jadi isi minimal sebesar level user tertinggi (mis. level 100 butuh minimal 200 agar benar-benar 100 request bersamaan).'},
                 {'name': 'concurrent_users', 'label': 'Concurrent Users (comma-separated)',
-                 'type': 'text', 'default': '2,5,10', 'required': True,
-                 'placeholder': 'Contoh: 2,5,10'},
+                 'type': 'text', 'default': '10,25,50,100', 'required': True,
+                 'placeholder': 'Contoh: 10,25,50,100 (maksimum 500 per level)'},
                 {'name': 'target_endpoint', 'label': 'Target Endpoint', 'type': 'select',
                  'options': [
                      {'value': 'generate_verify', 'label': 'Generate + Verify QR (POST /generate_qr + GET /v/<token>)'},
@@ -420,8 +420,8 @@ def test_config(test_type):
                  ], 'default': 'generate_verify', 'required': True,
                  'help': 'Generate + Verify paling end-to-end, tetapi membuat file QR, menulis log generate/verifikasi, dan dapat terkena rate limit.'},
                 {'name': 'base_url', 'label': 'Base URL', 'type': 'text',
-                 'default': os.environ.get('BASE_URL', 'https://rsa-pss.com/'), 'required': True,
-                 'help': 'Gunakan domain publik untuk melewati Nginx/HTTPS, atau http://127.0.0.1:5000/ untuk jalur lokal.'},
+                 'default': 'http://127.0.0.1:5000/', 'required': True,
+                 'help': 'Default jalur lokal (langsung ke Gunicorn): rate limit dikecualikan untuk beban uji ini sehingga level user tinggi terukur, dan pengguna publik tidak terganggu. Isi domain publik bila ingin menyertakan overhead Nginx/HTTPS \u2014 tetapi rate limit 60/menit akan aktif.'},
                 {'name': 'request_timeout_seconds', 'label': 'Request Timeout (seconds)', 'type': 'number',
                  'min': 2, 'max': 120, 'default': 15, 'required': True}
             ]
