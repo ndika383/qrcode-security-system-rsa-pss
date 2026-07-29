@@ -769,6 +769,243 @@ def resolve_scan_verification_target(qr_string):
 
     raise ValueError("Format QR tidak dikenali")
 
+QR_INDEX_BACKFILL_FLAG = 'qr_record_index_backfilled_v1'
+_qr_index_state = {'authoritative': False, 'checked_at': 0.0}
+QR_INDEX_RECHECK_SECONDS = 30
+
+
+def qr_record_index_ready():
+    """Index hanya otoritatif setelah seluruh direktori data selesai di-backfill.
+
+    Sebelum itu pencarian tetap memakai pemindaian direktori, sebab index yang
+    belum lengkap dapat melaporkan record asli sebagai tidak ada — yang akan
+    mengubah hasil klasifikasi verifikasi.
+    """
+    if _qr_index_state['authoritative']:
+        return True
+    if time.time() - _qr_index_state['checked_at'] < QR_INDEX_RECHECK_SECONDS:
+        return False
+    _qr_index_state['checked_at'] = time.time()
+
+    if not ensure_security_state_ready():
+        return False
+    try:
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            try:
+                row = conn.execute(
+                    "SELECT value FROM security_metadata WHERE key = ?",
+                    (QR_INDEX_BACKFILL_FLAG,)
+                ).fetchone()
+            finally:
+                conn.close()
+        _qr_index_state['authoritative'] = row is not None
+    except Exception as e:
+        app.logger.warning(f'Gagal memeriksa status index record QR: {e}')
+    return _qr_index_state['authoritative']
+
+
+def index_qr_record(filename, data):
+    """Daftarkan satu record QR ke index pencarian."""
+    if not filename or not ensure_security_state_ready():
+        return False
+
+    qr_id = str(data.get('id', '')).strip() if isinstance(data, dict) else ''
+    nonce = str(data.get('nonce', '')).strip() if isinstance(data, dict) else ''
+    now = datetime.now(timezone.utc).isoformat()
+
+    try:
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO qr_record_index (filename, qr_id, nonce, indexed_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(filename) DO UPDATE SET
+                        qr_id = excluded.qr_id,
+                        nonce = excluded.nonce,
+                        indexed_at = excluded.indexed_at
+                    """,
+                    (filename, qr_id, nonce, now)
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        return True
+    except Exception as e:
+        app.logger.warning(f'Gagal mengindeks record QR {filename}: {e}')
+        return False
+
+
+def save_qr_record(data_path, data):
+    """Tulis record QR ke disk sekaligus daftarkan ke index pencarian."""
+    with open(data_path, 'w', encoding='utf-8') as json_file:
+        json.dump(data, json_file, indent=2)
+    index_qr_record(os.path.basename(data_path), data)
+
+
+def reset_qr_record_index():
+    """Kosongkan index dan cabut status otoritatifnya (dipakai saat cleanup total)."""
+    if not ensure_security_state_ready():
+        return False
+    try:
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=20)
+            try:
+                conn.execute("DELETE FROM qr_record_index")
+                conn.execute(
+                    "DELETE FROM security_metadata WHERE key = ?",
+                    (QR_INDEX_BACKFILL_FLAG,)
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        _qr_index_state['authoritative'] = False
+        _qr_index_state['checked_at'] = 0.0
+        return True
+    except Exception as e:
+        app.logger.warning(f'Gagal mengosongkan index record QR: {e}')
+        return False
+
+
+def lookup_qr_filenames_by_prefixes(prefixes):
+    """Padanan `os.listdir` + filter awalan, lewat range scan pada primary key.
+
+    Mengembalikan None bila index tidak dapat dipakai, sehingga pemanggil tahu
+    harus jatuh kembali ke pemindaian direktori.
+    """
+    if not prefixes or not ensure_security_state_ready():
+        return None
+
+    try:
+        hasil = set()
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            try:
+                for prefix in prefixes:
+                    if not prefix:
+                        continue
+                    batas_atas = prefix[:-1] + chr(ord(prefix[-1]) + 1)
+                    rows = conn.execute(
+                        "SELECT filename FROM qr_record_index WHERE filename >= ? AND filename < ?",
+                        (prefix, batas_atas)
+                    ).fetchall()
+                    hasil.update(row[0] for row in rows if row[0].endswith('.json'))
+            finally:
+                conn.close()
+        return sorted(hasil)
+    except Exception as e:
+        app.logger.warning(f'Gagal mencari record QR lewat index: {e}')
+        return None
+
+
+def lookup_qr_filename_by_nonce(nonce):
+    if not nonce or not ensure_security_state_ready():
+        return None
+    try:
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            try:
+                row = conn.execute(
+                    "SELECT filename FROM qr_record_index WHERE nonce = ? ORDER BY filename LIMIT 1",
+                    (nonce,)
+                ).fetchone()
+            finally:
+                conn.close()
+        return row[0] if row else None
+    except Exception as e:
+        app.logger.warning(f'Gagal mencari record QR via nonce di index: {e}')
+        return None
+
+
+def backfill_qr_record_index(batch_size=2000, progress_callback=None):
+    """Isi index dari seluruh isi DATA_FOLDER, lalu tandai index sebagai otoritatif."""
+    if not ensure_security_state_ready():
+        raise RuntimeError('Security state DB tidak siap; index tidak dapat dibangun.')
+
+    data_dir = app.config['DATA_FOLDER']
+    now = datetime.now(timezone.utc).isoformat()
+    total = 0
+    gagal = 0
+    batch = []
+
+    def flush(rows):
+        if not rows:
+            return
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=30)
+            try:
+                conn.executemany(
+                    """
+                    INSERT INTO qr_record_index (filename, qr_id, nonce, indexed_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(filename) DO UPDATE SET
+                        qr_id = excluded.qr_id,
+                        nonce = excluded.nonce,
+                        indexed_at = excluded.indexed_at
+                    """,
+                    rows
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+    with os.scandir(data_dir) as entries:
+        for entry in entries:
+            if not entry.is_file() or not entry.name.endswith('.json'):
+                continue
+            try:
+                with open(entry.path, 'r', encoding='utf-8') as f:
+                    record = json.load(f)
+            except Exception:
+                record = None
+
+            if isinstance(record, dict):
+                qr_id = str(record.get('id', '')).strip()
+                nonce = str(record.get('nonce', '')).strip()
+            else:
+                # Berkas rusak/kosong tetap didaftarkan tanpa isi. Pada pemindaian
+                # direktori berkas seperti ini ikut masuk daftar kandidat dan baru
+                # gagal saat dibuka; menghilangkannya dari index akan mengubah
+                # klasifikasi dari "Data Palsu" menjadi "Data Tidak Ditemukan".
+                qr_id = ''
+                nonce = ''
+                gagal += 1
+
+            batch.append((entry.name, qr_id, nonce, now))
+            total += 1
+
+            if len(batch) >= batch_size:
+                flush(batch)
+                batch = []
+                if progress_callback:
+                    progress_callback(total, gagal)
+
+    flush(batch)
+
+    with security_state_lock:
+        conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=30)
+        try:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO security_metadata (key, value, updated_at)
+                VALUES (?, ?, ?)
+                """,
+                (QR_INDEX_BACKFILL_FLAG, str(total), now)
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    _qr_index_state['authoritative'] = True
+    _qr_index_state['checked_at'] = time.time()
+    app.logger.info(
+        f'Backfill index record QR selesai: {total} berkas terindeks, {gagal} rusak/kosong'
+    )
+    return total, gagal
+
+
 def find_original_qr_data(data):
     """Cari record JSON asli yang benar untuk payload QR.
 
@@ -785,14 +1022,16 @@ def find_original_qr_data(data):
     if safe_userid:
         prefixes.add(f'qr_{safe_userid}_')
 
-    try:
-        filenames = sorted(
-            f for f in os.listdir(app.config['DATA_FOLDER'])
-            if f.endswith('.json') and any(f.startswith(prefix) for prefix in prefixes)
-        )
-    except Exception as e:
-        app.logger.warning(f'Gagal membaca folder data QR: {e}')
-        return None, [], False
+    filenames = lookup_qr_filenames_by_prefixes(prefixes) if qr_record_index_ready() else None
+    if filenames is None:
+        try:
+            filenames = sorted(
+                f for f in os.listdir(app.config['DATA_FOLDER'])
+                if f.endswith('.json') and any(f.startswith(prefix) for prefix in prefixes)
+            )
+        except Exception as e:
+            app.logger.warning(f'Gagal membaca folder data QR: {e}')
+            return None, [], False
 
     candidates = []
     for filename in filenames:
@@ -802,6 +1041,12 @@ def find_original_qr_data(data):
                 candidate = json.load(f)
         except Exception as e:
             app.logger.warning(f'Gagal membaca data QR {filename}: {e}')
+            continue
+
+        # Record selalu berupa objek JSON. Berkas bertipe lain (array, string)
+        # lolos json.load tetapi membuat similarity_score menabrak .keys().
+        if not isinstance(candidate, dict):
+            app.logger.warning(f'Struktur data QR tidak dikenali, dilewati: {filename}')
             continue
 
         if candidate == data:
@@ -825,6 +1070,20 @@ def find_original_qr_data(data):
 def find_original_qr_data_by_nonce(data, nonce):
     """Fallback saat ID sudah dimodifikasi tetapi nonce masih mengarah ke QR asli."""
     if not nonce:
+        return None
+
+    if qr_record_index_ready():
+        filename = lookup_qr_filename_by_nonce(nonce)
+        if not filename:
+            return None
+        path = os.path.join(app.config['DATA_FOLDER'], filename)
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                candidate = json.load(f)
+        except Exception:
+            return None
+        if isinstance(candidate, dict) and str(candidate.get('nonce', '')).strip() == nonce:
+            return filename, candidate
         return None
 
     try:
@@ -1118,7 +1377,18 @@ def init_security_state_db():
                     )
                     """
                 )
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS qr_record_index (
+                        filename TEXT PRIMARY KEY,
+                        qr_id TEXT,
+                        nonce TEXT,
+                        indexed_at TEXT NOT NULL
+                    )
+                    """
+                )
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_nonce_last_used ON nonce_state(last_used_at)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_qr_record_nonce ON qr_record_index(nonce)')
                 conn.commit()
                 security_state_ready = True
                 return True
@@ -2953,8 +3223,7 @@ def generate_qr():
         save_timer = Timer().start()
         data_filename = filename.replace('.png', '.json')
         data_path = os.path.join(app.config['DATA_FOLDER'], data_filename)
-        with open(data_path, 'w', encoding='utf-8') as json_file:
-            json.dump(data, json_file, indent=2)
+        save_qr_record(data_path, data)
         save_time = save_timer.stop()
         
         total_time = total_timer.stop()
@@ -3595,8 +3864,7 @@ def get_scanner_test_data():
         # Simpan ke database untuk verifikasi
         filename = f"qr_{data['id']}.json"
         data_path = os.path.join(app.config['DATA_FOLDER'], filename)
-        with open(data_path, 'w', encoding='utf-8') as json_file:
-            json.dump(data, json_file, indent=2)
+        save_qr_record(data_path, data)
         
         # Buat URL verifikasi
         qr_url, encoded_data = generate_verification_url(payload)
@@ -5697,8 +5965,7 @@ def background_generate_process(task_id):
                     
                     data_filename = filename.replace('.png', '.json')
                     data_path = os.path.join(app.config['DATA_FOLDER'], data_filename)
-                    with open(data_path, 'w', encoding='utf-8') as json_file:
-                        json.dump(data, json_file, indent=2)
+                    save_qr_record(data_path, data)
                     save_time = save_timer.stop()
                     massal_stats["total_save_time"] += save_time
                     
@@ -8954,7 +9221,11 @@ def cleanup_all_generated_files():
                     except Exception as e:
                         app.logger.warning(f"Failed to delete {file_path}: {e}")
                         continue
-        
+
+        # Index pencarian harus ikut dikosongkan; entri yang menunjuk file
+        # terhapus akan membuat record hilang dilaporkan sebagai data palsu.
+        reset_qr_record_index()
+
         # Reset juga folder tasks
         tasks_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'tasks')
         if os.path.exists(tasks_folder):
