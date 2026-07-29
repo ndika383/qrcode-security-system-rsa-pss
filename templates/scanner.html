@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi QR Code - QR Code Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #e9ecef;
+        }
+        .upload-area.dragover {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .result-card {
+            border-left: 5px solid;
+            transition: transform 0.2s;
+        }
+        .result-card:hover {
+            transform: translateY(-3px);
+        }
+        .result-valid {
+            border-left-color: #28a745 !important;
+            background-color: #d4edda !important;
+        }
+        .result-invalid {
+            border-left-color: #dc3545 !important;
+            background-color: #f8d7da !important;
+        }
+        .result-warning {
+            border-left-color: #ffc107 !important;
+            background-color: #fff3cd !important;
+        }
+        .result-neutral {
+            border-left-color: #6c757d !important;
+            background-color: #f8f9fa !important;
+        }
+        .time-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .data-field {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #007bff;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .btn-verify {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        .btn-verify:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .progress-sm {
+            height: 6px;
+            border-radius: 3px;
+        }
+        .comparison-diff {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #ffc107;
+        }
+        .diff-item {
+            padding: 5px 10px;
+            margin: 2px 0;
+            background-color: white;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-primary">
+                            <i class="fas fa-camera me-2"></i>Verifikasi QR Code
+                        </h2>
+                        <p class="text-muted mb-0">Verifikasi keaslian dan integritas QR Code dengan digital signature</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs untuk Verifikasi Tunggal vs Massal -->
+        <div class="card">
+            <div class="card-header bg-white p-0">
+                <ul class="nav nav-tabs" id="verifyTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="single-tab" data-bs-toggle="tab" 
+                                data-bs-target="#single" type="button" role="tab">
+                            <i class="fas fa-file-image me-2"></i>Verifikasi Tunggal
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="massal-tab" data-bs-toggle="tab" 
+                                data-bs-target="#massal" type="button" role="tab">
+                            <i class="fas fa-folder-open me-2"></i>Verifikasi Massal
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="verifyTabContent">
+                    <!-- Tab Verifikasi Tunggal -->
+                    <div class="tab-pane fade show active" id="single" role="tabpanel">
+                        <form action="{{ url_for('verify_qr') }}" method="POST" enctype="multipart/form-data" id="singleForm">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="upload-area" id="singleUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                        <h5>Drag & Drop file QR Code di sini</h5>
+                                        <p class="text-muted">atau klik untuk memilih file</p>
+                                        <input type="file" name="qrfile" id="singleFile" 
+                                               class="d-none" accept=".png,.jpg,.jpeg,.gif" required>
+                                        <div class="mt-3">
+                                            <small class="text-muted">Format yang didukung: PNG, JPG, JPEG, GIF</small>
+                                        </div>
+                                    </div>
+                                    <div id="singleFileInfo" class="mt-3" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-file-image me-2"></i>
+                                            <span id="singleFileName"></span>
+                                            <button type="button" class="btn-close float-end" 
+                                                    onclick="clearSingleFile()"></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-verify">
+                                            <i class="fas fa-search me-2"></i>Verifikasi QR Code
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="document.getElementById('singleFile').click()">
+                                            <i class="fas fa-folder-open me-2"></i>Pilih File
+                                        </button>
+                                        <div class="mt-4">
+                                            <h6><i class="fas fa-info-circle me-2"></i>Informasi:</h6>
+                                            <small class="text-muted">
+                                                Sistem akan memverifikasi:
+                                                <ul class="mt-2">
+                                                    <li>Keaslian digital signature (ECDSA P-256)</li>
+                                                    <li>Integritas data QR Code</li>
+                                                    <li>Replay attack protection</li>
+                                                    <li>Kesesuaian dengan database</li>
+                                                </ul>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab Verifikasi Massal -->
+                    <div class="tab-pane fade" id="massal" role="tabpanel">
+                        <form action="{{ url_for('verify_qr_massal') }}" method="POST" 
+                              enctype="multipart/form-data" id="massalForm">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="upload-area" id="massalUploadArea">
+                                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                        <h5>Drag & Drop file QR Code (multiple)</h5>
+                                        <p class="text-muted">atau klik untuk memilih file</p>
+                                        <input type="file" name="qrfiles" id="massalFiles" 
+                                               class="d-none" multiple accept=".png,.jpg,.jpeg,.gif" required>
+                                        <div class="mt-3">
+                                            <small class="text-muted">Format yang didukung: PNG, JPG, JPEG, GIF</small>
+                                        </div>
+                                    </div>
+                                    <div id="massalFileInfo" class="mt-3" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-file-images me-2"></i>
+                                            <span id="massalFileCount"></span> file dipilih
+                                            <button type="button" class="btn-close float-end" 
+                                                    onclick="clearMassalFiles()"></button>
+                                            <div id="massalFileList" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-verify">
+                                            <i class="fas fa-search me-2"></i>Verifikasi Massal
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="document.getElementById('massalFiles').click()">
+                                            <i class="fas fa-folder-open me-2"></i>Pilih File
+                                        </button>
+                                        <div class="mt-4">
+                                            <h6><i class="fas fa-info-circle me-2"></i>Informasi:</h6>
+                                            <small class="text-muted">
+                                                Fitur verifikasi massal cocok untuk:
+                                                <ul class="mt-2">
+                                                    <li>Event dengan banyak peserta</li>
+                                                    <li>Batch processing QR Code</li>
+                                                    <li>Quality assurance testing</li>
+                                                    <li>Analisis statistik verifikasi</li>
+                                                </ul>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hasil Verifikasi Tunggal -->
+        {% if hasil_tunggal %}
+        <div class="card result-card {% if hasil_tunggal.valid %}result-valid{% elif hasil_tunggal.message.startswith('⚠️') %}result-warning{% else %}result-invalid{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Hasil Verifikasi Tunggal
+                </h5>
+                <span class="badge {% if hasil_tunggal.valid %}bg-success{% elif hasil_tunggal.message.startswith('⚠️') %}bg-warning{% else %}bg-danger{% endif %}">
+                    {{ hasil_tunggal.message }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Data QR Code -->
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-info-circle me-2"></i>Data QR Code:</h6>
+                        <div class="data-field">
+                            <small class="text-muted">Nama</small>
+                            <div class="fw-bold">{{ hasil_tunggal.data.nama if hasil_tunggal.data else 'N/A' }}</div>
+                        </div>
+                        <div class="data-field">
+                            <small class="text-muted">ID</small>
+                            <div class="fw-bold">{{ hasil_tunggal.data.id if hasil_tunggal.data else 'N/A' }}</div>
+                        </div>
+                        <div class="data-field">
+                            <small class="text-muted">Timestamp</small>
+                            <div class="fw-bold">{{ hasil_tunggal.data.timestamp if hasil_tunggal.data else 'N/A' }}</div>
+                        </div>
+                        <div class="data-field">
+                            <small class="text-muted">Nonce</small>
+                            <div class="text-monospace">{{ hasil_tunggal.data.nonce[:8] if hasil_tunggal.data and hasil_tunggal.data.nonce else 'N/A' }}...</div>
+                        </div>
+                        <div class="data-field">
+                            <small class="text-muted">Algoritma</small>
+                            <div class="fw-bold">{{ hasil_tunggal.algorithm if hasil_tunggal.algorithm else 'ECDSA' }}</div>
+                        </div>
+                        
+                        <!-- Perubahan Data (jika ada) -->
+                        {% if hasil_tunggal.perubahan %}
+                        <div class="mt-3">
+                            <h6 class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Perubahan Terdeteksi:
+                            </h6>
+                            {% for key, value in hasil_tunggal.perubahan.items() %}
+                            <div class="comparison-diff">
+                                <small class="text-muted">{{ key|capitalize }}:</small>
+                                <div class="diff-item">
+                                    <span class="text-success">Asli: {{ value.asli }}</span>
+                                </div>
+                                <div class="diff-item">
+                                    <span class="text-danger">Sekarang: {{ value.sekarang }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Statistik Waktu -->
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-stopwatch me-2"></i>Analisis Waktu Verifikasi:</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Load File
+                                <span class="badge bg-secondary time-badge">{{ hasil_tunggal.file_info.load_time if hasil_tunggal.file_info else 'N/A' }}</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Decode QR Code
+                                <span class="badge bg-secondary time-badge">{{ hasil_tunggal.file_info.decode_time if hasil_tunggal.file_info else 'N/A' }}</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Verifikasi Signature
+                                <span class="badge bg-secondary time-badge">{{ hasil_tunggal.file_info.verify_time if hasil_tunggal.file_info else 'N/A' }}</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Cek Database
+                                <span class="badge bg-secondary time-badge">{{ hasil_tunggal.file_info.db_time if hasil_tunggal.file_info else 'N/A' }}</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>TOTAL WAKTU</strong>
+                                <span class="badge bg-primary time-badge">{{ hasil_tunggal.file_info.total_time if hasil_tunggal.file_info else 'N/A' }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Visualisasi Waktu -->
+                        <div class="mt-3">
+                            <h6>Distribusi Waktu:</h6>
+                            {% if hasil_tunggal.file_info %}
+                                {% set total_sec = hasil_tunggal.file_info.total_time|replace(' detik', '')|float %}
+                                {% if total_sec > 0 %}
+                                    {% set load_pct = (hasil_tunggal.file_info.load_time|replace(' detik', '')|float / total_sec * 100)|round(1) %}
+                                    {% set decode_pct = (hasil_tunggal.file_info.decode_time|replace(' detik', '')|float / total_sec * 100)|round(1) %}
+                                    {% set verify_pct = (hasil_tunggal.file_info.verify_time|replace(' detik', '')|float / total_sec * 100)|round(1) %}
+                                    {% set db_pct = (hasil_tunggal.file_info.db_time|replace(' detik', '')|float / total_sec * 100)|round(1) %}
+                                    
+                                    <div class="mb-2">
+                                        <small>Load File ({{ load_pct }}%)</small>
+                                        <div class="progress progress-sm">
+                                            <div class="progress-bar bg-info" style="width: {{ load_pct }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Decode QR ({{ decode_pct }}%)</small>
+                                        <div class="progress progress-sm">
+                                            <div class="progress-bar bg-warning" style="width: {{ decode_pct }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Verify Signature ({{ verify_pct }}%)</small>
+                                        <div class="progress progress-sm">
+                                            <div class="progress-bar bg-danger" style="width: {{ verify_pct }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Database ({{ db_pct }}%)</small>
+                                        <div class="progress progress-sm">
+                                            <div class="progress-bar bg-success" style="width: {{ db_pct }}%"></div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Status Signature -->
+                        <div class="mt-3">
+                            <h6>Status Signature:</h6>
+                            <div class="alert {% if hasil_tunggal.signature_valid %}alert-success{% else %}alert-danger{% endif %}">
+                                <i class="fas fa-signature me-2"></i>
+                                Digital Signature: 
+                                <strong>{% if hasil_tunggal.signature_valid %}VALID{% else %}INVALID{% endif %}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Asli (jika ada) -->
+                {% if hasil_tunggal.original_data %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6><i class="fas fa-database me-2"></i>Data Asli dari Database:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key, value in hasil_tunggal.original_data.items() %}
+                                    <tr>
+                                        <td>{{ key|capitalize }}</td>
+                                        <td>
+                                            {% if key == 'timestamp' %}
+                                                {{ value|string|truncate(30) }}
+                                            {% elif key == 'nonce' %}
+                                                <code>{{ value|string|truncate(20) }}</code>
+                                            {% else %}
+                                                {{ value }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Hasil Verifikasi Massal -->
+        {% if hasil_massal %}
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Hasil Verifikasi Massal
+                </h5>
+                <span class="badge bg-light text-dark">
+                    {{ hasil_massal|length }} file diproses
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Statistik Massal -->
+                {% if massal_stats %}
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h6><i class="fas fa-chart-pie me-2"></i>Statistik Verifikasi Massal:</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Berlaku</small>
+                                        <div class="h5 mb-0">{{ outcome.berlaku|default(massal_stats.success_count) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Tidak Berlaku</small>
+                                        <div class="h5 mb-0">{{ outcome.tidak_berlaku|default(massal_stats.error_count) }}</div>
+                                        <small class="text-muted d-block">Signature boleh sah; lihat alasannya</small>
+                                        {% if outcome.kedaluwarsa %}
+                                        <small class="text-dark d-block">Kedaluwarsa: {{ outcome.kedaluwarsa }}</small>
+                                        {% endif %}
+                                        {% if outcome.replay %}
+                                        <small class="text-warning d-block">Replay: {{ outcome.replay }}</small>
+                                        {% endif %}
+                                        {% if outcome.dimodifikasi %}
+                                        <small class="text-danger d-block">Dimodifikasi/palsu: {{ outcome.dimodifikasi }}</small>
+                                        {% endif %}
+                                        {% if outcome.tidak_ditemukan %}
+                                        <small class="text-secondary d-block">Tidak ditemukan: {{ outcome.tidak_ditemukan }}</small>
+                                        {% endif %}
+                                        {% if outcome.error_pemrosesan %}
+                                        <small class="text-muted d-block">Error pemrosesan: {{ outcome.error_pemrosesan }} (dihitung terpisah)</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-percentage fa-2x text-info"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Rasio Berlaku</small>
+                                        <div class="h5 mb-0">{{ "%.1f"|format(outcome.pct_berlaku|default(massal_stats.success_rate)) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-stopwatch fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">Total Waktu</small>
+                                        <div class="h5 mb-0">{{ "%.2f"|format(massal_stats.total_time) }}s</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if massal_stats.replay_attack_count is defined and massal_stats.replay_attack_count > 0 %}
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            QR replay dihitung sebagai <strong>Ditolak</strong>, bukan error teknis server. Signature bisa valid, tetapi nonce sudah pernah digunakan.
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Breakdown Waktu -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>Breakdown Waktu:</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Load Files
+                                        <span class="badge bg-secondary">
+                                            {{ "%.3f"|format(massal_stats.time_breakdown.load) }}s
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Decode QR
+                                        <span class="badge bg-secondary">
+                                            {{ "%.3f"|format(massal_stats.time_breakdown.decode) }}s
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Verify Signature
+                                        <span class="badge bg-secondary">
+                                            {{ "%.3f"|format(massal_stats.time_breakdown.verify) }}s
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Database Check
+                                        <span class="badge bg-secondary">
+                                            {{ "%.3f"|format(massal_stats.time_breakdown.db) }}s
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Performa per File:</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Rata-rata Waktu
+                                        <span class="badge bg-primary">
+                                            {{ "%.3f"|format(massal_stats.avg_time_per_file) }}s
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Waktu Minimum
+                                        <span class="badge bg-success">
+                                            {{ "%.3f"|format(massal_stats.min_time) }}s
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        Waktu Maksimum
+                                        <span class="badge bg-danger">
+                                            {{ "%.3f"|format(massal_stats.max_time) }}s
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        File per Detik
+                                        <span class="badge bg-info">
+                                            {{ "%.1f"|format(massal_stats.total_files/massal_stats.total_time) if massal_stats.total_time > 0 else 0 }}
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Tabel Hasil Verifikasi -->
+                <div class="table-responsive">
+                    <table id="massalTable" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>File</th>
+                                <th>Status</th>
+                                <th>Nama</th>
+                                <th>ID</th>
+                                <th>Signature</th>
+                                <th>Waktu Total</th>
+                                <th>Breakdown Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in hasil_massal %}
+                            <tr class="{% if '✅' in item.status %}table-success{% elif '❌' in item.status or '⛔' in item.status %}table-danger{% elif '⚠️' in item.status %}table-warning{% elif '🔁' in item.status %}table-info{% endif %}">
+                                <td>{{ item.no }}</td>
+                                <td>
+                                    <small class="text-monospace">{{ item.filename|truncate(20) }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge {% if '✅' in item.status %}bg-success{% elif '❌' in item.status or '⛔' in item.status %}bg-danger{% elif '⚠️' in item.status %}bg-warning{% elif '🔁' in item.status %}bg-info{% else %}bg-secondary{% endif %}">
+                                        {{ item.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ item.data.nama if item.data else '-' }}
+                                </td>
+                                <td>
+                                    {% if item.data %}
+                                        <code>{{ item.data.id|truncate(15) }}</code>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.signature_valid is defined %}
+                                        <span class="badge {% if item.signature_valid %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if item.signature_valid %}Valid{% else %}Invalid{% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark time-badge">{{ item.total_time if item.total_time != '-' else 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    {% if item.processing_times and item.processing_times.load != '-' %}
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <small class="badge bg-info" title="Load">L:{{ item.processing_times.load[:5] }}</small>
+                                            <small class="badge bg-warning" title="Decode">D:{{ item.processing_times.decode[:5] }}</small>
+                                            <small class="badge bg-danger" title="Verify">V:{{ item.processing_times.verify[:5] }}</small>
+                                            <small class="badge bg-success" title="Database">DB:{{ item.processing_times.db[:5] }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Statistik Global (jika ada) -->
+        {% if stats %}
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Statistik Verifikasi Global
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="me-3">
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted">Total Verifikasi</small>
+                                <div class="h5 mb-0">{{ stats.verify_count }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="me-3">
+                                <i class="fas fa-stopwatch fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted">Rata-rata Waktu</small>
+                                <div class="h5 mb-0">{{ "%.3f"|format(stats.get_average_verify_time()) }}s</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="me-3">
+                                <i class="fas fa-clock fa-2x text-info"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted">Total Waktu Verifikasi</small>
+                                <div class="h5 mb-0">{{ "%.2f"|format(stats.total_verify_time) }}s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Di bagian Action Buttons -->
+		<div class="row mt-4">
+			<div class="col-md mb-2">
+				<a href="{{ url_for('scan_hp') }}" class="btn btn-outline-success w-100">
+					<i class="fas fa-mobile-alt me-2"></i>Scanner HP
+				</a>
+			</div>
+			<div class="col-md mb-2">
+				<a href="{{ url_for('verify_direct_page') }}" class="btn btn-outline-success w-100">
+					<i class="fas fa-barcode me-2"></i>Scanner USB
+				</a>
+			</div>
+				<div class="col-md mb-2">
+					<a href="{{ url_for('view_log_verifikasi') }}" class="btn btn-outline-info w-100">
+						<i class="fas fa-history me-2"></i>Lihat Log Verifikasi
+				</a>
+			</div>
+			<div class="col-md mb-2">
+				<a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100">
+					<i class="fas fa-tachometer-alt me-2"></i>Dashboard
+				</a>
+			</div>
+		</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        // Drag & Drop untuk single file
+        const singleUploadArea = document.getElementById('singleUploadArea');
+        const singleFileInput = document.getElementById('singleFile');
+        const singleFileInfo = document.getElementById('singleFileInfo');
+        const singleFileName = document.getElementById('singleFileName');
+        
+        singleUploadArea.addEventListener('click', () => singleFileInput.click());
+        
+        singleFileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                singleFileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)';
+                singleFileInfo.style.display = 'block';
+                singleUploadArea.style.borderColor = '#28a745';
+                singleUploadArea.style.backgroundColor = '#d4edda';
+            }
+        });
+        
+        singleUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            singleUploadArea.classList.add('dragover');
+        });
+        
+        singleUploadArea.addEventListener('dragleave', () => {
+            singleUploadArea.classList.remove('dragover');
+        });
+        
+        singleUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            singleUploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                singleFileInput.files = e.dataTransfer.files;
+                const file = e.dataTransfer.files[0];
+                singleFileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)';
+                singleFileInfo.style.display = 'block';
+                singleUploadArea.style.borderColor = '#28a745';
+                singleUploadArea.style.backgroundColor = '#d4edda';
+            }
+        });
+        
+        function clearSingleFile() {
+            singleFileInput.value = '';
+            singleFileInfo.style.display = 'none';
+            singleUploadArea.style.borderColor = '#dee2e6';
+            singleUploadArea.style.backgroundColor = '#f8f9fa';
+        }
+        
+        // Drag & Drop untuk multiple files
+        const massalUploadArea = document.getElementById('massalUploadArea');
+        const massalFilesInput = document.getElementById('massalFiles');
+        const massalFileInfo = document.getElementById('massalFileInfo');
+        const massalFileCount = document.getElementById('massalFileCount');
+        const massalFileList = document.getElementById('massalFileList');
+        
+        massalUploadArea.addEventListener('click', () => massalFilesInput.click());
+        
+        massalFilesInput.addEventListener('change', function() {
+            updateMassalFileInfo();
+        });
+        
+        massalUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            massalUploadArea.classList.add('dragover');
+        });
+        
+        massalUploadArea.addEventListener('dragleave', () => {
+            massalUploadArea.classList.remove('dragover');
+        });
+        
+        massalUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            massalUploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                massalFilesInput.files = e.dataTransfer.files;
+                updateMassalFileInfo();
+            }
+        });
+        
+        function updateMassalFileInfo() {
+            if (massalFilesInput.files.length > 0) {
+                massalFileCount.textContent = massalFilesInput.files.length + ' file dipilih';
+                massalFileList.innerHTML = '';
+                
+                let totalSize = 0;
+                for (let i = 0; i < Math.min(massalFilesInput.files.length, 5); i++) {
+                    const file = massalFilesInput.files[i];
+                    totalSize += file.size;
+                    const li = document.createElement('div');
+                    li.className = 'text-truncate';
+                    li.title = file.name;
+                    li.textContent = '• ' + file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)';
+                    massalFileList.appendChild(li);
+                }
+                
+                if (massalFilesInput.files.length > 5) {
+                    const more = document.createElement('div');
+                    more.className = 'text-muted';
+                    more.textContent = '... dan ' + (massalFilesInput.files.length - 5) + ' file lainnya';
+                    massalFileList.appendChild(more);
+                }
+                
+                const totalSizeDiv = document.createElement('div');
+                totalSizeDiv.className = 'mt-2 fw-bold';
+                totalSizeDiv.textContent = 'Total: ' + (totalSize / 1024).toFixed(2) + ' KB';
+                massalFileList.appendChild(totalSizeDiv);
+                
+                massalFileInfo.style.display = 'block';
+                massalUploadArea.style.borderColor = '#28a745';
+                massalUploadArea.style.backgroundColor = '#d4edda';
+            }
+        }
+        
+        function clearMassalFiles() {
+            massalFilesInput.value = '';
+            massalFileInfo.style.display = 'none';
+            massalUploadArea.style.borderColor = '#dee2e6';
+            massalUploadArea.style.backgroundColor = '#f8f9fa';
+        }
+        
+        // Inisialisasi DataTable untuk hasil massal
+        $(document).ready(function() {
+            if ($('#massalTable').length) {
+                $('#massalTable').DataTable({
+                    "order": [[0, "asc"]],
+                    "language": {
+                        "search": "Cari:",
+                        "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                        "zeroRecords": "Data tidak ditemukan",
+                        "info": "Menampilkan halaman _PAGE_ dari _PAGES_",
+                        "infoEmpty": "Tidak ada data",
+                        "infoFiltered": "(disaring dari _MAX_ total data)",
+                        "paginate": {
+                            "first": "Pertama",
+                            "last": "Terakhir",
+                            "next": "Berikutnya",
+                            "previous": "Sebelumnya"
+                        }
+                    },
+                    "pageLength": 10,
+                    "responsive": true
+                });
+            }
+        });
+    </script>
+	
+	<script>
+    // Cek jika ada task_id di URL (berarti baru selesai dari progress)
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('task_id');
+    
+    if (taskId) {
+        // Tampilkan toast notification bahwa verifikasi selesai
+        $(document).ready(function() {
+            const toast = `
+                <div class="toast show position-fixed top-0 end-0 m-3" role="alert">
+                    <div class="toast-header bg-success text-white">
+                        <strong class="me-auto"><i class="fas fa-check-circle me-2"></i>Verifikasi Selesai</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        Proses verifikasi massal telah selesai. Hasil ditampilkan di bawah.
+                        <div class="mt-2">
+                            <a href="{{ url_for('view_log_verifikasi', sumber='Massal') }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-clipboard-list me-1"></i>Lihat Log
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('body').append(toast);
+            
+            // Auto-hide toast setelah 10 detik
+            setTimeout(() => {
+                $('.toast').remove();
+            }, 10000);
+        });
+    }
+    
+    // Tambahkan info untuk verifikasi massal
+    $(document).ready(function() {
+        const fileInput = document.querySelector('input[name="qrfiles"]');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const fileCount = this.files.length;
+                if (fileCount > 5) {
+                    // Tampilkan info bahwa akan menggunakan async processing
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'alert alert-info mt-2';
+                    infoDiv.innerHTML = `
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Info:</strong> Karena Anda mengupload ${fileCount} file, proses akan menggunakan sistem background dengan progress tracking untuk performa yang lebih baik.
+                    `;
+                    
+                    // Cari form dan tambahkan info setelahnya
+                    const form = this.closest('form');
+                    if (form) {
+                        const existingInfo = form.querySelector('.alert-info');
+                        if (existingInfo) {
+                            existingInfo.remove();
+                        }
+                        form.appendChild(infoDiv);
+                    }
+                }
+            });
+        }
+    });
+	</script>
+
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>

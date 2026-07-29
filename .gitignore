@@ -45,9 +45,12 @@ static/testing_reports/
 temp_*.txt
 session_details.txt
 testing_results_summary_*.png
-hasil.html
-generate_csv.html
-scanner.html
+# Ditambatkan ke akar repo: tanpa garis miring awal, pola ini juga menangkap
+# templates/hasil.html, templates/generate_csv.html, dan templates/scanner.html
+# sehingga tiga template produksi ikut terabaikan dari kendali versi.
+/hasil.html
+/generate_csv.html
+/scanner.html
 
 # Local editor and OS files
 .vscode/

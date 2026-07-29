@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Generate QR Code - QR Code Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .qr-image {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: white;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        .stat-card h6 {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #343a40;
+        }
+        .stat-card .unit {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .time-breakdown {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .time-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .time-item:last-child {
+            border-bottom: none;
+        }
+        .time-label {
+            font-weight: 500;
+        }
+        .time-value {
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        .btn-download {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-download:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        .progress-bar-container {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin: 5px 0 15px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 4px;
+        }
+        .comparison-stats {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h2 class="text-primary">
+                    <i class="fas fa-qrcode me-2"></i>QR Code Berhasil Digenerate!
+                </h2>
+                <p class="text-muted">QR Code telah berhasil dibuat dengan sistem keamanan digital signature</p>
+                <a href="{{ url_for('qr_generator') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-qrcode me-2"></i>Kembali ke QR Generator
+                </a>
+            </div>
+        </div>
+
+        <!-- QR Code Display -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-image me-2"></i>QR Code Hasil Generate
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="qr-container">
+                    <img src="{{ url_for('static', filename=qr_path) }}" 
+                         alt="QR Code" 
+                         class="qr-image mb-3">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Scan QR code ini untuk verifikasi keaslian data
+                    </p>
+                    <a href="{{ url_for('static', filename=qr_path) }}" 
+                       download="qr_code_{{ qr_path.split('/')[-1] }}" 
+                       class="btn btn-download">
+                        <i class="fas fa-download me-2"></i>Download QR Code
+                    </a>
+                </div>
+                
+                <!-- Tambahan untuk URL Scan Kamera HP -->
+                {% if qr_url %}
+                <div class="alert alert-info mt-3">
+                    <h5><i class="fas fa-mobile-alt me-2"></i>📱 Scan dengan Kamera HP:</h5>
+                    <p>QR Code ini berisi URL yang dapat langsung discan dengan kamera HP:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="qrUrl" value="{{ qr_url }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyQRUrl()">Salin</button>
+                    </div>
+                    <a href="{{ url_for('scan_hp') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-mobile-alt me-2"></i>Buka Scanner HP Otomatis
+                    </a>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Pindai QR Code di atas dengan kamera HP untuk verifikasi instan.
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Informasi Dasar QR Code -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informasi Dasar QR Code
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h6><i class="fas fa-expand-alt me-2"></i>Resolusi</h6>
+                        <div class="value">{{ resolution }}</div>
+                        <div class="unit">Pixel</div>
+                    </div>
+                    <div class="stat-card">
+                        <h6><i class="fas fa-cube me-2"></i>Modul QR</h6>
+                        <div class="value">{{ modules }}</div>
+                        <div class="unit">Modul</div>
+                    </div>
+                    <div class="stat-card">
+                        <h6><i class="fas fa-code-branch me-2"></i>Versi QR</h6>
+                        <div class="value">Version {{ version }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h6><i class="fas fa-weight me-2"></i>Ukuran File</h6>
+                        <div class="value">{{ file_size }}</div>
+                        <div class="unit">Kilobytes</div>
+                    </div>
+                    <div class="stat-card">
+                        <h6><i class="fas fa-signature me-2"></i>Panjang Signature</h6>
+                        <div class="value">{{ signature_length }}</div>
+                        <div class="unit">Karakter</div>
+                    </div>
+                    <div class="stat-card">
+                        <h6><i class="fas fa-key me-2"></i>Algoritma</h6>
+                        <div class="value">{{ algorithm }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breakdown Waktu Generate -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-stopwatch me-2"></i>Analisis Waktu Generate
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="text-muted mb-3">Breakdown Waktu Eksekusi:</h6>
+                        <div class="time-breakdown">
+                            <div class="time-item">
+                                <span class="time-label">Pembuatan Data QR:</span>
+                                <span class="time-value">{{ data_time }}</span>
+                            </div>
+                            <div class="time-item">
+                                <span class="time-label">Pembuatan Digital Signature:</span>
+                                <span class="time-value">{{ sign_time }}</span>
+                            </div>
+                            <div class="time-item">
+                                <span class="time-label">Render Gambar QR:</span>
+                                <span class="time-value">{{ qr_time }}</span>
+                            </div>
+                            <div class="time-item">
+                                <span class="time-label">Penyimpanan File:</span>
+                                <span class="time-value">{{ save_time }}</span>
+                            </div>
+                            <div class="time-item" style="border-top: 2px solid rgba(255,255,255,0.3); padding-top: 12px;">
+                                <span class="time-label" style="font-size: 1.1rem;">TOTAL WAKTU:</span>
+                                <span class="time-value" style="font-size: 1.3rem; color: #ffcc00;">{{ total_time }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-3">Distribusi Waktu:</h6>
+                        <!-- Progress bars untuk distribusi waktu -->
+                        {% set total_seconds = total_time|replace(' detik', '')|float %}
+                        {% if total_seconds > 0 %}
+                            {% set data_pct = (data_time|replace(' detik', '')|float / total_seconds * 100)|round(1) %}
+                            {% set sign_pct = (sign_time|replace(' detik', '')|float / total_seconds * 100)|round(1) %}
+                            {% set qr_pct = (qr_time|replace(' detik', '')|float / total_seconds * 100)|round(1) %}
+                            {% set save_pct = (save_time|replace(' detik', '')|float / total_seconds * 100)|round(1) %}
+                            
+                            <div class="mb-3">
+                                <small>Data QR ({{ data_pct }}%)</small>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar bg-primary" style="width: {{ data_pct }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small>Digital Signature ({{ sign_pct }}%)</small>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar bg-danger" style="width: {{ sign_pct }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small>Render QR ({{ qr_pct }}%)</small>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar bg-warning" style="width: {{ qr_pct }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small>Penyimpanan ({{ save_pct }}%)</small>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar bg-success" style="width: {{ save_pct }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Perbandingan (jika ada) -->
+        {% if stats %}
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Statistik Performa System
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="comparison-stats">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Statistik Generate:</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Total QR Digenerate
+                                    <span class="badge bg-primary rounded-pill">{{ stats.qr_count }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Rata-rata Waktu Generate
+                                    <span class="badge bg-success rounded-pill">{{ "%.3f"|format(stats.get_average_generate_time()) }} detik</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Rata-rata Ukuran File
+                                    <span class="badge bg-info rounded-pill">{{ "%.2f"|format(stats.get_average_file_size()) }} KB</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Rentang Dimensi QR:</h6>
+                            <ul class="list-group list-group-flush">
+                                {% set dim_stats = stats.get_dimension_stats() %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Dimensi Minimum
+                                    <span class="badge bg-secondary rounded-pill">{{ dim_stats.min }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Dimensi Maksimum
+                                    <span class="badge bg-secondary rounded-pill">{{ dim_stats.max }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Dimensi Rata-rata
+                                    <span class="badge bg-secondary rounded-pill">{{ dim_stats.avg }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Statistik ini membantu mengoptimalkan performa sistem QR Code Anda
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-md-4 mb-2">
+                <a href="{{ url_for('scan_hp') }}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-mobile-alt me-2"></i>Scanner HP Otomatis
+                </a>
+            </div>
+            <div class="col-md-4 mb-2">
+                <a href="{{ url_for('generate_csv') }}" class="btn btn-outline-info w-100">
+                    <i class="fas fa-file-csv me-2"></i>Generate CSV untuk Massal
+                </a>
+            </div>
+            <div class="col-md-4 mb-2">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard Statistik
+                </a>
+            </div>
+        </div>
+
+        <!-- Informasi Tambahan -->
+        <div class="alert alert-info mt-4">
+            <h6><i class="fas fa-lightbulb me-2"></i>Tips Optimalisasi:</h6>
+            <ul class="mb-0">
+                <li>QR Code dengan versi lebih tinggi memiliki lebih banyak modul dan kapasitas data lebih besar</li>
+                <li>Digital signature memastikan keaslian dan keutuhan data dalam QR Code</li>
+                <li>Waktu generate dapat bervariasi tergantung kompleksitas data dan spesifikasi server</li>
+                <li>Gunakan generate massal dari CSV untuk membuat banyak QR Code sekaligus</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="container text-center mt-4 mb-5 text-muted">
+        <hr>
+        <small>&copy; 2026 QR Code Security System - Keamanan Digital Terverifikasi</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animasi untuk progress bars
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBars = document.querySelectorAll('.progress-bar');
+            progressBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.transition = 'width 1s ease-in-out';
+                    bar.style.width = width;
+                }, 100);
+            });
+        });
+        
+        // Fungsi untuk menyalin URL QR
+        function copyQRUrl() {
+            const urlInput = document.getElementById('qrUrl');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999); // Untuk mobile
+            document.execCommand('copy');
+            alert('URL berhasil disalin ke clipboard!');
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/table_keyboard_scroll.js') }}"></script>
+</body>
+</html>
