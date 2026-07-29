@@ -1,0 +1,10 @@
+{
+  "n_korpus": 50033,
+  "n_kueri": 513,
+  "n_beda": 0,
+  "ms_scan": 405.6799262591872,
+  "ms_index": 0.7453111754222019,
+  "speedup": 544.3094638013158,
+  "backfill_detik": 5.336920772970188,
+  "backfill_record": 50033
+}
