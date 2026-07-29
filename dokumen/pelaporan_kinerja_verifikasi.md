@@ -187,9 +187,9 @@ sebagai catatan optimasi.
 
 | Klaim | Dasar |
 |---|---|
-| Verifikasi tanda tangan 1,02 ms | `verify_time`, tervalidasi silang (§2.1) |
-| ≈ 980 verifikasi tanda tangan/detik/thread | 1 / 1,02 ms |
-| Dekode QR 1,04 ms | `decode_time`, properti medium QR |
+| Verifikasi tanda tangan 1,02–1,05 ms | `verify_time`, konsisten lintas tiga pengukuran independen (§2.1, §6.1) |
+| ≈ 970 verifikasi tanda tangan/detik/thread | 1 / 1,03 ms |
+| Dekode QR 1,04–1,07 ms | `decode_time`, properti medium QR |
 | Pemeriksaan kedaluwarsa 2,2 µs | Mikrobenchmark |
 
 ### 5.2 Yang harus dilaporkan terpisah
@@ -228,37 +228,44 @@ dibuktikan §4.
 | Penerapan ke produksi | Selesai — layanan sehat pasca-restart |
 | Backfill produksi | Selesai — 100.713 record, 14,8 detik |
 | Pengukuran komponen produksi | Selesai — §4.5 |
-| Pengukuran ujung-ke-ujung produksi | **Belum** — lihat catatan di bawah |
+| Pengukuran ujung-ke-ujung produksi | Selesai — §6.1 |
 
-### 6.1 Proyeksi ujung-ke-ujung
+### 6.1 Hasil ujung-ke-ujung terukur
 
-Berdasarkan pengukuran komponen §4.5, dengan mengganti biaya pencarian pada
-dekomposisi §2:
+Dibandingkan atas dua verifikasi massal nyata pada produksi, keduanya dengan
+korpus QR yang belum pernah diverifikasi sebelumnya:
 
-| Besaran | Sebelum | Proyeksi sesudah |
+| Fase | Sebelum (`56d7146d`, n = 528) | Sesudah (`7dc3bb0b`, n = 632) |
 |---|---:|---:|
-| `db_time` | 149,88 ms | ≈ 21,0 ms |
-| Total per berkas | 153,41 ms | ≈ 24,6 ms |
-| Throughput | 6,5 berkas/detik | ≈ 40 berkas/detik |
+| `load_time` | 0,04 ms | 0,00 ms |
+| `decode_time` | 1,04 ms | 1,07 ms |
+| `verify_time` | 1,02 ms | 1,05 ms |
+| `db_time` | 149,88 ms | **22,10 ms** |
+| **Total** | **153,41 ms** | **25,73 ms** |
+| Throughput | 6,5 berkas/detik | **38,9 berkas/detik** |
+| Porsi `db_time` | 97,7 % | 85,9 % |
 
-**Angka kolom kanan adalah turunan aritmetika dari pengukuran komponen, bukan
-hasil verifikasi massal nyata.** Nilai tersebut belum boleh dikutip sebagai
-hasil terukur.
+Perbaikan ujung-ke-ujung **6,0×**, dan nilainya berimpit dengan proyeksi
+aritmetika yang dihitung sebelumnya (≈ 24,6 ms; ≈ 40 berkas/detik) — sehingga
+model biaya pada §2 terkonfirmasi.
 
-### 6.2 Mengapa pengukuran ujung-ke-ujung belum dijalankan
+Perhatikan `verify_time` yang bergeming di 1,02–1,05 ms lintas kedua pengukuran
+dan lintas sandbox (§2.1). Konsistensi ini menegaskan bahwa perbaikan sepenuhnya
+terjadi pada lapisan penyimpanan dan tidak menyentuh jalur kriptografis sama
+sekali — persis pemisahan yang menjadi pokok dokumen ini.
 
-Pengukuran "sesudah" yang sah memerlukan verifikasi massal atas korpus QR yang
-**belum pernah diverifikasi**. Menjalankan ulang korpus lama akan menghasilkan
-klasifikasi replay, bukan valid, sehingga tidak sebanding dengan pengukuran
-"sebelum".
+`db_time` yang tersisa (22,10 ms) kini didominasi pencatatan nonce ke SQLite dan
+pembacaan record, yakni kerja yang memang disyaratkan protokol.
 
-Menyiapkan korpus baru berarti menerbitkan ratusan QR baru ke basis data
-produksi dan mencatatkan nonce-nya secara permanen. Itu keputusan pemilik
-sistem, bukan efek samping yang pantas diambil sepihak saat mengukur kinerja.
+### 6.2 Catatan reproduksi
 
-Prosedur bila dikehendaki: terbitkan korpus QR baru melalui halaman generate
-massal, jalankan verifikasi massal atas korpus tersebut, lalu baca dekomposisi
-fase dari `data/task_results/<task_id>.json` dan bandingkan dengan tabel §2.
+Pengukuran "sesudah" yang sah memerlukan korpus QR yang **belum pernah
+diverifikasi**. Menjalankan ulang korpus lama akan menghasilkan klasifikasi
+replay, bukan valid, sehingga tidak sebanding dengan pengukuran "sebelum".
+
+Prosedur: terbitkan korpus QR baru melalui halaman generate massal, jalankan
+verifikasi massal atas korpus tersebut, lalu baca dekomposisi fase dari
+`data/task_results/<task_id>.json`.
 
 ### 6.3 Utang teknis yang tersisa
 

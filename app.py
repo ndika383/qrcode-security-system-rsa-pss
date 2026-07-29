@@ -6816,6 +6816,8 @@ def view_log_verifikasi():
             'replay': 0,  # 🔁 Replay Attack
             'tidak_ditemukan': 0,  # ⛔ Data Tidak Ditemukan di Database
             'signature_invalid': 0,  # ⚠️ Data Valid tapi Signature Invalid
+            'kedaluwarsa': 0,  # ⏰ QR Code Kedaluwarsa
+            'lainnya': 0,  # Status yang belum dikenali kategori mana pun
             'tunggal': 0,
             'massal': 0,
             'direct': 0,  # Direct/Scanner
@@ -6940,6 +6942,7 @@ def view_log_verifikasi():
                             'replay': ['🔁', 'Replay Attack'],
                             'signature_invalid': ['⚠️ Data Valid tapi Signature Invalid'],
                             'tidak_ditemukan': ['⛔ Data Tidak Ditemukan', '⛔ Data Tidak Ditemukan di Database'],
+                            'kedaluwarsa': ['⏰ QR Code Kedaluwarsa', 'Kedaluwarsa'],
                             'error': ['❌ Error', '❌ Format QR', '⛔ Tidak dapat membaca QR']
                         }
                         
@@ -6966,11 +6969,17 @@ def view_log_verifikasi():
                                 elif '⛔ Data Tidak Ditemukan' in status_val:
                                     statistik['tidak_ditemukan'] += 1
                                     statistik['palsu'] += 1
+                                elif 'Kedaluwarsa' in status_val:
+                                    # Kategori tersendiri: QR sah yang lewat batas umur
+                                    # bukan pemalsuan, jadi tidak ditambahkan ke 'palsu'.
+                                    statistik['kedaluwarsa'] += 1
                                 elif '❌ Data Telah Dimodifikasi' in status_val or '❌ Data Palsu' in status_val:
                                     statistik['palsu'] += 1
-                                elif '❌' in status_val or 'Error' in status_val:
-                                    # Kategori error umum
-                                    pass
+                                else:
+                                    # Penampung status yang belum dikenali, termasuk error.
+                                    # Tanpa cabang ini status baru hilang dari seluruh
+                                    # kategori sementara 'total' tetap menghitungnya.
+                                    statistik['lainnya'] += 1
                             
                             # Hitung berdasarkan sumber
                             sumber_counts = df['Sumber'].value_counts()
