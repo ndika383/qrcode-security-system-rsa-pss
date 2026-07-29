@@ -619,19 +619,19 @@
                                 </small>
                             </div>
 
-                            <!-- Response Time Grading (P95, RAIL Model) -->
+                            <!-- Response Time Grading (P95 interaktif, jendela bergulir) -->
                             <div class="mb-3">
                                 <small class="text-muted">
-                                    <span class="methodology-tooltip" data-bs-toggle="tooltip" 
-                                          title="Menggunakan P95 response time dari CSV log. Grade A: ≤100ms, B: ≤300ms, C: ≤1000ms, D: >1000ms">
-                                        <i class="fas fa-book me-1"></i>P95 Response Time Grade:
+                                    <span class="methodology-tooltip" data-bs-toggle="tooltip"
+                                          title="P95 permintaan interaktif (scan kamera, verifikasi tunggal) dalam {{ performance_summary.meta.grade_window_days if performance_summary else 28 }} hari terakhir. Item verifikasi massal dikecualikan agar volume batch tidak menggeser grade. Minimum {{ performance_summary.meta.min_samples if performance_summary else 20 }} sampel. Ambang A ≤100ms dan C ≤1000ms mengikuti batas persepsi Miller (1968) / Nielsen (1993); B ≤300ms interpolasi internal.">
+                                        <i class="fas fa-book me-1"></i>P95 Response Time Grade ({{ performance_summary.meta.grade_window_days if performance_summary else 28 }} hari):
                                     </span>
                                 </small>
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1 me-3">
                                         <div class="progress" style="height: 10px;">
-                                            <div class="progress-bar bg-info" style="width: 
-                                                {% if performance_summary and performance_summary.verify.count > 0 %}
+                                            <div class="progress-bar bg-info" style="width:
+                                                {% if performance_summary and performance_summary.verify.grade_sample_count > 0 %}
                                                     {{ performance_summary.verify.grade.progress }}%
                                                 {% else %}
                                                     0%
@@ -640,18 +640,19 @@
                                         </div>
                                     </div>
                                     <small class="text-nowrap">
-                                        {% if performance_summary and performance_summary.verify.count > 0 %}
+                                        {% if performance_summary and performance_summary.verify.grade_sample_count > 0 %}
                                             <span class="{{ performance_summary.verify.grade.class }}">{{ performance_summary.verify.grade.label }}</span>
                                         {% else %}
-                                            N/A
+                                            <span class="text-muted">Belum ada permintaan interaktif</span>
                                         {% endif %}
                                     </small>
                                 </div>
 	                                <small class="text-muted d-block mt-1">
 	                                    <i class="fas fa-bullseye me-1"></i>Target P95: ≤100ms (Grade A) •
-	                                    <i class="fas fa-tachometer-alt me-1 ms-2"></i>P95: 
-	                                    {% if performance_summary and performance_summary.verify.count > 0 %}
-	                                        {{ "%.1f"|format(performance_summary.verify.p95_s * 1000) }}ms •
+	                                    <i class="fas fa-tachometer-alt me-1 ms-2"></i>P95 interaktif:
+	                                    {% if performance_summary and performance_summary.verify.grade_sample_count > 0 %}
+	                                        {{ "%.1f"|format(performance_summary.verify.grade_p95_s * 1000) }}ms (n={{ performance_summary.verify.grade_sample_count }}) •
+	                                        {% if performance_summary.verify.trend.count > 0 %}Tren {{ performance_summary.verify.trend.window_days }}h: {{ "%.1f"|format(performance_summary.verify.trend.p95_s * 1000) }}ms (<span class="{{ performance_summary.verify.trend.grade.class }}">{{ performance_summary.verify.trend.grade.grade }}</span>, n={{ performance_summary.verify.trend.count }}) •{% endif %}
 	                                        Median: {{ "%.1f"|format(performance_summary.verify.median_s * 1000) }}ms •
 	                                        Mean: {{ "%.1f"|format(performance_summary.verify.mean_s * 1000) }}ms
 	                                        {% if performance_summary.verify.outliers_over_1s > 0 %} • Outlier &gt;1s: {{ performance_summary.verify.outliers_over_1s }}{% endif %}
@@ -768,6 +769,7 @@
 	                            <ul class="mt-2 mb-2 ps-3">
 	                                <li>Timing dashboard bersumber dari <code>logs/log_generate.csv</code> dan <code>logs/log_verifikasi.csv</code>.</li>
 	                                <li>Latency memakai median untuk kondisi tipikal dan P95/P99 untuk tail latency.</li>
+	                                <li>Metrik latensi dibatasi jendela bergulir {{ performance_summary.meta.grade_window_days if performance_summary else 28 }} hari, mengikuti praktik Core Web Vitals (CrUX) dan error budget SRE. Tanpa jendela, satu sesi lambat mengunci grade permanen.</li>
 	                                <li>Traffic/throughput, valid-rate, dan resource server diperlakukan sebagai SLI operasional.</li>
 	                                <li>Ops/sec dashboard adalah estimasi <code>1 / median</code>, bukan throughput load-test.</li>
 	                            </ul>
@@ -777,8 +779,10 @@
 	                            <ul class="mt-2 mb-2 ps-3">
 	                                <li>Generate Target Attainment = <code>min(100%, target P95 / aktual P95 * 100)</code>.</li>
 	                                <li>Target lokal generate: P95 ≤0.2s per QR.</li>
-	                                <li>Verify grade memakai P95; Grade A memakai batas respons 100ms dari RAIL.</li>
-	                                <li>Grade B/C/D adalah kebijakan dashboard: ≤300ms, ≤1000ms, dan &gt;1000ms.</li>
+	                                <li>Verify grade memakai P95 <strong>permintaan interaktif</strong> dalam jendela bergulir <strong>{{ performance_summary.meta.grade_window_days if performance_summary else 28 }} hari</strong>; item verifikasi massal dikecualikan agar volume batch tidak menggeser grade.</li>
+	                                <li>Grade A (≤100ms) dan C (≤1000ms) mengikuti batas persepsi respons Miller (1968) dan Nielsen (1993): 0,1 s terasa seketika, 1,0 s menjaga alur pikir.</li>
+	                                <li>Grade B (≤300ms) adalah interpolasi internal tanpa rujukan kanonik.</li>
+	                                <li>Grade tidak ditampilkan bila sampel &lt;{{ performance_summary.meta.min_samples if performance_summary else 20 }}: pada n kecil P95 sama dengan nilai maksimum.</li>
 	                            </ul>
 	                        </div>
 	                        <div class="col-md-4 mb-3">
@@ -797,7 +801,8 @@
 	                            <ul class="mt-2 mb-2 ps-3">
 	                                <li><a href="https://sre.google/sre-book/service-level-objectives/" target="_blank" rel="noopener">Google SRE Book - Service Level Objectives</a>: SLI latency, error rate, dan throughput.</li>
 	                                <li><a href="https://sre.google/workbook/implementing-slos/" target="_blank" rel="noopener">Google SRE Workbook - Implementing SLOs</a>: penggunaan beberapa threshold untuk tail latency.</li>
-	                                <li><a href="https://web.dev/articles/rail" target="_blank" rel="noopener">web.dev RAIL Model</a>: respons pengguna terasa langsung pada rentang 0-100ms.</li>
+	                                <li>Miller (1968), <em>Response time in man-computer conversational transactions</em>, dan Nielsen (1993), <em>Usability Engineering</em> bab 5: batas persepsi 0,1 s (terasa seketika) dan 1,0 s (alur pikir tidak terputus) — dasar ambang Grade A dan C.</li>
+	                                <li><a href="https://developer.chrome.com/docs/crux" target="_blank" rel="noopener">Chrome UX Report (CrUX)</a>: praktik jendela bergulir 28 hari untuk metrik latensi lapangan.</li>
 	                                <li>Wilson (1927) dan Brown, Cai, DasGupta (2001): interval estimasi proporsi binomial.</li>
 	                                <li><a href="https://www.iso.org/standard/62021.html" target="_blank" rel="noopener">ISO/IEC 18004</a>: spesifikasi simbol QR Code.</li>
 	                            </ul>

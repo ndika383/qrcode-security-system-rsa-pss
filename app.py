@@ -7519,6 +7519,46 @@ def redirect_to_testing():
     """Redirect ke testing dashboard"""
     return redirect(url_for('testing.testing_dashboard'))
 
+# Jendela pengukuran latensi dashboard.
+#
+# Tanpa jendela, P95 dihitung atas seluruh riwayat CSV sehingga satu sesi lambat
+# mengunci grade selamanya: P95 adalah persentil, jadi K baris lambat baru turun
+# di bawahnya setelah ada 19K baris cepat. Akibatnya grade hanya bisa dipulihkan
+# lewat Reset Statistik — yang ikut menghapus seluruh data QR.
+#
+# 28 hari dipilih mengikuti praktik lazim, bukan standar yang mengikat: Core Web
+# Vitals (CrUX) memakai jendela bergulir 28 hari, dan error budget SRE umumnya
+# 28 hari. Empat minggu penuh membuat komposisi hari kerja dan akhir pekan
+# seimbang; jendela 30 hari menggeser komposisi itu dan menyuntikkan musiman
+# mingguan ke dalam angka.
+DASHBOARD_GRADE_WINDOW_DAYS = 28
+DASHBOARD_TREND_WINDOW_DAYS = 7
+
+# Di bawah ambang ini P95 tidak bermakna. Dengan index = round((n-1)*0.95),
+# untuk n <= 11 nilai P95 persis sama dengan permintaan terlambat, sehingga satu
+# permintaan lambat langsung menetapkan grade.
+DASHBOARD_GRADE_MIN_SAMPLES = 20
+
+
+def _is_batch_source(source):
+    """Item batch bukan permintaan interaktif dan tidak layak masuk grade.
+
+    Satu scan kamera adalah satu permintaan HTTP yang ditunggu pengguna,
+    sedangkan satu baris Massal hanyalah satu berkas di dalam satu unggahan.
+    Mencampurnya membuat grade dapat dinaikkan sekadar dengan menjalankan batch
+    besar: 20.000 item cepat mengencerkan scan kamera yang lambat tanpa ada yang
+    membaik. Grade karenanya dihitung dari sumber interaktif saja.
+    """
+    return str(source or '').strip().lower().startswith('massal')
+
+
+def _parse_log_timestamp(value):
+    try:
+        return datetime.fromisoformat(str(value).strip().replace('Z', '+00:00'))
+    except (TypeError, ValueError):
+        return None
+
+
 def _empty_timing_summary():
     return {
         'count': 0,
@@ -7532,7 +7572,12 @@ def _empty_timing_summary():
         'outliers_over_1s': 0,
         'file_size_mean_kb': 0.0,
         'file_size_median_kb': 0.0,
-        'by_source': {}
+        'by_source': {},
+        'interactive_count': 0,
+        'interactive_p95_s': 0.0,
+        'interactive_median_s': 0.0,
+        'window_days': None,
+        'skipped_no_timestamp': 0,
     }
 
 def _percentile(sorted_values, percentile):
@@ -7542,7 +7587,33 @@ def _percentile(sorted_values, percentile):
     index = max(0, min(len(sorted_values) - 1, index))
     return sorted_values[index]
 
-def _response_grade(seconds):
+# Ambang grade bersandar pada batas persepsi respons Miller (1968) yang
+# dipopulerkan Nielsen (1993, Usability Engineering bab 5):
+#
+#   0,1 detik — pengguna merasa sistem bereaksi seketika
+#   1,0 detik — alur pikir pengguna tidak terputus meski jeda terasa
+#
+# Grade A dan C memetakan langsung ke kedua batas itu. Grade B pada 300 ms adalah
+# interpolasi internal tanpa rujukan kanonik, dan dinyatakan demikian.
+#
+# Catatan: versi sebelumnya mengutip RAIL untuk ambang 100 ms. Rujukan itu keliru.
+# RAIL adalah model performa antarmuka web, dan 100 ms di sana adalah anggaran
+# persepsi untuk umpan balik visual atas input pengguna, bukan target latensi API
+# sisi server. RAIL juga sama sekali tidak mengenal sistem grade A-D.
+RESPONSE_GRADE_REFERENCE = 'Miller (1968) & Nielsen (1993): batas 0,1 s dan 1,0 s'
+
+
+def _response_grade(seconds, sample_count=None):
+    """Grade latensi. sample_count di bawah ambang minimum menghasilkan N/A."""
+    if sample_count is not None and sample_count < DASHBOARD_GRADE_MIN_SAMPLES:
+        return {
+            'grade': 'N/A',
+            'label': f'Data belum cukup ({sample_count}/{DASHBOARD_GRADE_MIN_SAMPLES})',
+            'class': 'text-muted',
+            'progress': 0,
+            'insufficient': True,
+        }
+
     ms = seconds * 1000
     if seconds <= 0:
         return {'grade': 'N/A', 'label': 'N/A', 'class': 'text-muted', 'progress': 0}
@@ -7554,14 +7625,22 @@ def _response_grade(seconds):
         return {'grade': 'C', 'label': 'Grade C', 'class': 'text-warning', 'progress': 60}
     return {'grade': 'D', 'label': 'Grade D', 'class': 'text-danger', 'progress': 40}
 
-def _summarize_timing_csv(path):
+def _summarize_timing_csv(path, window_days=None):
+    """Ringkas kolom waktu dari CSV log, opsional dibatasi jendela bergulir."""
     summary = _empty_timing_summary()
+    summary['window_days'] = window_days
     if not os.path.exists(path):
         return summary
 
+    batas = None
+    if window_days:
+        batas = datetime.now(timezone.utc) - timedelta(days=window_days)
+
     values = []
     file_size_values = []
+    interactive_values = []
     by_source_values = defaultdict(list)
+    skipped_no_timestamp = 0
     try:
         with open(path, newline='', encoding='utf-8', errors='ignore') as f:
             reader = csv.DictReader(f)
@@ -7573,9 +7652,24 @@ def _summarize_timing_csv(path):
                 if value < 0:
                     continue
 
+                if batas is not None:
+                    waktu = _parse_log_timestamp(row.get('Waktu'))
+                    if waktu is None:
+                        # Baris tanpa timestamp yang terbaca tidak dapat ditempatkan
+                        # dalam jendela; dikeluarkan agar tidak menyelundup sebagai
+                        # data terkini, dan jumlahnya dilaporkan.
+                        skipped_no_timestamp += 1
+                        continue
+                    if waktu.tzinfo is None:
+                        waktu = waktu.replace(tzinfo=timezone.utc)
+                    if waktu < batas:
+                        continue
+
                 values.append(value)
                 source = row.get('Sumber') or row.get('Jenis') or '-'
                 by_source_values[source].append(value)
+                if not _is_batch_source(source):
+                    interactive_values.append(value)
 
                 try:
                     file_size = float(str(row.get('Ukuran File (KB)', '')).strip())
@@ -7616,9 +7710,19 @@ def _summarize_timing_csv(path):
             'mean_s': statistics.mean(source_values),
             'median_s': statistics.median(source_values),
             'p95_s': _percentile(source_sorted, 95),
-            'max_s': source_sorted[-1]
+            'max_s': source_sorted[-1],
+            'is_batch': _is_batch_source(source),
         }
 
+    if interactive_values:
+        interactive_sorted = sorted(interactive_values)
+        summary.update({
+            'interactive_count': len(interactive_values),
+            'interactive_p95_s': _percentile(interactive_sorted, 95),
+            'interactive_median_s': statistics.median(interactive_values),
+        })
+
+    summary['skipped_no_timestamp'] = skipped_no_timestamp
     return summary
 
 def _build_dashboard_performance_summary(cache):
@@ -7631,16 +7735,27 @@ def _build_dashboard_performance_summary(cache):
         os.path.getsize(verify_path) if os.path.exists(verify_path) else 0,
     )
 
+    # Cache ikut memuat tanggal: jendela bergulir bergeser tiap hari meskipun
+    # berkas log tidak berubah sama sekali.
+    signature = signature + (datetime.now(timezone.utc).strftime('%Y-%m-%d'),)
+
     if cache.get('performance_signature') == signature and cache.get('performance_summary'):
         return cache['performance_summary']
 
-    generate_summary = _summarize_timing_csv(generate_path)
-    verify_summary = _summarize_timing_csv(verify_path)
+    generate_summary = _summarize_timing_csv(generate_path, DASHBOARD_GRADE_WINDOW_DAYS)
+    verify_summary = _summarize_timing_csv(verify_path, DASHBOARD_GRADE_WINDOW_DAYS)
+    verify_trend = _summarize_timing_csv(verify_path, DASHBOARD_TREND_WINDOW_DAYS)
     generate_target_s = 0.2
     generate_median_s = generate_summary['median_s']
     throughput_ops = (1 / generate_median_s) if generate_median_s > 0 else 0
     generate_p95_s = generate_summary['p95_s']
     target_attainment = min(100, (generate_target_s / generate_p95_s) * 100) if generate_p95_s > 0 else 0
+
+    # Grade dihitung dari permintaan interaktif saja. Bila belum ada satu pun
+    # dalam jendela, jangan diam-diam jatuh ke agregat gabungan — laporkan
+    # sebagai data belum cukup, karena angka gabungan didominasi item batch.
+    grade_p95_s = verify_summary['interactive_p95_s']
+    grade_count = verify_summary['interactive_count']
 
     performance_summary = {
         'generate': {
@@ -7652,11 +7767,27 @@ def _build_dashboard_performance_summary(cache):
         },
         'verify': {
             **verify_summary,
-            'grade_metric': 'p95',
-            'grade': _response_grade(verify_summary['p95_s']),
-            'median_grade': _response_grade(verify_summary['median_s']),
+            'grade_metric': 'p95 interaktif',
+            'grade': _response_grade(grade_p95_s, grade_count),
+            'grade_p95_s': grade_p95_s,
+            'grade_sample_count': grade_count,
+            'median_grade': _response_grade(verify_summary['interactive_median_s'], grade_count),
             'mean_grade': _response_grade(verify_summary['mean_s']),
-        }
+            'trend': {
+                'window_days': DASHBOARD_TREND_WINDOW_DAYS,
+                'p95_s': verify_trend['interactive_p95_s'],
+                'count': verify_trend['interactive_count'],
+                'grade': _response_grade(
+                    verify_trend['interactive_p95_s'], verify_trend['interactive_count']
+                ),
+            },
+        },
+        'meta': {
+            'grade_window_days': DASHBOARD_GRADE_WINDOW_DAYS,
+            'trend_window_days': DASHBOARD_TREND_WINDOW_DAYS,
+            'min_samples': DASHBOARD_GRADE_MIN_SAMPLES,
+            'grade_reference': RESPONSE_GRADE_REFERENCE,
+        },
     }
 
     cache['performance_signature'] = signature
