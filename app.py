@@ -9369,7 +9369,15 @@ def cleanup_all_generated_files():
 
         # Index pencarian harus ikut dikosongkan; entri yang menunjuk file
         # terhapus akan membuat record hilang dilaporkan sebagai data palsu.
+        # Setelah itu index langsung dibangun ulang dari isi direktori yang
+        # tersisa agar statusnya tetap otoritatif. Tanpa langkah ini pencarian
+        # diam-diam kembali ke pemindaian direktori setiap kali reset dijalankan,
+        # dan baru pulih bila seseorang ingat menjalankan backfill manual.
         reset_qr_record_index()
+        try:
+            backfill_qr_record_index()
+        except Exception as e:
+            app.logger.warning(f'Gagal membangun ulang index setelah cleanup: {e}')
 
         # Reset juga folder tasks
         tasks_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'tasks')
