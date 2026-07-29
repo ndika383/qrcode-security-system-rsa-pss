@@ -1262,6 +1262,108 @@ def classify_qr_verification(data, signature_valid, sig_error="", original_data_
         "is_expired": is_expired
     }
 
+
+# Pelaporan hasil verifikasi memakai dua sumbu yang berdiri sendiri:
+#
+#   1. Keabsahan signature — fakta kriptografis, sah atau tidak.
+#   2. Keberlakuan QR      — keputusan kebijakan: berlaku, atau tidak berlaku
+#                            beserta alasannya.
+#
+# Keduanya tidak boleh diruntuhkan menjadi satu angka. QR kedaluwarsa dan QR
+# replay sama-sama bersignature sah; yang membedakan hanya alasan tidak
+# berlakunya. Menggabungkannya dengan QR palsu ke dalam satu penghitung membuat
+# dokumen otentik yang lewat umur tampak setara dengan pemalsuan.
+OUTCOME_BERLAKU = 'berlaku'
+OUTCOME_KEDALUWARSA = 'kedaluwarsa'
+OUTCOME_REPLAY = 'replay'
+OUTCOME_DIMODIFIKASI = 'dimodifikasi'
+OUTCOME_TIDAK_DITEMUKAN = 'tidak_ditemukan'
+OUTCOME_SIGNATURE_INVALID = 'signature_invalid'
+OUTCOME_ERROR = 'error_pemrosesan'
+OUTCOME_LAINNYA = 'lainnya'
+
+OUTCOME_LABELS = {
+    OUTCOME_BERLAKU: 'Berlaku',
+    OUTCOME_KEDALUWARSA: 'Signature sah, tidak berlaku (kedaluwarsa)',
+    OUTCOME_REPLAY: 'Signature sah, tidak berlaku (replay)',
+    OUTCOME_DIMODIFIKASI: 'Tidak berlaku (data dimodifikasi/palsu)',
+    OUTCOME_TIDAK_DITEMUKAN: 'Tidak berlaku (tidak ada di basis data)',
+    OUTCOME_SIGNATURE_INVALID: 'Tidak berlaku (signature tidak sah)',
+    OUTCOME_ERROR: 'Error pemrosesan',
+    OUTCOME_LAINNYA: 'Lainnya',
+}
+
+# Hanya kategori yang benar-benar merupakan keputusan kebijakan. Error
+# pemrosesan sengaja dikecualikan: berkas yang gagal dibaca bukan QR yang
+# ditolak, melainkan QR yang belum sempat dinilai.
+OUTCOME_TIDAK_BERLAKU = (
+    OUTCOME_KEDALUWARSA,
+    OUTCOME_REPLAY,
+    OUTCOME_DIMODIFIKASI,
+    OUTCOME_TIDAK_DITEMUKAN,
+    OUTCOME_SIGNATURE_INVALID,
+)
+
+
+def classify_verification_outcome(result):
+    """Turunkan kategori keberlakuan dari satu baris hasil verifikasi."""
+    if not isinstance(result, dict):
+        return OUTCOME_LAINNYA
+
+    status = str(result.get('status', ''))
+
+    if result.get('valid'):
+        return OUTCOME_BERLAKU
+    if result.get('is_replay') or '🔁' in status:
+        return OUTCOME_REPLAY
+    if result.get('is_expired') or 'Kedaluwarsa' in status:
+        return OUTCOME_KEDALUWARSA
+    if 'Error' in status:
+        return OUTCOME_ERROR
+    if 'Dimodifikasi' in status or 'Data Palsu' in status:
+        return OUTCOME_DIMODIFIKASI
+    if 'Tidak Ditemukan' in status:
+        return OUTCOME_TIDAK_DITEMUKAN
+    if 'Signature Invalid' in status or 'signature' in status.lower() or 'Nonce tidak valid' in status:
+        return OUTCOME_SIGNATURE_INVALID
+    return OUTCOME_LAINNYA
+
+
+def summarize_verification_outcomes(results):
+    """Ringkasan dua sumbu atas sekumpulan hasil verifikasi."""
+    ringkasan = {key: 0 for key in OUTCOME_LABELS}
+    signature_sah = 0
+    dinilai = 0
+
+    for result in results or []:
+        kategori = classify_verification_outcome(result)
+        ringkasan[kategori] += 1
+        if kategori != OUTCOME_ERROR:
+            dinilai += 1
+            if isinstance(result, dict) and result.get('signature_valid'):
+                signature_sah += 1
+
+    total = len(results or [])
+    ringkasan['total'] = total
+    ringkasan['dinilai'] = dinilai
+    ringkasan['signature_sah'] = signature_sah
+    # Kunci ini menghitung sumbu kriptografis atas seluruh QR yang dinilai, dan
+    # sengaja berbeda dari kategori OUTCOME_SIGNATURE_INVALID yang hanya memuat
+    # QR yang alasan utama ketidakberlakuannya adalah signature. QR dimodifikasi
+    # juga bersignature tidak sah, sehingga kedua angka ini memang tidak sama.
+    ringkasan['signature_tidak_sah'] = max(dinilai - signature_sah, 0)
+    ringkasan['tidak_berlaku'] = sum(ringkasan[k] for k in OUTCOME_TIDAK_BERLAKU)
+    ringkasan['labels'] = OUTCOME_LABELS
+
+    # Persentase dihitung terhadap QR yang benar-benar dinilai, bukan terhadap
+    # seluruh berkas, agar error pemrosesan tidak mengencerkan angkanya.
+    basis = dinilai or 1
+    ringkasan['pct_berlaku'] = round(ringkasan[OUTCOME_BERLAKU] / basis * 100, 1)
+    ringkasan['pct_tidak_berlaku'] = round(ringkasan['tidak_berlaku'] / basis * 100, 1)
+    ringkasan['pct_signature_sah'] = round(signature_sah / basis * 100, 1)
+    return ringkasan
+
+
 class FileLock:
     """Simple file locking mechanism for Windows/Linux compatibility"""
     
@@ -4940,6 +5042,7 @@ def verify_qr_massal_direct(valid_files):
                              hasil_tunggal=None, 
                              hasil_massal=hasil_verifikasi,
                              massal_stats=massal_stats,
+                             outcome=summarize_verification_outcomes(hasil_verifikasi),
                              stats=qr_stats)
         
     except Exception as e:
@@ -5294,6 +5397,7 @@ def verify_massal_results(task_id):
                          hasil_tunggal=None, 
                          hasil_massal=task.get('results', []),
                          massal_stats=task.get('massal_stats', {}),
+                         outcome=summarize_verification_outcomes(task.get('results', [])),
                          stats=qr_stats)
 
 @app.route('/generate_csv', methods=['GET', 'POST'])
@@ -9074,6 +9178,7 @@ def render_verify_massal_results():
     return render_template("verify_massal_results.html",
         hasil=hasil,
         massal_stats=massal_stats,
+        outcome=summarize_verification_outcomes(hasil),
         stats=qr_stats,
         task_id=task_id)
 
@@ -9110,7 +9215,8 @@ def export_verify_massal_report():
                 'Status': result.get('status', ''),
                 'Nama': result.get('data', {}).get('nama', '') if result.get('data') else '',
                 'ID': result.get('data', {}).get('id', '') if result.get('data') else '',
-                'Signature Valid': 'Ya' if result.get('signature_valid') else 'Tidak',
+                'Signature Sah': 'Ya' if result.get('signature_valid') else 'Tidak',
+                'Keberlakuan': OUTCOME_LABELS.get(classify_verification_outcome(result), '-'),
                 'Is Replay': 'Ya' if result.get('is_replay') else 'Tidak',
                 'Load Time': result.get('load_time', ''),
                 'Decode Time': result.get('decode_time', ''),
@@ -9121,20 +9227,50 @@ def export_verify_massal_report():
         
         df_main = pd.DataFrame(main_data)
         
-        # Buat summary
+        # Ringkasan dua sumbu: keabsahan signature dipisahkan dari keberlakuan QR,
+        # sehingga dokumen otentik yang kedaluwarsa tidak terbaca setara dengan
+        # pemalsuan. Angka diturunkan dari hasil per berkas, bukan dari penghitung
+        # massal_stats yang menggabungkan penolakan kebijakan dengan error proses.
+        outcome = summarize_verification_outcomes(results)
         summary_data = {
             'Metric': [
-                'Total Files', 'Valid Count', 'Rejected Total', 'Replay Attack Count',
-                'Valid Signature Count', 'Valid Rate', 'Average Time per File',
-                'Total Time', 'Min Time', 'Max Time'
+                'Total Berkas',
+                'Berkas Dinilai',
+                'Error Pemrosesan',
+                '— Sumbu 1: Keabsahan Signature —',
+                'Signature Sah',
+                'Signature Tidak Sah',
+                'Rasio Signature Sah',
+                '— Sumbu 2: Keberlakuan QR —',
+                'Berlaku',
+                'Tidak Berlaku (total)',
+                'Tidak Berlaku: Kedaluwarsa',
+                'Tidak Berlaku: Replay',
+                'Tidak Berlaku: Dimodifikasi/Palsu',
+                'Tidak Berlaku: Tidak Ditemukan',
+                'Tidak Berlaku: Signature Tidak Sah',
+                'Rasio Berlaku',
+                '— Kinerja —',
+                'Average Time per File', 'Total Time', 'Min Time', 'Max Time'
             ],
             'Value': [
-                massal_stats.get('total_files', 0),
-                massal_stats.get('success_count', 0),
-                massal_stats.get('error_count', 0),
-                massal_stats.get('replay_attack_count', 0),
-                massal_stats.get('valid_signature_count', 0),
-                f"{massal_stats.get('success_rate', 0):.1f}%",
+                outcome['total'],
+                outcome['dinilai'],
+                outcome[OUTCOME_ERROR],
+                '',
+                outcome['signature_sah'],
+                outcome['signature_tidak_sah'],
+                f"{outcome['pct_signature_sah']:.1f}%",
+                '',
+                outcome[OUTCOME_BERLAKU],
+                outcome['tidak_berlaku'],
+                outcome[OUTCOME_KEDALUWARSA],
+                outcome[OUTCOME_REPLAY],
+                outcome[OUTCOME_DIMODIFIKASI],
+                outcome[OUTCOME_TIDAK_DITEMUKAN],
+                outcome[OUTCOME_SIGNATURE_INVALID],
+                f"{outcome['pct_berlaku']:.1f}%",
+                '',
                 f"{massal_stats.get('avg_time_per_file', 0):.3f} detik",
                 f"{massal_stats.get('total_time', 0):.3f} detik",
                 f"{massal_stats.get('min_time', 0):.3f} detik",
