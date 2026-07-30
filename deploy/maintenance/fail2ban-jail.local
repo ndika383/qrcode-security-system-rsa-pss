@@ -1,0 +1,42 @@
+# Konfigurasi fail2ban untuk server SI penelitian QR Code RSA-PSS.
+#
+# Dipasang 2026-07-30 sebagai respons atas 24.275 percobaan login SSH gagal yang
+# tercatat pada btmp, 4.702 di antaranya menyasar root, berasal dari sedikitnya
+# sepuluh alamat dengan lebih dari 700 percobaan masing-masing.
+#
+# Ini adalah kontrol kompensatoris, BUKAN pengganti autentikasi berbasis kunci.
+# Selama PasswordAuthentication masih yes dan tidak ada authorized_keys, server
+# tetap dapat ditembus oleh penebakan password yang sabar dan terdistribusi.
+
+[DEFAULT]
+# Alamat yang tidak pernah diblokir. Diambil dari riwayat login yang benar-benar
+# berhasil (wtmp), bukan tebakan. Menghapus baris ini berisiko mengunci pemilik
+# server bila terjadi salah ketik password berulang.
+ignoreip = 127.0.0.1/8 ::1 202.91.8.200 210.87.83.219
+
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+
+# Pemblokiran bertingkat: pelanggar berulang diblokir makin lama, sampai 7 hari.
+# Serangan yang teramati bersifat terdistribusi dan gigih, sehingga blokir tetap
+# satu jam hanya akan menunda tanpa memberi efek jera.
+bantime.increment = true
+bantime.factor    = 2
+bantime.maxtime   = 7d
+bantime.rndtime   = 5m
+
+# ufw sudah aktif di server ini; memakai aksi ufw membuat blokir tampil pada
+# `ufw status` dan menghindari dua perangkat menulis aturan iptables sendiri-sendiri.
+banaction          = ufw
+banaction_allports = ufw
+
+[sshd]
+enabled  = true
+port     = ssh
+backend  = systemd
+# mode aggressive turut menangkap pemindaian dan koneksi yang diputus sebelum
+# autentikasi selesai, bukan hanya kegagalan password.
+mode     = aggressive
+maxretry = 3
+bantime  = 1h
