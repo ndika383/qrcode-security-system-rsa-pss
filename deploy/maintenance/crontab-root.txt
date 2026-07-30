@@ -1,0 +1,15 @@
+# ── Pemeliharaan SI penelitian QR Code RSA-PSS ──────────────────────────────
+# Dipasang 2026-07-30. Skrip berada di /opt/qrcode/deploy/maintenance/ dan
+# ikut terlacak git.
+
+# Backup harian data kritis (kunci, security_state.db, log CSV, task_results)
+0 2 * * * /opt/qrcode/deploy/maintenance/backup-qrcode.sh harian >> /var/log/qrcode-backup.log 2>&1
+
+# Backup penuh mingguan, termasuk static/data (record QR)
+0 3 * * 0 /opt/qrcode/deploy/maintenance/backup-qrcode.sh penuh >> /var/log/qrcode-backup.log 2>&1
+
+# Health check aplikasi via HTTP; restart hanya bila benar-benar tidak merespons
+*/15 * * * * /opt/qrcode/deploy/maintenance/healthcheck-qrcode.sh
+
+# Pembersihan sisa berkas *.backup_* di logs/ yang lebih tua dari 30 hari
+30 4 * * 1 /opt/qrcode/deploy/maintenance/prune-backups-qrcode.sh
