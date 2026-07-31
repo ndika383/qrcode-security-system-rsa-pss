@@ -574,12 +574,20 @@ teknis, dan merotasinya akan memotong jendela pengukuran 28 hari.
 **Output:** Dependensi diperbarui, query DB lebih optimal, kapasitas storage terpantau.
 
 ```
-$ pip list --outdated
-Package         Version   Latest
-click           8.4.1     8.4.2
-Flask           3.0.3     3.1.3
-Flask-Limiter   4.0.0     4.1.1
-gunicorn        23.0.0    26.0.0
+$ pip list --outdated | wc -l
+27 paket
+
+Lompatan versi mayor:
+  numpy                   1.26.4     -> 2.5.1
+  pandas                  2.2.3      -> 3.0.5
+  opencv-python-headless  4.10.0.84  -> 5.0.0.93
+  pillow                  10.3.0     -> 12.3.0
+  scipy                   1.13.1     -> 1.18.0
+  qrcode                  7.4.2      -> 8.2
+  redis                   5.0.6      -> 8.1.0
+  gunicorn                23.0.0     -> 26.0.0
+  pycryptodome            3.20.0     -> 3.23.0
+  Flask                   3.0.3      -> 3.1.3
 
 $ pip check
 No broken requirements found.
@@ -595,11 +603,28 @@ $ du -sh
 ```
 
 Integritas basis data terverifikasi `ok` dan tidak ada dependensi yang rusak.
-Empat paket dapat diperbarui — pembaruan Flask 3.0.3 → 3.1.3 dan gunicorn
-23.0.0 → 26.0.0 merupakan lompatan mayor sehingga sebaiknya diuji pada
-lingkungan staging (Kegiatan 9) sebelum diterapkan ke production.
 
-**Status: pemantauan TERPENUHI · pembaruan dependensi PERLU DIJALANKAN**
+**Rekomendasi: dependensi dibekukan sampai penelitian selesai.**
+
+Alasannya bukan sekadar risiko teknis. Tiga paket berada tepat di jalur
+pengukuran yang dilaporkan dalam naskah:
+
+| Paket | Peran dalam penelitian |
+|---|---|
+| `pycryptodome` | Implementasi RSA-PSS. Seluruh angka `verify_time` 1,02–1,05 ms diukur pada versi 3.20.0 |
+| `qrcode` | Pembangkitan simbol QR, memengaruhi `qr_version` dan `qr_modules` pada payload |
+| `opencv-python-headless` | Pendekodean citra QR, memengaruhi `decode_time` |
+
+Memperbarui ketiganya di tengah penelitian akan mengubah baseline pengukuran dan
+membuat angka yang sudah dilaporkan tidak dapat direproduksi. Selain itu
+`numpy` 1.x → 2.x dan `pandas` 2.x → 3.x membawa perubahan API yang memutus
+kompatibilitas, sedangkan keduanya dipakai pada skrip analisis penelitian.
+
+Versi yang berlaku saat pengukuran sebaiknya justru **dicatat sebagai bagian dari
+syarat reproduksibilitas**, bukan diperbarui. Pembaruan dijadwalkan setelah
+naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
+
+**Status: pemantauan TERPENUHI · pembaruan dependensi SENGAJA DITUNDA**
 
 ---
 
@@ -622,7 +647,7 @@ lingkungan staging (Kegiatan 9) sebelum diterapkan ke production.
 | 13 | Pemeliharaan rutin | ✅ Terpenuhi |
 | 14 | Deploy production | ✅ Terpenuhi |
 | 15 | Cron maintenance | ✅ Terpenuhi |
-| 16 | Maintenance bulanan | ⚠ Pemantauan aktif; 4 dependensi perlu diperbarui |
+| 16 | Maintenance bulanan | ⚠ Pemantauan aktif; 27 dependensi usang, sengaja dibekukan |
 
 **11 terpenuhi penuh · 3 terpenuhi sebagian · 2 belum dikonfigurasi**
 
@@ -633,7 +658,8 @@ lingkungan staging (Kegiatan 9) sebelum diterapkan ke production.
 2. **Enkripsi arsip backup** (Kegiatan 7) — wajib sebelum salinan disimpan di
    luar server, karena arsip memuat kunci privat penandatangan
 3. Subdomain staging (Kegiatan 9) dan alert otomatis (Kegiatan 12)
-4. Pembaruan paket sistem dan dependensi aplikasi (Kegiatan 8 dan 16)
+4. Pembaruan paket sistem (Kegiatan 8) — dependensi Python sengaja dibekukan
+   sampai naskah final, lihat Kegiatan 16
 
 ---
 
