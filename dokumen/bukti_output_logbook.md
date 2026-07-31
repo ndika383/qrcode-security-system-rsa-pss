@@ -551,20 +551,64 @@ Berkas pendukung: `data-penelitian/hasil_index_produksi.json`,
 
 **Output:** Sistem alert aktif, uji notifikasi berhasil.
 
+Kanal notifikasi memakai bot Telegram. Email sengaja tidak dipakai: record MX
+`rsa-pss.com` menunjuk ke server ini tetapi tidak ada MTA yang berjalan dan port
+25, 465, serta 587 tidak mendengarkan, sehingga email dari maupun ke domain
+tersebut akan gagal.
+
 ```
 $ systemctl show qrcode -p OnFailure --value
-(kosong)
+qrcode-alert@qrcode.service.service
 
-$ systemctl list-timers --all | grep -iE 'monitor|alert|uptime'
-(tidak ada)
+$ crontab -l | grep daily-check
+0 7 * * * /opt/qrcode/deploy/maintenance/daily-check.sh
+
+$ notify.sh --test
+[2026-07-31T12:58:31+07:00] TERKIRIM via telegram [info] Uji notifikasi
 ```
 
-**Status: BELUM DIKONFIGURASI**
+### Empat pemicu, seluruhnya diuji sampai pesan terkirim
 
-Terdapat mekanisme pemulihan otomatis berupa health check tiap 15 menit
-(Kegiatan 15), namun belum ada notifikasi keluar. Yang diperlukan: unit
-`OnFailure` pada systemd atau layanan pemantauan eksternal, beserta konfigurasi
-pengiriman email.
+| # | Pemicu | Cara diuji | Hasil |
+|---|---|---|---|
+| 1 | systemd `OnFailure` | `systemctl start qrcode-alert@uji-pemicu-1` | `TERKIRIM [critical] Layanan gagal` |
+| 2 | Health check gagal pulih | Salinan skrip diarahkan ke port mati, `systemctl` di-shim | `TERKIRIM [critical] Aplikasi tidak pulih setelah restart` |
+| 3 | Backup gagal diverifikasi | Salinan skrip merusak arsip tepat setelah dibuat | `TERKIRIM [critical] Backup gagal diverifikasi` |
+| 4 | Pemeriksaan harian | Salinan skrip dengan ambang disk diturunkan ke 1 % | `TERKIRIM [warning] Pemeriksaan harian: 1 masalah` |
+
+Pengujian pemicu 2 dan 3 memakai salinan skrip, bukan yang terpasang. Pemicu 2
+menjalankan `systemctl` tiruan yang hanya mencatat perintah tanpa
+mengeksekusinya — tanpa itu, uji akan benar-benar me-restart layanan produksi.
+Pemicu 3 menulis arsip ke direktori sementara. Diverifikasi setelahnya bahwa
+layanan produksi tidak pernah restart dan ketiga arsip backup asli tetap lolos
+pemeriksaan checksum.
+
+### Diam saat sehat
+
+Pemeriksaan harian versi terpasang dijalankan tepat setelahnya dan **tidak
+mengirim apa pun**:
+
+```
+[2026-07-31T12:59:38+07:00] Pemeriksaan harian: seluruh butir lolos
+                            (disk 44%, sertifikat 38 hari)
+```
+
+Ini disengaja. Alert yang berbunyi setiap hari akan diabaikan, dan alert yang
+diabaikan sama saja dengan tidak ada. Health check pun hanya memberitakan bila
+aplikasi **tidak pulih** setelah restart otomatis — bukan setiap kali restart.
+
+### Cakupan pemeriksaan harian
+
+Kapasitas disk, masa berlaku sertifikat, kesegaran arsip backup, konsistensi
+index terhadap record di disk, dan integritas basis data. Kelimanya adalah
+kegagalan yang tidak mengumumkan dirinya sendiri: backup yang berhenti hanya
+terlihat sebagai arsip yang tidak bertambah, dan perpanjangan sertifikat yang
+gagal baru ketahuan saat pengguna tidak dapat membuka situs.
+
+Kredensial berada pada `/etc/qrcode-notify.conf` berizin 0600 milik root dan
+tidak dilacak git.
+
+**Status: TERPENUHI**
 
 ---
 
@@ -744,13 +788,13 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 9 | Subdomain staging | ✅ Terpenuhi |
 | 10 | Pembaruan SSL/TLS | ✅ Terpenuhi |
 | 11 | Optimasi database | ✅ Terpenuhi |
-| 12 | Alert otomatis & notifikasi | ⚠ Infrastruktur siap; menunggu kredensial kanal |
+| 12 | Alert otomatis & notifikasi | ✅ Terpenuhi — 4 pemicu diuji sampai pesan terkirim |
 | 13 | Pemeliharaan rutin | ✅ Terpenuhi |
 | 14 | Deploy production | ✅ Terpenuhi |
 | 15 | Cron maintenance | ✅ Terpenuhi |
 | 16 | Maintenance bulanan | ⚠ Pemantauan aktif; 27 dependensi usang, sengaja dibekukan |
 
-**13 terpenuhi penuh · 3 terpenuhi sebagian · 0 belum dikonfigurasi**
+**14 terpenuhi penuh · 2 terpenuhi sebagian · 0 belum dikonfigurasi**
 
 ### Prioritas tindak lanjut
 
@@ -758,7 +802,7 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
    gagal yang tercatat dan akses yang masih bergantung password
 2. **Enkripsi arsip backup** (Kegiatan 7) — wajib sebelum salinan disimpan di
    luar server, karena arsip memuat kunci privat penandatangan
-3. Alert otomatis (Kegiatan 12) — subdomain staging sudah tersedia
+3. PasswordAuthentication (Kegiatan 4) — setelah kunci terpasang di seluruh perangkat
 4. Pembaruan paket sistem (Kegiatan 8) — dependensi Python sengaja dibekukan
    sampai naskah final, lihat Kegiatan 16
 
