@@ -79,6 +79,9 @@ chmod 600 "$ARSIP"
 if ! tar -tzf "$ARSIP" >/dev/null 2>&1; then
   log "GALAT: arsip gagal diverifikasi, dihapus"
   rm -f "$ARSIP"
+  /opt/qrcode/deploy/maintenance/notify.sh critical \
+      "Backup gagal diverifikasi" \
+      "Arsip mode $MODE gagal dibaca ulang setelah dibuat dan telah dihapus. Tidak ada backup baru untuk siklus ini."
   exit 1
 fi
 

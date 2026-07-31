@@ -1,0 +1,8 @@
+[Unit]
+Description=Kirim notifikasi kegagalan untuk %i
+
+[Service]
+Type=oneshot
+ExecStart=/opt/qrcode/deploy/maintenance/notify.sh critical \
+    "Layanan gagal: %i" \
+    "Unit %i memasuki status failed. Periksa: journalctl -u %i -n 50"

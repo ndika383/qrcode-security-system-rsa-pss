@@ -76,4 +76,10 @@ fi
 
 log "GAGAL PULIH: setelah restart endpoint mengembalikan '$KODE3'"
 systemctl status "$UNIT" --no-pager -n 20 >> "$LOG" 2>&1
+# Hanya kegagalan pemulihan yang diberitakan. Restart yang berhasil tidak
+# menghasilkan notifikasi — yang perlu perhatian manusia adalah saat sistem
+# sudah mencoba menolong dirinya sendiri dan tetap gagal.
+/opt/qrcode/deploy/maintenance/notify.sh critical \
+    "Aplikasi tidak pulih setelah restart" \
+    "Endpoint mengembalikan '$KODE3' setelah restart otomatis. Periksa: journalctl -u $UNIT -n 50"
 exit 1

@@ -13,3 +13,6 @@
 
 # Pembersihan sisa berkas *.backup_* di logs/ yang lebih tua dari 30 hari
 30 4 * * 1 /opt/qrcode/deploy/maintenance/prune-backups-qrcode.sh
+
+# Pemeriksaan harian: disk, sertifikat, kesegaran backup, konsistensi index
+0 7 * * * /opt/qrcode/deploy/maintenance/daily-check.sh

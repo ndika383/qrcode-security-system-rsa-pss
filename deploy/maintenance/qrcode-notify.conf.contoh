@@ -1,0 +1,27 @@
+# Konfigurasi notifikasi SI penelitian QR Code RSA-PSS.
+# Berkas ini memuat kredensial: izin 0600 milik root, dan TIDAK dilacak git.
+#
+# Pilih satu kanal, lalu isi kredensialnya.
+#   telegram | discord | webhook | email | none
+
+NOTIFY_CHANNEL=none
+
+# --- Telegram (paling sederhana: tanpa MTA, sampai ke ponsel) ---------------
+# 1. Buat bot lewat @BotFather di Telegram, salin token yang diberikan
+# 2. Kirim satu pesan ke bot itu, lalu buka
+#    https://api.telegram.org/bot<TOKEN>/getUpdates untuk melihat chat id
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+
+# --- Discord ----------------------------------------------------------------
+# Server Settings > Integrations > Webhooks > New Webhook > Copy URL
+DISCORD_WEBHOOK_URL=
+
+# --- Webhook generik (JSON POST) --------------------------------------------
+WEBHOOK_URL=
+
+# --- Email lewat relay SMTP eksternal ---------------------------------------
+# Perlu msmtp terpasang dan dikonfigurasi. Domain rsa-pss.com TIDAK dapat
+# dipakai sebagai pengirim maupun penerima: record MX menunjuk ke server ini
+# tetapi tidak ada MTA yang berjalan.
+EMAIL_TO=
