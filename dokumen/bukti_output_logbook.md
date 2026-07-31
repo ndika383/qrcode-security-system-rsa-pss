@@ -164,16 +164,22 @@ Redis 6379   : tidak diizinkan dari luar
 ufw saat boot: enabled
 ```
 
-### Bagian yang BELUM terpenuhi
+### Akun administratif
 
 ```
-$ sshd -T | grep -iE 'permitrootlogin|passwordauthentication'
-permitrootlogin without-password
-passwordauthentication yes
-
 $ getent passwd | awk -F: '$3>=1000 && $3<65534'
 amikom (uid 1001)
+
+$ grep -rhE '^\s*(%sudo|amikom)' /etc/sudoers /etc/sudoers.d/
+%sudo   ALL=(ALL:ALL) ALL
+amikom ALL=(ALL) NOPASSWD:ALL
 ```
+
+Hak administratif `amikom` berasal dari entri sudoers **eksplisit**, bukan dari
+keanggotaan grup. Ini diperiksa sebelum akses root ditutup: seandainya hak
+tersebut bergantung pada grup `sudo` yang ternyata kosong, menutup root akan
+menghilangkan seluruh kemampuan administrasi. Eskalasi ke root diverifikasi
+berfungsi terlebih dahulu.
 
 ### Akses root ditutup
 
