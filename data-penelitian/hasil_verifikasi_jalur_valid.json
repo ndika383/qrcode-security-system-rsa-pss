@@ -1,0 +1,40 @@
+{
+  "task_id": "1b75628a-3744-47ec-a047-b8e932db4c64",
+  "n": 100000,
+  "jalur": "valid penuh",
+  "klasifikasi": {
+    "berlaku": 100000,
+    "signature_sah": 100000,
+    "replay": 0,
+    "kedaluwarsa": 0
+  },
+  "decode_time": {
+    "mean_ms": 1.074,
+    "median_ms": 1.0,
+    "p95_ms": 2.0,
+    "p99_ms": 2.0,
+    "max_ms": 235.0
+  },
+  "verify_time": {
+    "mean_ms": 1.046,
+    "median_ms": 1.0,
+    "p95_ms": 1.0,
+    "p99_ms": 2.0,
+    "max_ms": 5.0
+  },
+  "db_time": {
+    "mean_ms": 20.436,
+    "median_ms": 19.0,
+    "p95_ms": 27.0,
+    "p99_ms": 33.0,
+    "max_ms": 259.0
+  },
+  "total_time": {
+    "mean_ms": 23.062,
+    "median_ms": 22.0,
+    "p95_ms": 30.0,
+    "p99_ms": 36.0,
+    "max_ms": 262.0
+  },
+  "throughput_per_s": 43.36
+}

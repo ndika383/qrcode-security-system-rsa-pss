@@ -187,9 +187,9 @@ sebagai catatan optimasi.
 
 | Klaim | Dasar |
 |---|---|
-| Verifikasi tanda tangan 1,02–1,05 ms | `verify_time`, konsisten lintas tiga pengukuran independen (§2.1, §6.1) |
-| ≈ 970 verifikasi tanda tangan/detik/thread | 1 / 1,03 ms |
-| Dekode QR 1,04–1,07 ms | `decode_time`, properti medium QR |
+| Verifikasi tanda tangan 1,046 ms | `verify_time` pada n = 100.000, konsisten lintas empat pengukuran independen (§2.1, §6.1) |
+| ≈ 956 verifikasi tanda tangan/detik/thread | 1 / 1,046 ms |
+| Dekode QR 1,074 ms | `decode_time` pada n = 100.000, properti medium QR |
 | Pemeriksaan kedaluwarsa 2,2 µs | Mikrobenchmark |
 
 ### 5.2 Yang harus dilaporkan terpisah
@@ -232,30 +232,78 @@ dibuktikan §4.
 
 ### 6.1 Hasil ujung-ke-ujung terukur
 
-Dibandingkan atas dua verifikasi massal nyata pada produksi, keduanya dengan
-korpus QR yang belum pernah diverifikasi sebelumnya:
+Tiga verifikasi massal nyata pada produksi, seluruhnya atas korpus QR yang belum
+pernah diverifikasi sebelumnya:
 
-| Fase | Sebelum (`56d7146d`, n = 528) | Sesudah (`7dc3bb0b`, n = 632) |
-|---|---:|---:|
-| `load_time` | 0,04 ms | 0,00 ms |
-| `decode_time` | 1,04 ms | 1,07 ms |
-| `verify_time` | 1,02 ms | 1,05 ms |
-| `db_time` | 149,88 ms | **22,10 ms** |
-| **Total** | **153,41 ms** | **25,73 ms** |
-| Throughput | 6,5 berkas/detik | **38,9 berkas/detik** |
-| Porsi `db_time` | 97,7 % | 85,9 % |
+| Fase | Sebelum index<br>`56d7146d`, n = 528 | Sesudah index<br>`7dc3bb0b`, n = 632 | Jalur valid<br>`1b75628a`, **n = 100.000** |
+|---|---:|---:|---:|
+| `load_time` | 0,04 ms | 0,00 ms | 0,00 ms |
+| `decode_time` | 1,04 ms | 1,07 ms | 1,074 ms |
+| `verify_time` | 1,02 ms | 1,05 ms | 1,046 ms |
+| `db_time` | 149,88 ms | 22,10 ms | **20,436 ms** |
+| **Total** | **153,41 ms** | **25,73 ms** | **23,062 ms** |
+| Throughput | 6,5 berkas/detik | 38,9 berkas/detik | **43,4 berkas/detik** |
+| Porsi `db_time` | 97,7 % | 85,9 % | 88,6 % |
+| Klasifikasi | 100 % kedaluwarsa | 100 % kedaluwarsa | **100 % berlaku** |
 
-Perbaikan ujung-ke-ujung **6,0×**, dan nilainya berimpit dengan proyeksi
-aritmetika yang dihitung sebelumnya (≈ 24,6 ms; ≈ 40 berkas/detik) — sehingga
-model biaya pada §2 terkonfirmasi.
+Perbaikan ujung-ke-ujung **6,65×** terhadap baseline pra-index (153,41 → 23,062
+ms), dan throughput naik **6,68×** (6,5 → 43,4 berkas/detik).
 
-Perhatikan `verify_time` yang bergeming di 1,02–1,05 ms lintas kedua pengukuran
-dan lintas sandbox (§2.1). Konsistensi ini menegaskan bahwa perbaikan sepenuhnya
-terjadi pada lapisan penyimpanan dan tidak menyentuh jalur kriptografis sama
-sekali — persis pemisahan yang menjadi pokok dokumen ini.
+#### Mengapa kolom ketiga yang seharusnya dikutip
 
-`db_time` yang tersisa (22,10 ms) kini didominasi pencatatan nonce ke SQLite dan
-pembacaan record, yakni kerja yang memang disyaratkan protokol.
+Dua pengukuran pertama berasal dari korpus yang seluruhnya kedaluwarsa, sehingga
+klasifikasinya berhenti pada pemeriksaan umur. Pengukuran ketiga menempuh
+**jalur valid penuh** — signature diverifikasi, record dicocokkan, nonce dicatat,
+umur diperiksa, dan payload dinyatakan berlaku — dengan n = 100.000, dua orde
+besaran lebih besar daripada 528 dan 632.
+
+Sebaran latensinya rapat: median 22,0 ms, P95 30,0 ms, P99 36,0 ms, maksimum
+262,0 ms. Ekor yang pendek menunjukkan tidak ada patologi tersembunyi pada skala
+seratus ribu.
+
+#### Stabilitas pengukuran kriptografis
+
+`verify_time` kini terukur pada **empat kesempatan independen**:
+
+| Sumber | `verify_time` |
+|---|---:|
+| Sandbox terisolasi (§2.1) | 1,023–1,064 ms |
+| Produksi pra-index, n = 528 | 1,02 ms |
+| Produksi pasca-index, n = 632 | 1,05 ms |
+| Produksi jalur valid, n = 100.000 | 1,046 ms |
+
+Rentangnya tidak bergerak meski jumlah record di basis data naik dari 100.713 ke
+100.000 dan jalur klasifikasi berubah dari kedaluwarsa ke berlaku. Ini menegaskan
+bahwa seluruh perbaikan terjadi pada lapisan penyimpanan tanpa menyentuh jalur
+kriptografis — persis pemisahan yang menjadi pokok dokumen ini. Klaim
+**≈ 956 verifikasi tanda tangan/detik/thread** (1 / 1,046 ms) kini bersandar pada
+n = 100.000, bukan ratusan.
+
+#### Sisa biaya
+
+`db_time` 20,436 ms masih menempati 88,6 % waktu total. Isinya kerja yang memang
+disyaratkan protokol: pembacaan record asli, pencocokan payload, dan pencatatan
+nonce ke SQLite untuk deteksi replay. Pencarian record sendiri kini 0,602 ms
+(§4.5), sehingga sisanya didominasi penulisan nonce — satu transaksi SQLite per
+verifikasi. Bila optimasi lanjutan dikehendaki, di situlah sasarannya.
+
+#### Verifikasi konsistensi pasca-eksekusi
+
+| Besaran | Nilai |
+|---|---|
+| Record di disk | 100.000 |
+| Entri index | 100.000 (selisih 0) |
+| Entri `nonce_state` | 114.285 = 14.285 sebelumnya + tepat 100.000 verifikasi |
+| Signature sah | 100.000 / 100.000 |
+| Berlaku | 100.000 / 100.000 |
+| Replay terdeteksi | 0 |
+| Kedaluwarsa | 0 |
+| Error pemrosesan | 0 |
+
+Pertambahan `nonce_state` yang persis sama dengan jumlah verifikasi membuktikan
+setiap payload tercatat tepat satu kali — tidak ada pencatatan ganda maupun yang
+terlewat. Pelaporan dua sumbu (§5) menghasilkan jumlah kategori yang sama dengan
+total, tanpa kebocoran.
 
 ### 6.2 Catatan reproduksi
 
@@ -266,6 +314,11 @@ replay, bukan valid, sehingga tidak sebanding dengan pengukuran "sebelum".
 Prosedur: terbitkan korpus QR baru melalui halaman generate massal, jalankan
 verifikasi massal atas korpus tersebut, lalu baca dekomposisi fase dari
 `data/task_results/<task_id>.json`.
+
+Versi dependensi yang berlaku saat seluruh pengukuran ini diambil tercatat pada
+`data-penelitian/requirements-terukur.txt`. Angka `verify_time` terikat pada
+`pycryptodome` 3.20.0 dan `decode_time` pada `opencv-python-headless` 4.10.0.84;
+memperbarui keduanya akan menggeser baseline.
 
 ### 6.3 Utang teknis yang tersisa
 
