@@ -175,9 +175,63 @@ $ getent passwd | awk -F: '$3>=1000 && $3<65534'
 amikom (uid 1001)
 ```
 
-Akses root **belum** dinonaktifkan. Ini disengaja: server tidak memiliki kunci
-SSH sama sekali, sehingga menonaktifkan autentikasi password atau login root
-akan menutup seluruh jalan masuk ke server secara permanen.
+### Akses root ditutup
+
+```
+$ sshd -T | grep -iE 'permitrootlogin|passwordauthentication|maxauthtries|logingracetime'
+permitrootlogin no
+passwordauthentication yes
+maxauthtries 3
+logingracetime 30
+```
+
+Konfigurasi ditulis sebagai drop-in `/etc/ssh/sshd_config.d/10-hardening.conf`.
+Penomoran 10 bukan gaya penulisan melainkan syarat kebenaran: pada sshd, nilai
+**pertama** yang diperoleh untuk sebuah kata kunci adalah yang berlaku, bukan
+yang terakhir. Server ini memiliki dua drop-in bawaan cloud-image yang saling
+bertentangan — `50-cloud-init.conf` menyatakan `PasswordAuthentication yes` dan
+`60-cloudimg-settings.conf` menyatakan `no` — dan yang bernomor 50 menang karena
+dibaca lebih dulu. Berkas hardening bernomor lebih besar akan diabaikan secara
+diam-diam: konfigurasi tampak benar, tetapi tidak berlaku.
+
+**Uji ujung-ke-ujung dari komputer pemilik server:**
+
+```
+$ ssh root@rsa-pss.com
+(ditolak)
+```
+
+Tercatat pada log autentikasi server:
+
+```
+11:19:14 pam_unix(sshd:auth): authentication failure; rhost=202.91.8.200 user=root
+11:19:16 Failed password for root from 202.91.8.200 port 42767 ssh2
+11:19:24 Failed password for root from 202.91.8.200 port 42767 ssh2
+11:19:26 error: maximum authentication attempts exceeded for root from 202.91.8.200
+11:19:26 Disconnecting authenticating user root 202.91.8.200: Too many authentication failures
+```
+
+Tiga hal terbukti sekaligus dari catatan yang sama:
+
+1. **Akses root ditolak.** Perlu dicatat bahwa sshd sengaja mencatat penolakan
+   root sebagai `Failed password`, identik dengan password keliru, agar tidak
+   membocorkan apakah password root sebenarnya benar. Baris log ini karenanya
+   tidak membedakan keduanya; bukti otoritatifnya adalah `sshd -T` yang
+   melaporkan `permitrootlogin no`.
+2. **`MaxAuthTries 3` bekerja.** Koneksi diputus tepat setelah percobaan ketiga
+   dengan pesan `maximum authentication attempts exceeded` — sebelumnya bawaan
+   sshd mengizinkan enam.
+3. **Daftar pengecualian fail2ban melindungi pemilik server.** Tiga kegagalan
+   autentikasi dari 202.91.8.200 semestinya memicu blokir pada ambang
+   `maxretry = 3`, tetapi IP tersebut tercatat diabaikan 50 kali dan tidak
+   pernah diblokir. Tanpa daftar itu, pemilik server akan mengunci dirinya
+   sendiri justru saat menguji hardening.
+
+### PasswordAuthentication sengaja dipertahankan
+
+Autentikasi password dibiarkan aktif atas keputusan pemilik sistem, yang
+mengelola server dari lebih dari satu perangkat sementara baru satu di antaranya
+memegang kunci. Mematikannya sekarang akan mengunci akses dari mesin lain.
 
 **Urutan aman untuk menuntaskannya:**
 
@@ -194,7 +248,7 @@ akan menutup seluruh jalan masuk ke server secara permanen.
 Mengingat 24.275 percobaan login gagal yang tercatat, langkah ini sebaiknya
 tidak ditunda.
 
-**Status: firewall TERPENUHI · hardening SSH BELUM**
+**Status: firewall TERPENUHI · akses root TERPENUHI · password auth ditunda atas keputusan pemilik sistem**
 
 ---
 
@@ -682,7 +736,7 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 1 | Registrasi domain & DNS | ✅ Terpenuhi |
 | 2 | Aktivasi & konfigurasi VPS | ✅ Terpenuhi |
 | 3 | SSL/TLS & akses publik | ✅ Terpenuhi |
-| 4 | Firewall & hardening | ⚠ Firewall aktif; hardening SSH belum |
+| 4 | Firewall & hardening | ⚠ Firewall aktif, root ditutup; password auth ditunda |
 | 5 | Instalasi aplikasi & database | ✅ Terpenuhi |
 | 6 | Load testing & optimasi | ✅ Terpenuhi |
 | 7 | Backup terjadwal | ✅ Terpenuhi |
@@ -690,13 +744,13 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 9 | Subdomain staging | ✅ Terpenuhi |
 | 10 | Pembaruan SSL/TLS | ✅ Terpenuhi |
 | 11 | Optimasi database | ✅ Terpenuhi |
-| 12 | Alert otomatis & notifikasi | ❌ Belum dikonfigurasi |
+| 12 | Alert otomatis & notifikasi | ⚠ Infrastruktur siap; menunggu kredensial kanal |
 | 13 | Pemeliharaan rutin | ✅ Terpenuhi |
 | 14 | Deploy production | ✅ Terpenuhi |
 | 15 | Cron maintenance | ✅ Terpenuhi |
 | 16 | Maintenance bulanan | ⚠ Pemantauan aktif; 27 dependensi usang, sengaja dibekukan |
 
-**13 terpenuhi penuh · 2 terpenuhi sebagian · 1 belum dikonfigurasi**
+**13 terpenuhi penuh · 3 terpenuhi sebagian · 0 belum dikonfigurasi**
 
 ### Prioritas tindak lanjut
 
