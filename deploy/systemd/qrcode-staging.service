@@ -1,0 +1,30 @@
+[Unit]
+Description=QR Code Security System (RSA-PSS) — STAGING
+Documentation=file:///opt/qrcode/dokumen/bukti_output_logbook.md
+After=network.target
+# Sengaja tidak Requires= produksi: staging harus dapat naik-turun sendiri
+# tanpa memengaruhi layanan yang melayani responden.
+
+[Service]
+Type=simple
+User=root
+# WorkingDirectory inilah kunci isolasinya. Seluruh path aplikasi bersifat
+# relatif terhadap cwd (static/data, logs/security_state.db, rsa_key.pem),
+# sehingga direktori kerja yang berbeda berarti basis data, ledger nonce, dan
+# kunci penandatangan yang sepenuhnya terpisah dari produksi.
+WorkingDirectory=/opt/qrcode-staging
+Environment=HOST=127.0.0.1
+Environment=PORT=5001
+Environment=GUNICORN_WORKERS=1
+Environment=GUNICORN_THREADS=4
+# Penjadwal internal dimatikan di staging: pembersihan berkas otomatis tidak
+# diperlukan pada lingkungan uji dan hanya menambah variabel saat menguji.
+Environment=ENABLE_INTERNAL_SCHEDULER=False
+ExecStart=/opt/qrcode-staging/venv/bin/gunicorn \
+    --workers 1 --threads 4 --timeout 300 \
+    --bind 127.0.0.1:5001 wsgi:app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

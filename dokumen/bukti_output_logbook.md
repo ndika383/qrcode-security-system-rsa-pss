@@ -346,15 +346,62 @@ penuntasan.
 $ ls -1 /etc/nginx/sites-enabled/
 default
 rsa-pss.com
+staging.rsa-pss.com
 
-$ dig +short A staging.rsa-pss.com
-(tidak ada hasil)
+$ dig +short staging.rsa-pss.com @8.8.8.8
+rsa-pss.com.
+103.13.207.36
+
+$ curl -sI https://staging.rsa-pss.com
+HTTP/1.1 302 FOUND
+X-Environment: staging
+X-Robots-Tag: noindex, nofollow
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}' http://staging.rsa-pss.com/
+301 https://staging.rsa-pss.com/
+
+subject = CN = staging.rsa-pss.com
+notBefore = Jul 31 02:06:03 2026 GMT
+notAfter  = Oct 29 02:06:02 2026 GMT
 ```
 
-**Status: BELUM DIKONFIGURASI**
+Propagasi terverifikasi dari empat resolver publik (Google, Cloudflare, Quad9,
+OpenDNS) dan dari nameserver otoritatif `rinjani.cloudhost.id`.
 
-Yang diperlukan: A record `staging.rsa-pss.com`, vhost nginx terpisah,
-sertifikat SSL untuk subdomain, dan instans aplikasi kedua pada port berbeda.
+### Isolasi dari produksi
+
+Seluruh path aplikasi bersifat relatif terhadap direktori kerja
+(`static/data`, `logs/security_state.db`, `rsa_key.pem`). Lingkungan staging
+karenanya dijalankan dengan `WorkingDirectory=/opt/qrcode-staging`, yang
+menghasilkan basis data, ledger nonce, dan kunci penandatangan yang sepenuhnya
+terpisah.
+
+Isolasi ini **wajib**, bukan sekadar rapi: instans staging yang berbagi direktori
+dengan produksi akan menulis record uji ke `static/data` dan mencatat nonce uji
+ke ledger replay, sehingga merusak data penelitian.
+
+| Aspek | Produksi | Staging |
+|---|---|---|
+| Direktori kerja | `/opt/qrcode` | `/opt/qrcode-staging` |
+| Port | 5000 | 5001 |
+| Branch git | `perf/qr-record-index` | `main` |
+| Virtualenv | `/opt/qrcode/venv` | `/opt/qrcode-staging/venv` (48 paket) |
+| Record QR | 100.000 | 0 |
+| `security_state.db` | inode 524699, 51,3 MB | inode 263617, 24,6 KB |
+| Sidik jari kunci publik | `beb65cbc981d7eac` | `02dd9a1351445d71` |
+
+Inode yang berbeda membuktikan berkas basis data benar-benar terpisah, bukan
+hardlink maupun symlink ke berkas yang sama. Kunci penandatangan yang berbeda
+berarti QR yang diterbitkan di staging **tidak akan pernah lolos verifikasi di
+produksi**, dan sebaliknya — pemisahan yang justru diinginkan pada lingkungan uji.
+
+Virtualenv terpisah memungkinkan pengujian pembaruan dependensi (Kegiatan 16)
+tanpa menyentuh versi yang menjadi baseline pengukuran penelitian di produksi.
+
+Penjadwal internal dimatikan di staging (`ENABLE_INTERNAL_SCHEDULER=False`) agar
+pembersihan berkas otomatis tidak menjadi variabel pengganggu saat menguji.
+
+**Status: TERPENUHI**
 
 ---
 
@@ -639,8 +686,8 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 5 | Instalasi aplikasi & database | ✅ Terpenuhi |
 | 6 | Load testing & optimasi | ✅ Terpenuhi |
 | 7 | Backup terjadwal | ✅ Terpenuhi |
-| 8 | Monitoring & pembaruan paket | ⚠ Monitoring aktif; 15 paket perlu diperbarui |
-| 9 | Subdomain staging | ❌ Belum dikonfigurasi |
+| 8 | Monitoring & pembaruan paket | ✅ Terpenuhi — 15/15 paket diperbarui, reboot tuntas |
+| 9 | Subdomain staging | ✅ Terpenuhi |
 | 10 | Pembaruan SSL/TLS | ✅ Terpenuhi |
 | 11 | Optimasi database | ✅ Terpenuhi |
 | 12 | Alert otomatis & notifikasi | ❌ Belum dikonfigurasi |
@@ -649,7 +696,7 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 15 | Cron maintenance | ✅ Terpenuhi |
 | 16 | Maintenance bulanan | ⚠ Pemantauan aktif; 27 dependensi usang, sengaja dibekukan |
 
-**11 terpenuhi penuh · 3 terpenuhi sebagian · 2 belum dikonfigurasi**
+**13 terpenuhi penuh · 2 terpenuhi sebagian · 1 belum dikonfigurasi**
 
 ### Prioritas tindak lanjut
 
@@ -657,7 +704,7 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
    gagal yang tercatat dan akses yang masih bergantung password
 2. **Enkripsi arsip backup** (Kegiatan 7) — wajib sebelum salinan disimpan di
    luar server, karena arsip memuat kunci privat penandatangan
-3. Subdomain staging (Kegiatan 9) dan alert otomatis (Kegiatan 12)
+3. Alert otomatis (Kegiatan 12) — subdomain staging sudah tersedia
 4. Pembaruan paket sistem (Kegiatan 8) — dependensi Python sengaja dibekukan
    sampai naskah final, lihat Kegiatan 16
 
