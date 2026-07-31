@@ -528,7 +528,7 @@ NOTIFY_CHANNEL=telegram
 notifikasi terkirim tercatat: 6
 ```
 
-### Empat pemicu, seluruhnya diuji sampai pesan terkirim
+### Lima pemicu, seluruhnya diuji sampai pesan terkirim
 
 | # | Pemicu | Cara diuji | Hasil |
 |---|---|---|---|
@@ -536,6 +536,35 @@ notifikasi terkirim tercatat: 6
 | 2 | Health check gagal pulih | Salinan diarahkan ke port mati, `systemctl` di-shim | `[critical] Aplikasi tidak pulih` |
 | 3 | Backup gagal diverifikasi | Salinan merusak arsip tepat setelah dibuat | `[critical] Backup gagal diverifikasi` |
 | 4 | Pemeriksaan harian | Salinan dengan ambang disk diturunkan ke 1 % | `[warning] 1 masalah` |
+| 5 | Sesi SSH dibuka | Login nyata dari komputer pemilik sistem | `[info] Sesi SSH dibuka: amikom` |
+
+### Pemicu 5: keberhasilan login, bukan kegagalan
+
+Dipasang lewat `pam_exec` pada `session optional`, sehingga kegagalan pengiriman
+notifikasi tidak dapat menghalangi login. Notifikasi dijalankan di latar agar
+sesi tidak menunggu Telegram merespons.
+
+Yang diberitakan sengaja keberhasilan, bukan kegagalan. Server mencatat 24.341
+percobaan login gagal; memberitakannya akan menghasilkan ratusan notifikasi per
+hari dan berujung diabaikan — sekaligus menenggelamkan alert yang benar-benar
+penting. Kegagalan sudah ditangani fail2ban pada lapisan yang tepat.
+
+Keberhasilan berperilaku sebaliknya: volumenya sangat rendah karena hanya pemilik
+sistem yang masuk, sementara nilainya tinggi. Login gagal tidak berbahaya; login
+**berhasil** yang tidak dikenali pemiliknya justru berbahaya. Asal koneksi
+dibandingkan terhadap daftar IP yang dikenal, dan yang di luar daftar naik
+tingkat menjadi `warning`.
+
+Terverifikasi pada login nyata:
+
+```
+14:17:25 sshd(pam_google_authenticator): Accepted google_authenticator for amikom
+14:17:25 sshd: pam_unix(sshd:session): session opened for user amikom
+14:17:27 notify: TERKIRIM via telegram [info] Sesi SSH dibuka: amikom
+```
+
+Selisih dua detik antara sesi terbuka dan notifikasi terkirim menunjukkan login
+tidak tertunda menunggu pengiriman.
 
 Pengujian pemicu 2 dan 3 memakai salinan skrip, bukan yang terpasang. Pemicu 2
 menjalankan `systemctl` tiruan yang hanya mencatat perintah tanpa
@@ -735,6 +764,7 @@ pada lingkungan staging (Kegiatan 9) lebih dulu.
 | `deploy/maintenance/notify.sh` | Pengirim notifikasi multi-kanal |
 | `deploy/maintenance/prune-backups-qrcode.sh` | Pembersihan sisa berkas |
 | `deploy/maintenance/cek-totp` | Diagnosis kecocokan kode TOTP |
+| `deploy/maintenance/notify-ssh-login.sh` | Pemberitahuan sesi SSH dibuka |
 | `deploy/maintenance/sshd-10-hardening.conf` | Konfigurasi hardening SSH |
 | `deploy/maintenance/pam-sshd.conf` | Konfigurasi PAM dengan TOTP |
 | `deploy/maintenance/logrotate-qrcode.conf` | Konfigurasi rotasi log |
