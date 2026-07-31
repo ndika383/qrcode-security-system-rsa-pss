@@ -653,11 +653,20 @@
 	                                    {% if performance_summary and performance_summary.verify.grade_sample_count > 0 %}
 	                                        {{ "%.1f"|format(performance_summary.verify.grade_p95_s * 1000) }}ms (n={{ performance_summary.verify.grade_sample_count }}) •
 	                                        {% if performance_summary.verify.trend.count > 0 %}Tren {{ performance_summary.verify.trend.window_days }}h: {{ "%.1f"|format(performance_summary.verify.trend.p95_s * 1000) }}ms (<span class="{{ performance_summary.verify.trend.grade.class }}">{{ performance_summary.verify.trend.grade.grade }}</span>, n={{ performance_summary.verify.trend.count }}) •{% endif %}
-	                                        Median: {{ "%.1f"|format(performance_summary.verify.median_s * 1000) }}ms •
+	                                        Median: {{ "%.1f"|format(performance_summary.verify.interactive_median_s * 1000) }}ms •
 	                                        Mean: {{ "%.1f"|format(performance_summary.verify.mean_s * 1000) }}ms
 	                                        {% if performance_summary.verify.outliers_over_1s > 0 %} • Outlier &gt;1s: {{ performance_summary.verify.outliers_over_1s }}{% endif %}
+	                                    {% elif performance_summary and performance_summary.verify.batch_count > 0 %}
+	                                        <span class="text-muted">tidak ada permintaan interaktif dalam jendela</span>
 	                                    {% else %}
 	                                        N/A
+	                                    {% endif %}
+	                                    {% if performance_summary and performance_summary.verify.batch_count > 0 %}
+	                                    <br><i class="fas fa-layer-group me-1"></i>Item verifikasi massal:
+	                                        P95 {{ "%.1f"|format(performance_summary.verify.batch_p95_s * 1000) }}ms &bull;
+	                                        Median {{ "%.1f"|format(performance_summary.verify.batch_median_s * 1000) }}ms &bull;
+	                                        n={{ performance_summary.verify.batch_count }}
+	                                        <span class="text-muted">— tidak masuk grade: satu berkas dalam unggahan, bukan permintaan yang ditunggu pengguna</span>
 	                                    {% endif %}
 	                                </small>
 	                                {% if performance_summary and performance_summary.verify.by_source %}

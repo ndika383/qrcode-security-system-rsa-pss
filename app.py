@@ -7576,6 +7576,9 @@ def _empty_timing_summary():
         'interactive_count': 0,
         'interactive_p95_s': 0.0,
         'interactive_median_s': 0.0,
+        'batch_count': 0,
+        'batch_p95_s': 0.0,
+        'batch_median_s': 0.0,
         'window_days': None,
         'skipped_no_timestamp': 0,
     }
@@ -7639,6 +7642,7 @@ def _summarize_timing_csv(path, window_days=None):
     values = []
     file_size_values = []
     interactive_values = []
+    batch_values = []
     by_source_values = defaultdict(list)
     skipped_no_timestamp = 0
     try:
@@ -7668,7 +7672,9 @@ def _summarize_timing_csv(path, window_days=None):
                 values.append(value)
                 source = row.get('Sumber') or row.get('Jenis') or '-'
                 by_source_values[source].append(value)
-                if not _is_batch_source(source):
+                if _is_batch_source(source):
+                    batch_values.append(value)
+                else:
                     interactive_values.append(value)
 
                 try:
@@ -7720,6 +7726,17 @@ def _summarize_timing_csv(path, window_days=None):
             'interactive_count': len(interactive_values),
             'interactive_p95_s': _percentile(interactive_sorted, 95),
             'interactive_median_s': statistics.median(interactive_values),
+        })
+
+    # Angka batch tidak pernah masuk grade, tetapi tetap dilaporkan. Tanpa ini
+    # dashboard tampak kosong pada instalasi yang beban kerjanya murni verifikasi
+    # massal, padahal ratusan ribu berkas baru saja diproses.
+    if batch_values:
+        batch_sorted = sorted(batch_values)
+        summary.update({
+            'batch_count': len(batch_values),
+            'batch_p95_s': _percentile(batch_sorted, 95),
+            'batch_median_s': statistics.median(batch_values),
         })
 
     summary['skipped_no_timestamp'] = skipped_no_timestamp
