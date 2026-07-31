@@ -233,11 +233,69 @@ Tiga hal terbukti sekaligus dari catatan yang sama:
    pernah diblokir. Tanpa daftar itu, pemilik server akan mengunci dirinya
    sendiri justru saat menguji hardening.
 
-### PasswordAuthentication sengaja dipertahankan
+### Autentikasi dua faktor (TOTP)
 
-Autentikasi password dibiarkan aktif atas keputusan pemilik sistem, yang
-mengelola server dari lebih dari satu perangkat sementara baru satu di antaranya
-memegang kunci. Mematikannya sekarang akan mengunci akses dari mesin lain.
+Kunci SSH tidak dipakai sebagai faktor kedua karena pemilik sistem mengelola
+server dari banyak perangkat, dan kunci menuntut pemasangan pada setiap mesin.
+Dipilih TOTP (RFC 6238): faktor keduanya berada di ponsel, bukan di mesin yang
+dipakai menyambung, sehingga login tetap mungkin dari perangkat mana pun tanpa
+persiapan apa pun di mesin tersebut.
+
+```
+$ sshd -T | grep -iE 'permitrootlogin|passwordauthentication|kbdinteractive|authenticationmethods|maxauthtries|logingracetime'
+permitrootlogin no
+passwordauthentication no
+kbdinteractiveauthentication yes
+authenticationmethods publickey keyboard-interactive
+maxauthtries 3
+logingracetime 30
+
+$ grep -E '^\s*auth' /etc/pam.d/sshd
+auth required pam_google_authenticator.so
+```
+
+`PasswordAuthentication no` **tidak** mematikan login password. Yang ditutup
+adalah jalur password internal sshd; autentikasi dialihkan ke PAM lewat
+`keyboard-interactive`, dan PAM tetap menanyakan password Unix sebelum meminta
+kode TOTP. Penutupan jalur internal itu justru syarat mutlak — bila dibiarkan
+aktif, penyerang dapat melewati TOTP sepenuhnya hanya dengan menebak password.
+
+Modul PAM dipasang **tanpa** `nullok`, sehingga pengguna tanpa rahasia TOTP tidak
+dapat login melalui jalur ini. Diperiksa lebih dulu bahwa hanya `amikom` yang
+memiliki shell login dan ia telah memegang rahasia yang terbukti bekerja.
+
+**Bukti login berhasil:**
+
+```
+13:53:26 sshd(pam_google_authenticator): Accepted google_authenticator for amikom
+13:53:26 sshd: Accepted keyboard-interactive/pam for amikom from 202.91.8.200
+```
+
+### Penerapan bertahap dengan pembatalan otomatis
+
+Konfigurasi PAM yang keliru dapat mengunci seluruh akses SSH. Setiap penerapan
+karenanya dijadwalkan bersama tugas pembatalan otomatis yang memulihkan
+konfigurasi bila tidak dikonfirmasi dalam tenggat tertentu.
+
+Mekanisme ini terbukti bekerja pada percobaan pertama. Kode TOTP ditolak
+(`Invalid verification code`), dan pembatalan menyala tepat waktu memulihkan
+akses tanpa campur tangan manusia:
+
+```
+13:37:15 sshd(pam_google_authenticator): Invalid verification code for amikom
+13:37:39 2fa-rollback: Konfigurasi 2FA SSH dibatalkan otomatis dan dipulihkan
+```
+
+Penelusuran menemukan aplikasi authenticator memegang rahasia berbeda dari yang
+tersimpan di server. Untuk memastikannya tanpa menebak, dibuat perkakas
+`cek-totp` yang membandingkan kode dari aplikasi terhadap hitungan server pada
+jendela ±5 menit, sehingga selisih jam dapat **diukur** dan dibedakan dari
+rahasia yang memang tidak cocok.
+
+Setelah rahasia dibuat ulang dan `cek-totp` melaporkan `COCOK TEPAT`, barulah
+konfigurasi diterapkan kembali. Urutan inilah yang seharusnya dipakai sejak awal:
+memverifikasi faktor kedua lebih dulu memakan beberapa detik, sedangkan
+mengetahuinya lewat kegagalan login memakan satu siklus penerapan penuh.
 
 **Urutan aman untuk menuntaskannya:**
 
@@ -254,7 +312,7 @@ memegang kunci. Mematikannya sekarang akan mengunci akses dari mesin lain.
 Mengingat 24.275 percobaan login gagal yang tercatat, langkah ini sebaiknya
 tidak ditunda.
 
-**Status: firewall TERPENUHI · akses root TERPENUHI · password auth ditunda atas keputusan pemilik sistem**
+**Status: TERPENUHI** — firewall aktif, akses root ditutup, dan autentikasi dua faktor diwajibkan
 
 ---
 
@@ -786,7 +844,7 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 1 | Registrasi domain & DNS | ✅ Terpenuhi |
 | 2 | Aktivasi & konfigurasi VPS | ✅ Terpenuhi |
 | 3 | SSL/TLS & akses publik | ✅ Terpenuhi |
-| 4 | Firewall & hardening | ⚠ Firewall aktif, root ditutup; password auth ditunda |
+| 4 | Firewall & hardening | ✅ Terpenuhi — firewall, root ditutup, 2FA TOTP wajib |
 | 5 | Instalasi aplikasi & database | ✅ Terpenuhi |
 | 6 | Load testing & optimasi | ✅ Terpenuhi |
 | 7 | Backup terjadwal | ✅ Terpenuhi |
@@ -800,13 +858,11 @@ naskah final, dan diuji pada lingkungan staging (Kegiatan 9) lebih dulu.
 | 15 | Cron maintenance | ✅ Terpenuhi |
 | 16 | Maintenance bulanan | ⚠ Pemantauan aktif; 27 dependensi usang, sengaja dibekukan |
 
-**14 terpenuhi penuh · 2 terpenuhi sebagian · 0 belum dikonfigurasi**
+**15 terpenuhi penuh · 1 terpenuhi sebagian · 0 belum dikonfigurasi**
 
 ### Prioritas tindak lanjut
 
-1. **Hardening SSH** (Kegiatan 4) — mendesak, mengingat 24.275 percobaan login
-   gagal yang tercatat dan akses yang masih bergantung password
-2. **Enkripsi arsip backup** (Kegiatan 7) — wajib sebelum salinan disimpan di
+1. **Enkripsi arsip backup** (Kegiatan 7) — wajib sebelum salinan disimpan di
    luar server, karena arsip memuat kunci privat penandatangan
 3. PasswordAuthentication (Kegiatan 4) — setelah kunci terpasang di seluruh perangkat
 4. Pembaruan paket sistem (Kegiatan 8) — dependensi Python sengaja dibekukan

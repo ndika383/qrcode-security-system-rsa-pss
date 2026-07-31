@@ -1,0 +1,43 @@
+#!/opt/qrcode/venv/bin/python
+"""Bandingkan kode dari aplikasi authenticator dengan hitungan server.
+
+Menelusuri jendela +/- 10 langkah waktu (+/- 5 menit) untuk menemukan pada
+langkah mana kode tersebut sah, sehingga selisih jam dapat diukur, bukan ditebak.
+"""
+import base64, hmac, hashlib, struct, sys, time
+
+BERKAS = '/home/amikom/.google_authenticator'
+try:
+    rahasia = open(BERKAS).readline().strip()
+except PermissionError:
+    sys.exit("Jalankan dengan sudo.")
+
+kunci = base64.b32decode(rahasia + '=' * (-len(rahasia) % 8), casefold=True)
+
+def kode(langkah):
+    h = hmac.new(kunci, struct.pack('>Q', langkah), hashlib.sha1).digest()
+    o = h[19] & 0xf
+    return f"{(struct.unpack('>I', h[o:o+4])[0] & 0x7fffffff) % 1000000:06d}"
+
+masuk = (sys.argv[1] if len(sys.argv) > 1
+         else input("Ketik kode 6 digit dari Microsoft Authenticator: ")).strip()
+sekarang = int(time.time()) // 30
+
+if not (masuk.isdigit() and len(masuk) == 6):
+    sys.exit("Kode harus tepat 6 angka.")
+
+for d in range(-10, 11):
+    if kode(sekarang + d) == masuk:
+        if d == 0:
+            print("\n  COCOK TEPAT — rahasia benar, jam ponsel sinkron.")
+            print("  Kegagalan sebelumnya berarti soal waktu pengetikan, bukan konfigurasi.")
+        else:
+            print(f"\n  COCOK, tetapi meleset {d:+d} langkah ({d*30:+d} detik).")
+            print("  Rahasia BENAR; yang bermasalah jam ponsel.")
+            print("  Perbaiki: aktifkan waktu otomatis di ponsel, lalu coba lagi.")
+        break
+else:
+    print("\n  TIDAK COCOK dalam rentang +/- 5 menit.")
+    print("  Aplikasi memegang rahasia yang berbeda dari server.")
+    print("  Hapus entri di Microsoft Authenticator, lalu jalankan ulang:")
+    print("    google-authenticator -t -d -f -r 3 -R 30 -W")
