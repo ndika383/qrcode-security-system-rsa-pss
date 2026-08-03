@@ -23,7 +23,7 @@ produksi, disalin apa adanya tanpa penyuntingan.
 | 1 | Registrasi domain & DNS | ✅ Terpenuhi |
 | 2 | Aktivasi & konfigurasi VPS | ✅ Terpenuhi |
 | 3 | SSL/TLS & akses publik | ✅ Terpenuhi |
-| 4 | Firewall, hak akses & hardening | ✅ Terpenuhi |
+| 4 | Firewall, hak akses & hardening | ✅ Terpenuhi — TOTP sebagai lapis tambahan dijeda sementara |
 | 5 | Instalasi aplikasi & database | ✅ Terpenuhi |
 | 6 | Load testing & optimasi | ✅ Terpenuhi |
 | 7 | Backup terjadwal & verifikasi integritas | ✅ Terpenuhi |
@@ -178,7 +178,27 @@ auth required pam_google_authenticator.so
 | 3 | `MaxAuthTries 3` (bawaan 6) |
 | 4 | `LoginGraceTime 30` |
 | 5 | `PermitRootLogin no` |
-| 6 | Autentikasi dua faktor TOTP (RFC 6238) |
+| 6 | Autentikasi dua faktor TOTP (RFC 6238) — **dinonaktifkan sementara, lihat catatan di bawah** |
+
+> **Catatan status per 3 Agustus 2026.** Lapis keenam sempat aktif dan diverifikasi
+> bekerja, lalu dinonaktifkan sementara. Penyebabnya bukan pada server melainkan
+> pada klien: perkakas administrasi yang dipakai pemilik sistem tidak mendukung
+> prompt `keyboard-interactive`, sehingga kode verifikasi tidak pernah dapat
+> dimasukkan dan login gagal. Klien lain seperti VS Code tetap berhasil.
+>
+> Lima lapis lainnya tetap berjalan penuh. Keluaran yang disyaratkan logbook —
+> firewall aktif, akses root dinonaktifkan, user admin terkonfigurasi — seluruhnya
+> tetap terpenuhi; TOTP merupakan tambahan di luar itu.
+>
+> Konfigurasi dipertahankan agar dapat dinyalakan kembali tanpa setup ulang:
+> baris modul PAM hanya dikomentari, rahasia TOTP di `~/.google_authenticator`
+> tidak dihapus, dan konfigurasi sshd dicadangkan pada
+> `10-hardening.conf.bak-disable-totp-20260803-072043`.
+>
+> Jalan keluar yang tersedia: `AuthenticationMethods` menerima kunci publik
+> sebagai metode berdiri sendiri, sehingga klien yang memakai kunci tidak akan
+> pernah dimintai kode. Memasang kunci publik pada perkakas tersebut akan
+> memungkinkan TOTP dinyalakan kembali tanpa mengorbankan kemudahan akses.
 
 ### Mengapa TOTP, bukan kunci SSH
 
@@ -196,12 +216,16 @@ penyerang dapat melewati TOTP sepenuhnya hanya dengan menebak password.
 Modul PAM dipasang **tanpa** `nullok`, sehingga pengguna tanpa rahasia TOTP tidak
 dapat login melalui jalur ini.
 
-### Bukti login dua faktor
+### Bukti login dua faktor saat lapis ini masih aktif
 
 ```
 13:53:26 sshd(pam_google_authenticator): Accepted google_authenticator for amikom
 13:53:26 sshd: Accepted keyboard-interactive/pam for amikom from 202.91.8.200
 ```
+
+Catatan tersebut direkam pada 31 Juli, ketika TOTP masih diwajibkan. Ia
+dipertahankan di sini sebagai bukti bahwa penerapannya pernah berjalan dan
+terverifikasi, bukan sebagai gambaran keadaan sekarang.
 
 ### Konfigurasi drop-in dan urutan pembacaan
 
