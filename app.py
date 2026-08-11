@@ -76,6 +76,10 @@ class Config:
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000/')  # Default ke localhost, akan dideteksi otomatis
     TRUST_PROXY_HEADERS = os.environ.get('TRUST_PROXY_HEADERS', 'False').lower() == 'true'
     VERIFY_PAYLOAD_RETENTION_DAYS = int(os.environ.get('VERIFY_PAYLOAD_RETENTION_DAYS', '30'))
+    UPLOAD_RETENTION_DAYS = int(os.environ.get('UPLOAD_RETENTION_DAYS', '7'))
+    # 0 = tidak pernah dihapus. QR hasil generate adalah bukti penelitian, jadi
+    # secara default tidak ikut dibersihkan oleh scheduler harian.
+    QR_RETENTION_DAYS = int(os.environ.get('QR_RETENTION_DAYS', '0'))
     QR_PAYLOAD_MAX_AGE_SECONDS = int(os.environ.get('QR_PAYLOAD_MAX_AGE_SECONDS', str(7 * 24 * 3600)))
     QR_NONCE_BYTES = int(os.environ.get('QR_NONCE_BYTES', '8'))
     VERIFICATION_FEATURE_ENABLED = os.environ.get('VERIFICATION_FEATURE_ENABLED', 'False').lower() == 'true'
@@ -8389,17 +8393,19 @@ def cleanup_old_files():
     """Cleanup file-file lama secara berkala"""
     try:
         now = time.time()
-        max_age = 7 * 24 * 3600  # 7 hari
+        upload_max_age = app.config['UPLOAD_RETENTION_DAYS'] * 24 * 3600
+        qr_max_age = app.config['QR_RETENTION_DAYS'] * 24 * 3600
 
+        # Retensi 0 berarti folder dilewati sama sekali (file tidak pernah kedaluwarsa).
         folders_to_clean = [
-            app.config['UPLOAD_FOLDER'],
-            app.config['QR_FOLDER'],
-            app.config['QR_MASSAL_FOLDER'],
-            app.config['FAKE_QR_FOLDER']
+            (app.config['UPLOAD_FOLDER'], upload_max_age),
+            (app.config['QR_FOLDER'], qr_max_age),
+            (app.config['QR_MASSAL_FOLDER'], qr_max_age),
+            (app.config['FAKE_QR_FOLDER'], qr_max_age)
         ]
 
-        for folder in folders_to_clean:
-            if not os.path.exists(folder):
+        for folder, max_age in folders_to_clean:
+            if max_age <= 0 or not os.path.exists(folder):
                 continue
 
             for filename in os.listdir(folder):
