@@ -78,6 +78,7 @@ class Config:
     VERIFY_PAYLOAD_RETENTION_DAYS = int(os.environ.get('VERIFY_PAYLOAD_RETENTION_DAYS', '30'))
     QR_PAYLOAD_MAX_AGE_SECONDS = int(os.environ.get('QR_PAYLOAD_MAX_AGE_SECONDS', str(7 * 24 * 3600)))
     QR_NONCE_BYTES = int(os.environ.get('QR_NONCE_BYTES', '8'))
+    VERIFICATION_FEATURE_ENABLED = os.environ.get('VERIFICATION_FEATURE_ENABLED', 'False').lower() == 'true'
     
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'csv'}
     # Meningkatkan batas ukuran request untuk mencegah error 413 saat upload batch banyak file
@@ -101,6 +102,19 @@ if app.config['TRUST_PROXY_HEADERS']:
 
 # Register blueprint testing
 app.register_blueprint(testing_bp, url_prefix='/testing')
+
+
+def is_verification_feature_enabled():
+    return app.config.get('VERIFICATION_FEATURE_ENABLED', False)
+
+
+def verification_disabled_view(message=None, status_code=200):
+    return render_template(
+        'verification_disabled.html',
+        message=message or 'Fitur verifikasi sedang dinonaktifkan sementara sampai diaktifkan kembali.',
+        verification_enabled=False
+    ), status_code
+
 
 # Setup logging
 os.makedirs(app.config['LOGS_FOLDER'], exist_ok=True)
@@ -3382,10 +3396,15 @@ def generate_qr():
 @app.route('/scanner')
 @login_required
 def scanner():
+    if not is_verification_feature_enabled():
+        return verification_disabled_view('Halaman verifikasi saat ini dinonaktifkan sementara.')
     return render_template('scanner.html', hasil_tunggal=None, hasil_massal=None)
 
 @app.route('/verify_qr', methods=['POST'])
 def verify_qr():
+    if not is_verification_feature_enabled():
+        return verification_disabled_view('Verifikasi QR sedang dinonaktifkan sementara.')
+
     try:
         total_timer = Timer().start()
         
@@ -3553,6 +3572,8 @@ def verify_qr():
 @app.route('/verify_direct')
 def verify_direct_page():
     """Halaman untuk verifikasi langsung dari scanner"""
+    if not is_verification_feature_enabled():
+        return verification_disabled_view('Scanner langsung sedang dinonaktifkan sementara.')
     return render_template('verify_direct.html')
 
 @app.route('/scan_hp')
@@ -3560,12 +3581,17 @@ def verify_direct_page():
 @app.route('/mobile_scan')
 def scan_hp():
     """Halaman scanner HP yang otomatis membuka URL verifikasi setelah QR terbaca."""
+    if not is_verification_feature_enabled():
+        return verification_disabled_view('Kamera HP untuk verifikasi sedang dinonaktifkan sementara.')
     return render_template('scan_hp.html')
 
 @app.route('/api/resolve_scan_target', methods=['POST'])
 @limiter.limit("120 per minute")
 def resolve_scan_target():
     """Validasi hasil scan dan kembalikan URL verifikasi internal untuk redirect."""
+    if not is_verification_feature_enabled():
+        return jsonify({'success': False, 'error': 'Fitur verifikasi sedang dinonaktifkan sementara.'}), 503
+
     try:
         payload = request.get_json(silent=True) or {}
         target_url = resolve_scan_verification_target(payload.get('qr_string', ''))
@@ -3589,6 +3615,9 @@ def resolve_scan_target():
 @limiter.limit("120 per minute")  # Limit khusus yang lebih besar untuk scanner kamera
 def decode_qr_string():
     """API untuk mendecode data QR dari string (dari scanner atau kamera)"""
+    if not is_verification_feature_enabled():
+        return jsonify({'success': False, 'error': 'Fitur verifikasi sedang dinonaktifkan sementara.'}), 503
+
     try:
         data = request.get_json()
         if not data or 'qr_string' not in data:
@@ -3596,9 +3625,9 @@ def decode_qr_string():
                 'success': False,
                 'error': 'Data QR tidak ditemukan'
             })
-        
+
         qr_string = data['qr_string']
-        
+
         payload = extract_payload_from_qr_string(qr_string)
         if not payload:
             return jsonify({
@@ -3628,7 +3657,7 @@ def decode_qr_string():
         # Verifikasi signature
         serialized = json.dumps(data, sort_keys=True)
         hash_obj = SHA256.new(serialized.encode('utf-8'))
-        
+
         if alg == 'RSA':
             try:
                 verifier = pss.new(public_key, salt_bytes=8)
@@ -3657,14 +3686,14 @@ def decode_qr_string():
         else:
             sig_error = "signature tidak valid (algoritma tidak diketahui)"
             signature_valid = False
-        
+
         # Cek database dan replay attack dengan logika yang diperbaiki
         changed_fields = {}
         original_data = None
         message = ""
         valid = False
         is_replay = False
-        
+
         verification_result = classify_qr_verification(data, signature_valid, sig_error)
         original_data = verification_result["original_data"]
         changed_fields = verification_result["changed_fields"]
@@ -3682,7 +3711,7 @@ def decode_qr_string():
             "0.050000", "0.150000"
         ]
         _log_to_csv_extended(app.config['CSV_LOG_VERIFIKASI'], log_row)
-        
+
         # Update statistik
         qr_stats.add_verify_stat(0.15, success=valid)  # Estimasi waktu
         
@@ -3709,6 +3738,11 @@ def decode_qr_string():
 @app.route('/v/<token>', methods=['GET', 'HEAD'])
 def verify_short_qr_token(token):
     """Endpoint URL pendek untuk verifikasi QR RSA-PSS dari kamera HP."""
+    if not is_verification_feature_enabled():
+        if request.method == 'HEAD':
+            return Response(status=503)
+        return verification_disabled_view('URL verifikasi sedang dinonaktifkan sementara.')
+
     if request.method == 'HEAD':
         return direct_verify_probe_response(200 if load_verify_payload(token) else 404)
 
@@ -3738,6 +3772,11 @@ def verify_short_qr_token(token):
 @app.route('/verify/<path:encoded_data>', methods=['GET', 'HEAD'])
 def verify_qr_data(encoded_data):
     """Endpoint untuk verifikasi langsung dari URL (untuk kamera HP)"""
+    if not is_verification_feature_enabled():
+        if request.method == 'HEAD':
+            return Response(status=503)
+        return verification_disabled_view('URL verifikasi sedang dinonaktifkan sementara.')
+
     try:
         if request.method == 'HEAD':
             return direct_verify_probe_response()
@@ -4595,6 +4634,10 @@ def download_batch_fake():
 
 @app.route('/verify_qr_massal', methods=['POST'])
 def verify_qr_massal():
+    if not is_verification_feature_enabled():
+        flash('Fitur verifikasi massal sedang dinonaktifkan sementara.', 'warning')
+        return redirect(url_for('scanner'))
+
     try:
         if 'qrfiles' not in request.files:
             flash('Tidak ada file yang diunggah', 'warning')
@@ -6504,6 +6547,10 @@ def download_qr_massal():
 @login_required
 def verify_generated_task(task_id):
     """Mulai verifikasi massal langsung dari QR hasil generate di server."""
+    if not is_verification_feature_enabled():
+        flash('Fitur verifikasi hasil generate sedang dinonaktifkan sementara.', 'warning')
+        return redirect(url_for('index'))
+
     try:
         source_task = ensure_generate_task_loaded(task_id)
         if not source_task:
@@ -8343,18 +8390,18 @@ def cleanup_old_files():
     try:
         now = time.time()
         max_age = 7 * 24 * 3600  # 7 hari
-        
+
         folders_to_clean = [
             app.config['UPLOAD_FOLDER'],
             app.config['QR_FOLDER'],
             app.config['QR_MASSAL_FOLDER'],
             app.config['FAKE_QR_FOLDER']
         ]
-        
+
         for folder in folders_to_clean:
             if not os.path.exists(folder):
                 continue
-                
+
             for filename in os.listdir(folder):
                 filepath = os.path.join(folder, filename)
                 if os.path.isfile(filepath):
