@@ -3623,6 +3623,9 @@ def decode_qr_string():
         return jsonify({'success': False, 'error': 'Fitur verifikasi sedang dinonaktifkan sementara.'}), 503
 
     try:
+        total_timer = Timer().start()
+        decode_time = verify_time = db_time = 0.0
+
         data = request.get_json()
         if not data or 'qr_string' not in data:
             return jsonify({
@@ -3632,7 +3635,9 @@ def decode_qr_string():
 
         qr_string = data['qr_string']
 
+        decode_timer = Timer().start()
         payload = extract_payload_from_qr_string(qr_string)
+        decode_time = decode_timer.stop()
         if not payload:
             return jsonify({
                 'success': False,
@@ -3659,6 +3664,7 @@ def decode_qr_string():
             })
         
         # Verifikasi signature
+        verify_timer = Timer().start()
         serialized = json.dumps(data, sort_keys=True)
         hash_obj = SHA256.new(serialized.encode('utf-8'))
 
@@ -3691,6 +3697,8 @@ def decode_qr_string():
             sig_error = "signature tidak valid (algoritma tidak diketahui)"
             signature_valid = False
 
+        verify_time = verify_timer.stop()
+
         # Cek database dan replay attack dengan logika yang diperbaiki
         changed_fields = {}
         original_data = None
@@ -3698,7 +3706,9 @@ def decode_qr_string():
         valid = False
         is_replay = False
 
+        db_timer = Timer().start()
         verification_result = classify_qr_verification(data, signature_valid, sig_error)
+        db_time = db_timer.stop()
         original_data = verification_result["original_data"]
         changed_fields = verification_result["changed_fields"]
         message = verification_result["message"]
@@ -3707,17 +3717,20 @@ def decode_qr_string():
         
         # Log verifikasi
         # PERBAIKAN: Gunakan datetime.now(timezone.utc) untuk menghindari deprecation warning
+        total_time = total_timer.stop()
+
+        # Waktu Load = 0: rute ini menerima string QR, tidak membaca berkas gambar.
         log_row = [
             "Direct/Scanner", datetime.now(timezone.utc).isoformat(), "direct_scan", message,
             data.get('nama', '-'), data.get('id', '-'),
             json.dumps(changed_fields, ensure_ascii=False) if changed_fields else '-',
-            "0.000000", "0.000000", "0.100000",
-            "0.050000", "0.150000"
+            "0.000000", f"{decode_time:.6f}", f"{verify_time:.6f}",
+            f"{db_time:.6f}", f"{total_time:.6f}"
         ]
         _log_to_csv_extended(app.config['CSV_LOG_VERIFIKASI'], log_row)
 
         # Update statistik
-        qr_stats.add_verify_stat(0.15, success=valid)  # Estimasi waktu
+        qr_stats.add_verify_stat(total_time, success=valid)
         
         return jsonify({
             'success': True,
