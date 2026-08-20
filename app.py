@@ -2938,7 +2938,7 @@ def get_security_profile_context():
         },
         'keys': {
             'rsa': get_key_file_info(app.config['RSA_KEY_FILE']),
-            'ecdsa_legacy': get_key_file_info(app.config['ECDSA_KEY_FILE'])
+            'ecdsa': get_key_file_info(app.config['ECDSA_KEY_FILE'])
         },
         'nonce_store': get_nonce_store_stats(),
         'payload': {
@@ -3307,7 +3307,7 @@ def generate_qr():
         if alg == 'RSA':
             signer = pss.new(private_key, salt_bytes=8) # Inovasi: Salt 8 bytes (Adapted RSA-PSS)
         else:
-            # Default ECDSA
+            # Algoritma pembanding: ECDSA P-256 (RSA-PSS tetap algoritma utama)
             signer = DSS.new(ecdsa_private_key, 'fips-186-3')
         
         sign_timer = Timer().start()
@@ -3490,17 +3490,9 @@ def verify_qr():
                 signature_valid = True
                 sig_error = "" # RSA succeeded, no error message
             except (ValueError, TypeError):
-                # Fallback ke ECDSA jika RSA gagal
-                try:
-                    verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
-                    verifier.verify(hash_obj, signature)
-                    signature_valid = True
-                    # ECDSA succeeded, but RSA (primary) failed, so set specific error message
-                    sig_error = "signature tidak valid (ECDSA)"
-                except (ValueError, TypeError):
-                    # Both RSA and ECDSA failed
-                    sig_error = "signature tidak valid (ECDSA)"
-                    signature_valid = False
+                # Payload menyatakan alg=RSA, jadi hanya kunci RSA yang berhak menilainya.
+                sig_error = "signature tidak valid (RSA)"
+                signature_valid = False
         elif alg == 'ECDSA':
             try:
                 verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
@@ -3675,15 +3667,9 @@ def decode_qr_string():
                 signature_valid = True
                 sig_error = ""
             except (ValueError, TypeError):
-                # Fallback ke ECDSA
-                try:
-                    verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
-                    verifier.verify(hash_obj, signature)
-                    signature_valid = True
-                    sig_error = "signature tidak valid (ECDSA)"
-                except (ValueError, TypeError):
-                    sig_error = "signature tidak valid (ECDSA)"
-                    signature_valid = False
+                # Payload menyatakan alg=RSA, jadi hanya kunci RSA yang berhak menilainya.
+                sig_error = "signature tidak valid (RSA)"
+                signature_valid = False
         elif alg == 'ECDSA':
             try:
                 verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
@@ -3842,15 +3828,9 @@ def verify_qr_data(encoded_data):
                     signature_valid = True
                     sig_error = ""
                 except (ValueError, TypeError):
-                    # Fallback
-                    try:
-                        verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
-                        verifier.verify(hash_obj, signature)
-                        signature_valid = True
-                        sig_error = "signature tidak valid (ECDSA)"
-                    except (ValueError, TypeError):
-                        sig_error = "signature tidak valid (ECDSA)"
-                        signature_valid = False
+                    # Payload menyatakan alg=RSA, jadi hanya kunci RSA yang berhak menilainya.
+                    sig_error = "signature tidak valid (RSA)"
+                    signature_valid = False
             elif alg == 'ECDSA':
                 try:
                     verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
@@ -4969,14 +4949,9 @@ def verify_qr_massal_direct(valid_files):
                         signature_valid = True
                         sig_error = ""
                     except (ValueError, TypeError):
-                        try:
-                            verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
-                            verifier.verify(hash_obj, signature)
-                            signature_valid = True
-                            sig_error = "signature tidak valid (ECDSA)"
-                        except (ValueError, TypeError):
-                            sig_error = "signature tidak valid (ECDSA)"
-                            signature_valid = False
+                        # Payload menyatakan alg=RSA, jadi hanya kunci RSA yang berhak menilainya.
+                        sig_error = "signature tidak valid (RSA)"
+                        signature_valid = False
                 elif alg == 'ECDSA':
                     try:
                         verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
@@ -8893,14 +8868,9 @@ def background_verify_massal_process(task_id):
                                 signature_valid = True
                                 sig_error = ""
                             except (ValueError, TypeError):
-                                try:
-                                    verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
-                                    verifier.verify(hash_obj, signature)
-                                    signature_valid = True
-                                    sig_error = "signature tidak valid (ECDSA)"
-                                except (ValueError, TypeError):
-                                    sig_error = "signature tidak valid (ECDSA)"
-                                    signature_valid = False
+                                # Payload menyatakan alg=RSA, jadi hanya kunci RSA yang berhak menilainya.
+                                sig_error = "signature tidak valid (RSA)"
+                                signature_valid = False
                         elif alg == 'ECDSA':
                             try:
                                 verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
