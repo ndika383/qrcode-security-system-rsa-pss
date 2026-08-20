@@ -1,0 +1,15 @@
+session_id,test_type,test_name,start_time,end_time,status,total_operations,completed_operations
+test_20260723_125730_195_normal_operations_3744d3,normal_operations,Normal Operations - 2026-07-23 12:57,2026-07-23T12:57:30.195938,2026-07-23T12:57:58.026415,completed,50000,50000
+test_20260723_125822_257_normal_operations_0d45ef,normal_operations,Normal Operations - 2026-07-23 12:58,2026-07-23T12:58:22.258008,2026-07-23T12:58:53.363844,completed,50000,50000
+test_20260723_130005_078_replay_attack_d261a8,replay_attack,Replay Attack Simulation - 2026-07-23 12:59,2026-07-23T13:00:05.079062,2026-07-23T13:02:09.822145,completed,55000,55000
+test_20260723_130232_541_replay_attack_ed68b2,replay_attack,Replay Attack Simulation - 2026-07-23 13:02,2026-07-23T13:02:32.541314,2026-07-23T13:04:34.937193,completed,55000,55000
+test_20260723_130604_721_data_tampering_bb0ba6,data_tampering,Data Tampering Detection - 2026-07-23 13:06,2026-07-23T13:06:04.721655,2026-07-23T13:06:36.178522,completed,50000,50000
+test_20260723_130807_859_signature_forgery_fa2100,signature_forgery,Signature Forgery Testing - 2026-07-23 13:07,2026-07-23T13:08:07.859299,2026-07-23T13:08:30.682448,completed,25000,25000
+test_20260723_130845_653_signature_forgery_681e46,signature_forgery,Signature Forgery Testing - 2026-07-23 13:08,2026-07-23T13:08:45.653552,2026-07-23T13:09:08.536149,completed,25000,25000
+test_20260723_130936_108_stress_test_0f32d8,stress_test,Simulated Stress Testing - 2026-07-23 13:09,2026-07-23T13:09:36.108217,2026-07-23T13:15:57.109837,completed,40000,40000
+test_20260723_133053_146_real_http_stress_test_d11b5e,real_http_stress_test,Real HTTP Stress Test (Local Server) - 2026-07-23 13:30,2026-07-23T13:30:53.146847,2026-07-23T13:32:14.692393,completed,80,80
+test_20260727_071149_195_real_http_stress_test_27712c,real_http_stress_test,Real HTTP Stress Test (Local Server) - 2026-07-27 07:11,2026-07-27T07:11:49.195437,2026-07-27T07:11:54.150963,completed,800,800
+test_20260727_071804_042_real_http_stress_test_8ee159,real_http_stress_test,Verifikasi Fix Cookie,2026-07-27T07:18:04.042127,2026-07-27T07:21:07.103623,completed,80,80
+test_20260727_072243_431_real_http_stress_test_db1e7e,real_http_stress_test,Kalibrasi timeout,2026-07-27T07:22:43.431470,2026-07-27T07:28:21.373394,completed,90,90
+test_20260727_072858_703_real_http_stress_test_955cfc,real_http_stress_test,Endpoint ringan,2026-07-27T07:28:58.703323,2026-07-27T07:29:02.123454,completed,600,600
+test_20260727_093910_187_real_http_stress_test_316138,real_http_stress_test,Real HTTP Stress Test (Local Server) - 2026-07-27 09:39,2026-07-27T09:39:10.187254,2026-07-27T09:47:26.973581,completed,300,300

@@ -1,0 +1,48 @@
+{
+  "title": "Dataset Pengujian Keamanan dan Kalibrasi Kinerja QR Code Security System RSA-PSS",
+  "upload_type": "dataset",
+  "language": "ind",
+  "description": "<p>Dataset hasil pengujian keamanan dan kalibrasi kinerja dari <em>QR Code Security System RSA-PSS</em>, sebuah sistem pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/SHA-256 dengan ECDSA P-256 sebagai algoritma pembanding.</p><p>Dataset memuat tiga kelompok data:</p><ul><li><strong>Kalibrasi kinerja kriptografi tiga tingkat</strong> — pengukuran waktu penandatanganan dan verifikasi pada tiga tingkat pengambilan sampel: <em>quick_check</em> (1.000 sampel), <em>production</em> (10.000), dan <em>validation</em> (100.000), lengkap dengan simpangan baku, selang kepercayaan, dan galat relatif.</li><li><strong>Pengujian operasi normal</strong> — dua sesi, masing-masing 50.000 operasi, berisi deret waktu penandatanganan dan verifikasi per operasi.</li><li><strong>Delapan sesi pengujian keamanan</strong> — meliputi serangan replay (2 sesi, 55.000 operasi masing-masing), pengubahan data / <em>data tampering</em> (1 sesi, 50.000 operasi), pemalsuan tanda tangan / <em>signature forgery</em> (2 sesi, 25.000 operasi masing-masing), dan uji beban / <em>stress test</em> (1 sesi, 40.000 operasi), ditambah dua sesi operasi normal yang menjadi garis dasarnya.</li></ul><p>Ditambah enam sesi <em>real HTTP stress test</em> terhadap endpoint produksi. Seluruhnya mencakup 461.950 nilai terukur yang diekspor apa adanya dari basis data hasil pengujian, terverifikasi identik bit-per-bit terhadap sumbernya.</p><p>Dataset ini melengkapi rekaman perangkat lunaknya (concept DOI 10.5281/zenodo.21271011), yang hanya memuat kode sumber tanpa data hasil pengujian.</p>",
+  "creators": [
+    {
+      "name": "Slameto, Andika Agus",
+      "affiliation": "Program Studi Informatika, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia",
+      "orcid": "0000-0002-6842-4163"
+    },
+    {
+      "name": "Sutanto, Yudi",
+      "affiliation": "Program Studi Informatika, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    },
+    {
+      "name": "Kurniawan, Hendra",
+      "affiliation": "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
+    }
+  ],
+  "keywords": [
+    "QR Code",
+    "RSA-PSS",
+    "ECDSA P-256",
+    "digital signature",
+    "replay attack",
+    "data tampering",
+    "signature forgery",
+    "stress testing",
+    "performance calibration",
+    "security testing dataset"
+  ],
+  "license": "cc-by-4.0",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.21271011",
+      "relation": "isSupplementTo",
+      "resource_type": "software",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/ndika383/qrcode-security-system-rsa-pss",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

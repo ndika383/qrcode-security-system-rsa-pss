@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "calibration_date": "2026-08-20 08:20:15",
+    "num_samples": 10000,
+    "tier": "production",
+    "system_info": {
+      "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+      "platform_system": "Linux",
+      "platform_release": "6.8.0-137-generic",
+      "platform_version": "#137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026",
+      "platform_machine": "x86_64",
+      "platform_processor": "x86_64",
+      "cpu_count": 2,
+      "cpu_count_logical": 2,
+      "cpu_count_physical": 2,
+      "cpu_freq_current": 2.2,
+      "cpu_freq_max": 0.0,
+      "cpu_freq_unit": "GHz",
+      "ram_total_gb": 9.71,
+      "ram_available_gb": 8.53,
+      "ram_used_gb": 0.87,
+      "ram_percent": 12.2
+    }
+  },
+  "benchmark_results": {
+    "rsa_pss_2048": {
+      "signing": {
+        "mean": 2.4842680673478754,
+        "std": 0.4289263109802975,
+        "ci_lower": 2.4758611116526614,
+        "ci_upper": 2.4926750230430894,
+        "ci_width": 0.01681391139042766,
+        "relative_error_percent": 0.33840775098755044,
+        "samples": 10000
+      },
+      "verification": {
+        "mean": 0.8801153772743419,
+        "std": 0.19025685179144877,
+        "ci_lower": 0.8763863429792295,
+        "ci_upper": 0.8838444115694543,
+        "ci_width": 0.007458068590224791,
+        "relative_error_percent": 0.4236983458533543,
+        "samples": 10000
+      }
+    },
+    "ecdsa_p256": {
+      "signing": {
+        "mean": 1.2149506792789908,
+        "std": 0.2726225877667129,
+        "ci_lower": 1.2096072765587633,
+        "ci_upper": 1.2202940819992183,
+        "ci_width": 0.010686805440455145,
+        "relative_error_percent": 0.43980408516653535,
+        "samples": 10000
+      },
+      "verification": {
+        "mean": 2.476848766594776,
+        "std": 0.49459400478835214,
+        "ci_lower": 2.4671547241009244,
+        "ci_upper": 2.4865428090886277,
+        "ci_width": 0.019388084987703405,
+        "relative_error_percent": 0.3913861283981128,
+        "samples": 10000
+      }
+    }
+  }
+}

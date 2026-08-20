@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "calibration_date": "2026-08-20 08:18:55",
+    "num_samples": 1000,
+    "tier": "quick_check",
+    "system_info": {
+      "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+      "platform_system": "Linux",
+      "platform_release": "6.8.0-137-generic",
+      "platform_version": "#137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026",
+      "platform_machine": "x86_64",
+      "platform_processor": "x86_64",
+      "cpu_count": 2,
+      "cpu_count_logical": 2,
+      "cpu_count_physical": 2,
+      "cpu_freq_current": 2.2,
+      "cpu_freq_max": 0.0,
+      "cpu_freq_unit": "GHz",
+      "ram_total_gb": 9.71,
+      "ram_available_gb": 8.53,
+      "ram_used_gb": 0.88,
+      "ram_percent": 12.2
+    }
+  },
+  "benchmark_results": {
+    "rsa_pss_2048": {
+      "signing": {
+        "mean": 2.4882404469681205,
+        "std": 0.44612283849168927,
+        "ci_lower": 2.4605894669653985,
+        "ci_upper": 2.5158914269708426,
+        "ci_width": 0.05530196000544446,
+        "relative_error_percent": 1.1112663985674893,
+        "samples": 1000
+      },
+      "verification": {
+        "mean": 0.8844128501368687,
+        "std": 0.1862052293662063,
+        "ci_lower": 0.8728717304510555,
+        "ci_upper": 0.8959539698226818,
+        "ci_width": 0.0230822393716263,
+        "relative_error_percent": 1.3049470825788076,
+        "samples": 1000
+      }
+    },
+    "ecdsa_p256": {
+      "signing": {
+        "mean": 1.2178344392305007,
+        "std": 0.2534817422960137,
+        "ci_lower": 1.2021234780724053,
+        "ci_upper": 1.2335454003885962,
+        "ci_width": 0.031421922316191106,
+        "relative_error_percent": 1.2900736464656608,
+        "samples": 1000
+      },
+      "verification": {
+        "mean": 2.494479881017469,
+        "std": 0.5061360660452509,
+        "ci_lower": 2.463109242634125,
+        "ci_upper": 2.5258505194008127,
+        "ci_width": 0.06274127676668785,
+        "relative_error_percent": 1.257602381244631,
+        "samples": 1000
+      }
+    }
+  }
+}
