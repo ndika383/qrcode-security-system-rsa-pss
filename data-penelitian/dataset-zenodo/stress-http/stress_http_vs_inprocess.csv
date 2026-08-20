@@ -1,0 +1,16 @@
+sesi,target_endpoint,metrik,in_process,http_nyata,rasio,arah
+4,generate_verify,mean_detik,0.008557671892642976,44.082521035977855,5151.228,HTTP nyata lebih lambat
+4,generate_verify,p95_detik,0.016582965850830078,99.61557792564851,6007.103,HTTP nyata lebih lambat
+4,generate_verify,p99_detik,0.035385556221008335,104.86349873226717,2963.455,HTTP nyata lebih lambat
+4,generate_verify,throughput_ops_per_detik,1000.0,0.27378197902149354,3652.541,in-process lebih tinggi
+4,generate_verify,laju_kesalahan_persen,2.5775,0.0,,-
+5,server_metrics,mean_detik,0.008557671892642976,0.16688370217913567,19.501,HTTP nyata lebih lambat
+5,server_metrics,p95_detik,0.016582965850830078,0.344925231540401,20.8,HTTP nyata lebih lambat
+5,server_metrics,p99_detik,0.035385556221008335,0.364987382213294,10.315,HTTP nyata lebih lambat
+5,server_metrics,throughput_ops_per_detik,1000.0,221.99470502829436,4.505,in-process lebih tinggi
+5,server_metrics,laju_kesalahan_persen,2.5775,0.0,,-
+6,generate_verify,mean_detik,0.008557671892642976,20.518471013513043,2397.67,HTTP nyata lebih lambat
+6,generate_verify,p95_detik,0.016582965850830078,42.49854759981099,2562.783,HTTP nyata lebih lambat
+6,generate_verify,p99_detik,0.035385556221008335,46.45947966657578,1312.95,HTTP nyata lebih lambat
+6,generate_verify,throughput_ops_per_detik,1000.0,0.637437477946247,1568.781,in-process lebih tinggi
+6,generate_verify,laju_kesalahan_persen,2.5775,0.0,,-

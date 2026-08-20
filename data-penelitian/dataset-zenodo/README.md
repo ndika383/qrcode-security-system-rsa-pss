@@ -16,6 +16,10 @@ terhadap sumbernya: 461.950 nilai dibandingkan, 0 selisih.
 indeks_sesi.csv                        14 sesi pengujian beserta waktu dan status
 ringkasan_metrik.json                  ringkasan skalar tiap sesi
 deret-mentah/                          18 berkas CSV, satu baris per operasi
+stress-http/
+  stress_http_ringkasan.csv            6 sesi real HTTP stress test
+  stress_http_tahap.csv                19 tahap konkurensi, termasuk CPU dan memori
+  stress_http_vs_inprocess.csv         perbandingan terhadap stress test in-process
 kalibrasi/
   kalibrasi_quick_check.json           tier 1.000 sampel
   kalibrasi_production.json            tier 10.000 sampel
@@ -82,6 +86,57 @@ konvergensi.
 Perbedaan cakupan lain: berkas kalibrasi Juli hanya memuat `rsa_pss_2048`, sedangkan
 kalibrasi Agustus memuat `rsa_pss_2048` dan `ecdsa_p256`. Selisih ini dipertahankan apa
 adanya, tidak ditambal.
+
+## Real HTTP stress test
+
+Enam sesi menguji sistem lewat HTTP sungguhan, berbeda dari `stress_test` yang berjalan
+in-process. Kolom `kesahihan` pada `stress_http_ringkasan.csv` menandai mana yang layak
+dipakai:
+
+| Sesi | Endpoint | Timeout | Permintaan | Sukses | Kesahihan |
+|---:|---|---:|---:|---:|---|
+| 1 | `generate_verify` | 15 s | 80 | 0 | `gagal_total` |
+| 2 | `generate_verify` | 15 s | 800 | 0 | `gagal_total` |
+| 3 | `generate_verify` | 20 s | 80 | 7 | `sebagian_besar_gagal` |
+| 4 | `generate_verify` | 90 s | 90 | 90 | `sah` |
+| 5 | `server_metrics` | 60 s | 600 | 600 | `sah` |
+| 6 | `generate_verify` | 120 s | 300 | 300 | `sah` |
+
+**Hanya sesi 4, 5, dan 6 yang merupakan hasil pengukuran.** Sesi 1 dan 2 mencatat status
+HTTP `0`, artinya tidak ada respons yang sah diterima, sehingga angka latensinya bukan
+latensi layanan. Penyebabnya berbeda dan terbaca pada kolom `galat_dominan`:
+
+- Sesi 1 dan 3 — `The read operation timed out`. Timeout 15 s dan 20 s lebih pendek
+  daripada waktu alur sebenarnya. Setelah timeout dinaikkan ke 90–120 s pada sesi 4 dan 6,
+  keberhasilan langsung 100%.
+- Sesi 2 — `Generate response did not include ...`, dengan `timeout` nol pada keempat
+  tahapnya. Server membalas cepat (p95 antara 0,068 dan 0,497 detik) tetapi harness gagal
+  mengurai responsnya. Ini kegagalan alat ukur, bukan kegagalan sistem.
+
+Sesi 5 menyasar `server_metrics`, endpoint pembacaan ringan tanpa operasi kriptografi,
+sehingga tidak sebanding dengan `generate_verify` yang menjalankan penandatanganan,
+pembuatan berkas QR, dan penulisan log.
+
+### Catatan pembacaan
+
+Beban dibangkitkan dari mesin yang sama dengan aplikasi, sehingga pembangkit beban dan
+aplikasi berbagi 2 vCPU. Kolom `cpu_rerata_persen` memperlihatkan dampaknya: pada sesi 6
+pemakaian CPU naik dari 71,0% pada 5 pengguna menjadi 88,9% pada 25 pengguna. Angka
+throughput dan latensi di sini mencerminkan kondisi berbagi sumber daya itu, bukan batas
+kemampuan sistem bila beban dibangkitkan dari mesin terpisah.
+
+Perbandingan pada `stress_http_vs_inprocess.csv` perlu dibaca sebagai **simulasi
+in-process versus pengukuran HTTP nyata**, bukan dua pengukuran setara. Throughput
+in-process tercatat persis 1000,0 untuk 100, 500, 1.000, dan 1.500 pengguna — datar di
+seluruh rentang beban, ciri nilai model dan bukan hasil ukur.
+
+Jumlah permintaan pada sesi yang sah kecil (90 dan 300), sehingga p99 ditentukan oleh
+satu atau dua nilai ekstrem. Pada sesi 4, p99 sebesar 104,863 detik praktis sama dengan
+nilai maksimum 106,939 detik.
+
+Nilai p95 pada sesi 4 (99,616 detik) melampaui timeout 90 detik tanpa satu pun kegagalan
+karena timeout berlaku per permintaan HTTP, sedangkan waktu yang diukur mencakup alur
+`generate_verify` yang terdiri atas dua permintaan berurutan.
 
 ## Lingkungan pengukuran
 
