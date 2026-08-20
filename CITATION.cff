@@ -16,13 +16,13 @@ authors:
     family-names: "Kurniawan"
     affiliation: "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
     email: "hendrakurniawan@amikom.ac.id"
-version: "1.1.0"
+version: "1.2.0"
 license: MIT
 doi: "10.5281/zenodo.21271011"
-date-released: "2026-07-09"
+date-released: "2026-08-20"
 repository-code: "https://github.com/ndika383/qrcode-security-system-rsa-pss"
 url: "https://doi.org/10.5281/zenodo.21271011"
-abstract: "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu."
+abstract: "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu. Sejak versi 1.2.0 arsip turut memuat dataset penelitian berisi kalibrasi kinerja tiga tingkat serta hasil pengujian operasi normal dan delapan sesi pengujian keamanan."
 keywords:
   - QR Code
   - RSA-PSS

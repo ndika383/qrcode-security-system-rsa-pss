@@ -1,9 +1,10 @@
 # Dataset Pengujian Keamanan dan Kalibrasi Kinerja — QR Code Security System RSA-PSS
 
 Dataset ini memuat data mentah dan ringkasan hasil pengujian keamanan serta kalibrasi
-kinerja kriptografi dari *QR Code Security System RSA-PSS*. Dataset melengkapi rekaman
-perangkat lunaknya (concept DOI [10.5281/zenodo.21271011](https://doi.org/10.5281/zenodo.21271011)),
-yang hanya berisi kode sumber tanpa data hasil pengujian.
+kinerja kriptografi dari *QR Code Security System RSA-PSS*. Mulai versi 1.2.0 dataset
+disertakan langsung di dalam arsip rilis perangkat lunaknya, sehingga kode dan data
+terarsip dalam satu rekaman Zenodo yang sama
+(concept DOI [10.5281/zenodo.21271011](https://doi.org/10.5281/zenodo.21271011)).
 
 Seluruh angka diekspor apa adanya dari basis data hasil pengujian sistem
 (`data/testing/testing_results.db`), lalu **diverifikasi identik bit-per-bit**
@@ -102,5 +103,10 @@ saat start.
 
 ## Lisensi dan sitasi
 
-Dataset dilisensikan CC BY 4.0. Perangkat lunaknya berlisensi MIT dan disitasi terpisah
-melalui concept DOI 10.5281/zenodo.21271011.
+Dataset ini **tidak** diterbitkan sebagai rekaman Zenodo tersendiri. Sejak versi 1.2.0 ia
+menjadi bagian dari rekaman perangkat lunak, sehingga ikut terarsip dan tersitasi melalui
+concept DOI [10.5281/zenodo.21271011](https://doi.org/10.5281/zenodo.21271011) beserta
+version DOI rilis yang memuatnya.
+
+Karena satu rekaman Zenodo hanya membawa satu pernyataan lisensi, seluruh isi arsip —
+kode maupun data — berada di bawah lisensi MIT yang sama seperti perangkat lunaknya.

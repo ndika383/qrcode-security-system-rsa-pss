@@ -16,17 +16,22 @@
       "affiliation": "Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Amikom Yogyakarta, Yogyakarta, Indonesia"
     }
   ],
-  "description": "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu. Versi 1.1.0 memuat perbaikan pada modul kalibrasi performa, pengujian beban HTTP nyata, dan pembuatan grafik evaluasi. Arsip ini berisi kode sumber sistem beserta data hasil sistem (log generate/verifikasi, hasil kalibrasi performa, dan berkas evidensi pengujian). Dokumentasi naratif dan tangkapan layar tidak disertakan dalam versi ini.",
+  "description": "Aplikasi Flask untuk pembuatan dan verifikasi QR Code berbasis tanda tangan digital RSA-PSS/ECDSA, dilengkapi dashboard audit, pengujian keamanan, dan deployment Ubuntu. Arsip ini berisi kode sumber sistem beserta data hasil sistem (log generate/verifikasi, hasil kalibrasi performa, dan berkas evidensi pengujian). Dokumentasi naratif dan tangkapan layar tidak disertakan dalam versi ini. Versi 1.2.0 menambahkan paket dataset penelitian pada data-penelitian/dataset-zenodo/, yang memuat: (a) kalibrasi kinerja kriptografi tiga tingkat, yaitu quick_check 1.000 sampel, production 10.000, dan validation 100.000, untuk RSA-PSS 2048 dan ECDSA P-256, lengkap dengan simpangan baku, selang kepercayaan, dan galat relatif; (b) dua sesi pengujian operasi normal, masing-masing 50.000 operasi; (c) delapan sesi pengujian keamanan yang mencakup replay attack, data tampering, signature forgery, dan stress test, ditambah enam sesi real HTTP stress test. Seluruhnya mencakup 461.950 nilai terukur yang diekspor dari basis data hasil pengujian dan terverifikasi identik bit-per-bit terhadap sumbernya.",
   "keywords": [
     "QR Code",
     "RSA-PSS",
-    "ECDSA",
+    "ECDSA P-256",
     "digital signature",
     "Flask",
-    "verification"
+    "verification",
+    "replay attack",
+    "data tampering",
+    "signature forgery",
+    "performance calibration",
+    "security testing dataset"
   ],
-  "version": "1.1.0",
-  "publication_date": "2026-07-27",
+  "version": "1.2.0",
+  "publication_date": "2026-08-20",
   "access_right": "open",
   "license": "MIT"
 }
