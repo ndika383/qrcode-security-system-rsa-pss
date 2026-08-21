@@ -1,7 +1,11 @@
 """
 export_test_data.py - Export semua data pengujian ke CSV dan buat tabel ringkasan
-Data mentah dari testing_results.db untuk lampiran paper
-Date: 11 April 2026
+Data mentah dari testing_results.db untuk lampiran paper.
+
+Aturan berkas ini: tidak ada nilai hasil pengujian yang ditulis sebagai
+literal. Semua angka dihitung ulang dari testing_results.db (dan berkas
+kalibrasi) setiap kali skrip dijalankan, supaya tabel tidak pernah lagi
+memuat angka dari basis data yang sudah diganti.
 """
 
 import sqlite3
@@ -9,6 +13,7 @@ import json
 import csv
 import os
 import statistics
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
@@ -30,7 +35,7 @@ cursor = conn.cursor()
 # ============================================================
 # 1. EXPORT SEMUA SESI PENGUJIAN KE CSV
 # ============================================================
-print("\n[1/5] Exporting test sessions summary...")
+print("\n[1/6] Exporting test sessions summary...")
 
 cursor.execute("""
     SELECT id, session_id, test_type, test_name, start_time, end_time, 
@@ -65,7 +70,7 @@ print(f"  ✅ Saved: {csv_sessions} ({len(sessions)} sessions)")
 # ============================================================
 # 2. EXPORT METRIK DETIL PER SESI KE CSV
 # ============================================================
-print("\n[2/5] Exporting detailed metrics per session...")
+print("\n[2/6] Exporting detailed metrics per session...")
 
 csv_metrics = os.path.join(output_dir, 'data_metrik_detil_pengujian.csv')
 
@@ -193,7 +198,7 @@ print(f"  ✅ Saved: {csv_metrics}")
 # ============================================================
 # 3. EXPORT DETECTION RATES PER JENIS SERANGAN KE CSV
 # ============================================================
-print("\n[3/5] Exporting detection rates by attack type...")
+print("\n[3/6] Exporting detection rates by attack type...")
 
 csv_attacks = os.path.join(output_dir, 'data_deteksi_per_jenis_serangan.csv')
 
@@ -262,7 +267,7 @@ print(f"  ✅ Saved: {csv_attacks}")
 # ============================================================
 # 4. EXPORT SKALABILITAS (STRESS TEST) KE CSV
 # ============================================================
-print("\n[4/5] Exporting scalability data...")
+print("\n[4/6] Exporting scalability data...")
 
 csv_scalability = os.path.join(output_dir, 'data_skalabilitas_stress_test.csv')
 
@@ -301,9 +306,125 @@ with open(csv_scalability, 'w', newline='', encoding='utf-8') as f:
 print(f"  ✅ Saved: {csv_scalability}")
 
 # ============================================================
-# 5. BUA T TABEL RINGKASAN (MARKDOWN)
+# 5. AGREGASI METRIK UNTUK TABEL RINGKASAN
 # ============================================================
-print("\n[5/5] Creating summary table...")
+# Semua angka pada tabel ringkasan dihitung ulang dari sumbernya setiap kali
+# skrip dijalankan. Jangan menulis nilai hasil pengujian sebagai literal di
+# sini: versi lama skrip ini menyalin angka dari basis data yang sudah
+# diganti, sehingga tabel melaporkan error rate 0,79% @500 pengguna padahal
+# sesi 23 Juli 2026 mencatat 1,78%.
+print("\n[5/6] Aggregating metrics...")
+
+
+def _results(session_row):
+    if not session_row['results_json'] or session_row['results_json'] == '{}':
+        return None
+    return json.loads(session_row['results_json'])
+
+
+def _pct(part, total):
+    return (part / total * 100) if total else None
+
+
+def _status(value, target, lower_is_better, band=0.10):
+    """Verdict terhadap target; 'band' = toleransi relatif untuk 'Mendekati'."""
+    if value is None:
+        return 'N/A'
+    if lower_is_better:
+        if value <= target:
+            return '✅ Tercapai'
+        return '⚠️ Mendekati' if value <= target * (1 + band) else '❌ Perlu Optimasi'
+    if value >= target:
+        return '✅ Tercapai'
+    return '⚠️ Mendekati' if value >= target * (1 - band) else '❌ Perlu Optimasi'
+
+
+norm_ok = norm_total = 0
+replay_detected = replay_total = 0
+tamper_detected = tamper_total = 0
+forgery_rejected = forgery_total = 0
+stress_error_by_users = {}
+stress_overall_error = None
+
+for s in sessions:
+    r = _results(s)
+    if not r:
+        continue
+    ttype = s['test_type']
+    if ttype == 'normal_operations':
+        norm_ok += r.get('signing_success', 0) + r.get('verification_success', 0)
+        norm_total += len(r.get('signing_times', [])) + len(r.get('verification_times', []))
+    elif ttype == 'replay_attack':
+        replay_detected += r.get('detected_replays', 0)
+        replay_total += r.get('detected_replays', 0) + r.get('missed_replays', 0)
+    elif ttype == 'data_tampering':
+        tamper_detected += r.get('detected_tampering', 0)
+        tamper_total += r.get('detected_tampering', 0) + r.get('missed_tampering', 0)
+    elif ttype == 'signature_forgery':
+        forgery_rejected += r.get('rejected_forgeries', 0)
+        forgery_total += r.get('rejected_forgeries', 0) + r.get('accepted_forgeries', 0)
+    elif ttype == 'stress_test':
+        for users, err in r.get('error_rate_by_user_count', {}).items():
+            stress_error_by_users[int(users)] = err
+        stress_overall_error = r.get('overall_error_rate', stress_overall_error)
+
+normal_success_rate = _pct(norm_ok, norm_total)
+replay_rate = _pct(replay_detected, replay_total)
+tamper_rate = _pct(tamper_detected, tamper_total)
+forgery_rate = _pct(forgery_rejected, forgery_total)
+total_operations = sum(s['total_operations'] or 0 for s in sessions)
+status_counts = Counter(s['status'] for s in sessions)
+
+# Waktu signing/verifikasi diambil dari berkas kalibrasi, BUKAN dari
+# testing_results.db: sesi normal_operations di basis data hanya merekam
+# micro-sleep pengganti operasi kripto (lihat _run_normal_operations_test
+# pada modules/testing_controller.py), jadi durasinya bukan waktu RSA-PSS.
+calib_path = BASE_DIR / 'data' / 'calibration' / 'multi_scenario_calibration.json'
+crypto = {}
+calib_date = ''
+if calib_path.exists():
+    with open(calib_path, encoding='utf-8') as cf:
+        calib = json.load(cf)
+    rsa = calib.get('benchmark_results', {}).get('rsa_pss_2048', {})
+    for op in ('signing', 'verification'):
+        if rsa.get(op):
+            crypto[op] = rsa[op]
+    calib_date = calib.get('metadata', {}).get('calibration_date', '')
+    print(f"  ✅ Kalibrasi RSA-PSS 2048 dimuat ({calib_date or 'tanpa tanggal'})")
+else:
+    print(f"  ⚠️  Kalibrasi tidak ditemukan: {calib_path}")
+
+# Metrik yang tidak punya sumber terukur di repositori ini. Sengaja tidak
+# dicetak sebagai angka supaya tidak lagi beredar sebagai 'hasil pengujian'.
+METRIK_TANPA_SUMBER = [
+    'Ukuran signature (bit) dan efisiensi terhadap RSA baku',
+    'Laju deteksi replay pada data produksi',
+    'Pernyataan kepatuhan ISO/IEC 20248:2022',
+]
+
+
+def _hitung_baris(path):
+    """Jumlah baris data sebuah CSV (tanpa header), None bila tidak ada."""
+    if not os.path.exists(path):
+        return None
+    with open(path, 'r', encoding='utf-8', errors='replace') as lf:
+        return max(0, sum(1 for _ in lf) - 1)
+
+
+def _hitung_entri_json(path):
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding='utf-8') as jf:
+            return len(json.load(jf))
+    except (ValueError, TypeError):
+        return None
+
+
+# ============================================================
+# 6. BUAT TABEL RINGKASAN (MARKDOWN)
+# ============================================================
+print("\n[6/6] Creating summary table...")
 
 summary_md = os.path.join(output_dir, 'TABEL_HASIL_PENGUJIAN_LENGKAP.md')
 
@@ -315,11 +436,16 @@ with open(summary_md, 'w', encoding='utf-8') as f:
     f.write("---\n\n")
     f.write("## DAFTAR FILE CSV DATA MENTAH\n\n")
     f.write("| File | Isi | Jumlah Baris |\n")
-    f.write("|---|---|---|\n")
-    f.write("| `data_sessions_pengujian.csv` | Summary 14 sesi pengujian | 14 |\n")
-    f.write("| `data_metrik_detil_pengujian.csv` | Metrik detil per sesi (timing, success rate) | ~20 |\n")
-    f.write("| `data_deteksi_per_jenis_serangan.csv` | Detection rates per jenis serangan (17 sub-tipe) | ~17 |\n")
-    f.write("| `data_skalabilitas_stress_test.csv` | Scalability data (100-1500 users) | 4 |\n\n")
+    f.write("|---|---|---:|\n")
+    for nama, isi in [
+        ('data_sessions_pengujian.csv', 'Ringkasan sesi pengujian'),
+        ('data_metrik_detil_pengujian.csv', 'Metrik detil per sesi (timing, success rate)'),
+        ('data_deteksi_per_jenis_serangan.csv', 'Laju deteksi per jenis serangan'),
+        ('data_skalabilitas_stress_test.csv', 'Skalabilitas stress test per tingkat beban'),
+    ]:
+        n = _hitung_baris(os.path.join(output_dir, nama))
+        f.write(f"| `{nama}` | {isi} | " + (f"{n:,} |\n" if n is not None else "– |\n"))
+    f.write("\n")
     
     f.write("---\n\n")
     f.write("## TABEL 1: RINGKASAN SESI PENGUJIAN\n\n")
@@ -328,24 +454,47 @@ with open(summary_md, 'w', encoding='utf-8') as f:
     for i, s in enumerate(sessions, 1):
         f.write(f"| {i} | {s['test_type']} | {s['test_name']} | {s['total_operations']:,} | {s['status']} |\n")
     
-    f.write(f"\n**Total Operasi: 271,200** | **Sesi: 14** | **Completed: 9** | **Failed: 1** | **Stopped: 4**\n\n")
+    ringkas_status = ' | '.join(f"**{k.title()}: {v}**" for k, v in sorted(status_counts.items()))
+    f.write(f"\n**Total Operasi: {total_operations:,}** | **Sesi: {len(sessions)}** | {ringkas_status}\n\n")
     
     f.write("---\n\n")
     f.write("## TABEL 2: METRIK KINERJA UTAMA\n\n")
-    f.write("| Skenario | Metrik | Nilai | Target | Status |\n")
-    f.write("|---|---|---|---|---|\n")
-    f.write("| Normal Operations | Signing Time | 30.93 ± 1.02 ms | ≤400 ms | ✅ Tercapai |\n")
-    f.write("| Normal Operations | Verification Time | 13.77 ± 1.32 ms | ≤200 ms | ✅ Tercapai |\n")
-    f.write("| Normal Operations | Success Rate | 100% | ≥99% | ✅ Tercapai |\n")
-    f.write("| Replay Attack | Detection Rate (Synthetic) | 95.3% | ≥98% | ⚠️ Mendekati |\n")
-    f.write("| Replay Attack | Detection Rate (Production) | 100% | ≥98% | ✅ Tercapai |\n")
-    f.write("| Data Tampering | Detection Accuracy | 72.2% | ≥85% | ⚠️ Perlu Optimasi |\n")
-    f.write("| Signature Forgery | Rejection Rate | 98.2% | ≥99.9% | ⚠️ Mendekati |\n")
-    f.write("| Stress Test @100 users | Error Rate | 0.2% | <2% | ✅ Tercapai |\n")
-    f.write("| Stress Test @500 users | Error Rate | 0.79% | <2% | ✅ Tercapai |\n")
-    f.write("| Stress Test @1000 users | Error Rate | 11.21% | <2% | ❌ Perlu Optimasi |\n")
-    f.write("| Signature Efficiency | Size | 381.7 ± 3.2 bits | ≤512 bits | ✅ Tercapai |\n")
-    f.write("| ISO/IEC 20248:2022 | Compliance | Yes | Yes | ✅ Tercapai |\n\n")
+    f.write("| Skenario | Metrik | Nilai | Target | Status | Sumber |\n")
+    f.write("|---|---|---|---|---|---|\n")
+    if crypto.get('signing'):
+        c = crypto['signing']
+        f.write(f"| RSA-PSS 2048 | Signing Time | {c['mean']:.2f} ± {c['std']:.2f} ms | ≤400 ms | "
+                f"{_status(c['mean'], 400, True)} | kalibrasi ({c.get('samples', 0):,} sampel) |\n")
+    if crypto.get('verification'):
+        c = crypto['verification']
+        f.write(f"| RSA-PSS 2048 | Verification Time | {c['mean']:.2f} ± {c['std']:.2f} ms | ≤200 ms | "
+                f"{_status(c['mean'], 200, True)} | kalibrasi ({c.get('samples', 0):,} sampel) |\n")
+    if normal_success_rate is not None:
+        f.write(f"| Normal Operations | Success Rate | {normal_success_rate:.2f}% | ≥99% | "
+                f"{_status(normal_success_rate, 99, False)} | testing_results.db |\n")
+    if replay_rate is not None:
+        f.write(f"| Replay Attack | Detection Rate | {replay_rate:.2f}% | ≥98% | "
+                f"{_status(replay_rate, 98, False)} | testing_results.db |\n")
+    if tamper_rate is not None:
+        f.write(f"| Data Tampering | Detection Accuracy | {tamper_rate:.2f}% | ≥85% | "
+                f"{_status(tamper_rate, 85, False)} | testing_results.db |\n")
+    if forgery_rate is not None:
+        f.write(f"| Signature Forgery | Rejection Rate | {forgery_rate:.2f}% | ≥99.9% | "
+                f"{_status(forgery_rate, 99.9, False)} | testing_results.db |\n")
+    for users in sorted(stress_error_by_users):
+        err = stress_error_by_users[users]
+        f.write(f"| Stress Test @{users} users | Error Rate | {err:.2f}% | <2% | "
+                f"{_status(err, 2, True)} | testing_results.db |\n")
+    if stress_overall_error is not None:
+        f.write(f"| Stress Test (agregat) | Error Rate | {stress_overall_error:.2f}% | <2% | "
+                f"{_status(stress_overall_error, 2, True)} | testing_results.db |\n")
+    f.write("\n")
+    f.write("> Baris stress test berasal dari beban simulasi in-process. Baris `@N users` "
+            "hanya mencakup tingkat beban tersebut, sedangkan baris agregat mencakup "
+            "seluruh tingkat beban sekaligus — dua angka yang berbeda cakupan, bukan "
+            "dua angka yang bertentangan.\n\n")
+    f.write("> Tidak dicetak di tabel ini karena tidak punya sumber terukur di repositori: "
+            + "; ".join(METRIK_TANPA_SUMBER) + ".\n\n")
     
     f.write("---\n\n")
     f.write("## TABEL 3: DETEKSI PER JENIS SERANGAN\n\n")
@@ -394,35 +543,55 @@ with open(summary_md, 'w', encoding='utf-8') as f:
                 f.write(f"| {users} | {resp[str(users)]*1000:.2f} | {err.get(str(users), 0):.2f}% | {succ.get(str(users), 0):.2f}% |\n")
     
     f.write("\n---\n\n")
-    f.write("## TABEL 5: PERBANDINGAN DENGAN PENELITIAN TERDAHULU (CORRECTED)\n\n")
+    f.write("## TABEL 5: PERBANDINGAN DENGAN PENELITIAN TERDAHULU\n\n")
+    # Kolom penelitian terdahulu adalah kutipan literatur (tetap literal).
+    # Kolom "Penelitian Ini" selalu dihitung dari sumber terukur.
+    def _num(nilai, digit=2):
+        return f"{nilai:.{digit}f}" if nilai is not None else 'N/A'
+
+    lolos_2persen = [u for u, e in stress_error_by_users.items() if e < 2]
+    if lolos_2persen:
+        u = max(lolos_2persen)
+        skalabilitas = f"{u} (err {stress_error_by_users[u]:.2f}%)"
+    else:
+        skalabilitas = 'N/A'
+
     f.write("| Kriteria | **Penelitian Ini** | Lorien & Wellem (2021) | Nuraeni et al. (2024) | Almousa et al. (2024) |\n")
     f.write("|---|---:|---:|---:|---:|\n")
     f.write("| **Metode** | **RSA-PSS + Nonce-TS** | SHA-256 + RSA | RSA + AES-128 | Dual ML |\n")
-    f.write("| **Signature Size (bit)** | **381.7** | 512 | ~600 | N/A |\n")
-    f.write("| **Efisiensi vs RSA** | **+25.4%** | Baseline | -17.2% | N/A |\n")
-    f.write("| **Signing Time (ms)** | **30.93** | ~500 | ~600 | N/A |\n")
-    f.write("| **Verification Time (ms)** | **13.77** | ~250 | ~300 | N/A |\n")
-    f.write("| **Replay Detection (%)** | **95.3** | None | None | None |\n")
-    f.write("| **Tampering Detection (%)** | **72.2** | 100 | ~95 | 93.50 |\n")
-    f.write("| **Forgery Rejection (%)** | **98.2** | N/A | N/A | N/A |\n")
-    f.write("| **ISO/IEC 20248:2022** | **Yes** | No | No | No |\n")
-    f.write("| **Skalabilitas (users)** | **500 (<1% err)** | N/T | N/T | N/T |\n")
-    f.write("| **Total Operasi Testing** | **271,200** | N/R | N/R | N/R |\n")
+    f.write(f"| **Signing Time (ms)** | **{_num(crypto.get('signing', {}).get('mean'))}** | ~500 | ~600 | N/A |\n")
+    f.write(f"| **Verification Time (ms)** | **{_num(crypto.get('verification', {}).get('mean'))}** | ~250 | ~300 | N/A |\n")
+    f.write(f"| **Replay Detection (%)** | **{_num(replay_rate, 1)}** | None | None | None |\n")
+    f.write(f"| **Tampering Detection (%)** | **{_num(tamper_rate, 1)}** | 100 | ~95 | 93.50 |\n")
+    f.write(f"| **Forgery Rejection (%)** | **{_num(forgery_rate, 1)}** | N/A | N/A | N/A |\n")
+    f.write(f"| **Skalabilitas (users)** | **{skalabilitas}** | N/T | N/T | N/T |\n")
+    f.write(f"| **Total Operasi Testing** | **{total_operations:,}** | N/R | N/R | N/R |\n")
     f.write("| **Offline Verification** | **Yes** | Yes | Yes | No |\n\n")
-    
+
     f.write("*Keterangan: N/R = Not Reported; N/T = Not Tested; N/A = Not Applicable*\n\n")
+    f.write("*Baris ukuran signature, efisiensi terhadap RSA, dan kepatuhan ISO/IEC 20248:2022 "
+            "sengaja tidak dicetak: nilainya tidak dapat dihitung dari sumber mana pun di "
+            "repositori ini, jadi harus dilampirkan manual beserta sumbernya.*\n\n")
     
     f.write("---\n\n")
     f.write("## SUMBER DATA\n\n")
     f.write("Semua data di atas diambil langsung dari:\n")
-    f.write("- `data/testing/testing_results.db` — Database pengujian (271,200 operasi)\n")
-    f.write("- `logs/log_generate.csv` — Log generate produksi\n")
-    f.write("- `logs/log_verifikasi.csv` — Log verifikasi produksi\n")
-    f.write("- `logs/modification_logs.json` — Log modifikasi (10 entri)\n")
-    f.write("- `logs/batch_modification_logs.json` — Log batch modifikasi (1,000 fake QR)\n\n")
-    f.write("---\n\n")
-    f.write("*Dibuat: 11 April 2026*\n")
-    f.write("*Data diverifikasi dari testing_results.db*\n")
+    f.write(f"- `data/testing/testing_results.db` — Basis data pengujian "
+            f"({total_operations:,} operasi dalam {len(sessions)} sesi)\n")
+    if crypto:
+        f.write(f"- `data/calibration/multi_scenario_calibration.json` — Kalibrasi waktu "
+                f"RSA-PSS 2048{f' ({calib_date})' if calib_date else ''}\n")
+    for label, path in [('Log generate produksi', 'logs/log_generate.csv'),
+                        ('Log verifikasi produksi', 'logs/log_verifikasi.csv')]:
+        n = _hitung_baris(os.path.join(BASE_DIR, path))
+        f.write(f"- `{path}` — {label}" + (f" ({n:,} baris)\n" if n is not None else " (tidak ditemukan)\n"))
+    for label, path in [('Log modifikasi', 'logs/modification_logs.json'),
+                        ('Log batch modifikasi', 'logs/batch_modification_logs.json')]:
+        n = _hitung_entri_json(os.path.join(BASE_DIR, path))
+        f.write(f"- `{path}` — {label}" + (f" ({n:,} entri)\n" if n is not None else " (tidak ditemukan)\n"))
+    f.write("\n---\n\n")
+    f.write(f"*Dibuat: {datetime.now().strftime('%d %B %Y, %H:%M')}*\n")
+    f.write("*Seluruh angka dihitung ulang dari sumbernya saat skrip dijalankan.*\n")
 
 print(f"  ✅ Saved: {summary_md}")
 
