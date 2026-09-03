@@ -18,3 +18,38 @@ Struktur:
 
 Data dihasilkan dari halaman kalibrasi aplikasi (`/testing/calibration`)
 menggunakan `calibrate_performance.py`.
+
+### `harness_empiris.py`
+Harness pengukuran empiris skenario keamanan, ditambahkan 3 September 2026 sebagai
+kegiatan 2 pada Tabel 16 Laporan Kemajuan.
+
+Berbeda dari `modules/testing_controller.py` yang membangkitkan hasil deteksi dari
+laju terparameter, harness ini benar-benar memodifikasi payload lalu memanggil
+verifikasi RSA-PSS dan `classify_qr_verification()` milik aplikasi. Tidak ada satu
+pun keputusan deteksi yang diundi.
+
+Empat skenario: pemalsuan data tujuh subjenis, replay dengan verifikasi berulang,
+masa berlaku beserta kontrol negatif, dan pemalsuan tanda tangan empat jenis.
+
+Isolasi bukti: basis data status keamanan diarahkan ke berkas sementara sehingga
+buku besar nonce produksi tidak tersentuh, dan tidak ada penulisan ke
+`data/testing/testing_results.db` maupun berkas log produksi.
+
+```bash
+sudo venv/bin/python data-penelitian/harness_empiris.py \
+     --operasi 50000 --replay 1500 --forgery 4000 --kedaluwarsa 5000
+```
+
+Wajib dijalankan sebagai root karena kunci privat bermode 0640 `root:www-data`.
+Keluarannya tersimpan di `dataset-zenodo/empiris/`.
+
+### `uji_penguatan_validasi_semantik.py`
+Uji regresi 12 kasus atas penguatan lapisan validasi semantik (kegiatan 1 pada
+Tabel 16): toleransi drift timestamp 300 detik, penegakan timestamp monotonik per
+nonce, dan validasi struktur payload.
+
+Empat kasus pertama adalah uji regresi yang memastikan QR sah berumur 0 sampai 6
+hari tetap diterima. Sisanya menguji jalur deteksi baru dan memastikan deteksi
+replay, kedaluwarsa, serta pemalsuan data tidak mengalami kemunduran.
+
+Dijalankan terisolasi seperti harness di atas dan tidak menyentuh basis data produksi.

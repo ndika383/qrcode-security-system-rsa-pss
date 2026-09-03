@@ -6,9 +6,21 @@ disertakan langsung di dalam arsip rilis perangkat lunaknya, sehingga kode dan d
 terarsip dalam satu rekaman Zenodo yang sama
 (concept DOI [10.5281/zenodo.21271011](https://doi.org/10.5281/zenodo.21271011)).
 
-Seluruh angka diekspor apa adanya dari basis data hasil pengujian sistem
-(`data/testing/testing_results.db`), lalu **diverifikasi identik bit-per-bit**
-terhadap sumbernya: 461.950 nilai dibandingkan, 0 selisih.
+Dataset ini memuat **dua jenis data yang tidak boleh dicampur**:
+
+1. **Simulasi peristiwa diskret terkalibrasi** — delapan sesi pengujian keamanan
+   berisi 350.000 operasi. Angkanya diekspor apa adanya dari basis data hasil
+   pengujian sistem (`data/testing/testing_results.db`) dan **diverifikasi identik
+   bit-per-bit** terhadap sumbernya: 461.950 nilai dibandingkan, 0 selisih. Waktu
+   operasinya diturunkan dari kalibrasi empiris, tetapi keputusan terdeteksi atau
+   tidaknya sebuah serangan dibangkitkan dari laju terparameter, bukan dari
+   pemanggilan jalur verifikasi.
+2. **Pengukuran empiris** — 63.500 operasi pada `empiris/`, seluruhnya hasil
+   pemanggilan jalur verifikasi asli. Tidak ada satu pun keputusan deteksi yang
+   diundi.
+
+Perbedaan ini menentukan cara membaca setiap angka dan diuraikan pada bagian
+[Pengukuran empiris](#pengukuran-empiris).
 
 ## Struktur
 
@@ -20,13 +32,19 @@ stress-http/
   stress_http_ringkasan.csv            6 sesi real HTTP stress test
   stress_http_tahap.csv                19 tahap konkurensi, termasuk CPU dan memori
   stress_http_vs_inprocess.csv         perbandingan terhadap stress test in-process
+empiris/
+  hasil_empiris_20260903.json          keluaran lengkap harness pengukuran empiris
+  empiris_ringkasan.csv                9 metrik terhadap target proposal
+  empiris_per_subjenis.csv             laju deteksi 7 subjenis pemalsuan data
+  empiris_waktu.csv                    statistik waktu 4 skenario
+  MANIFEST.sha256                      checksum SHA-256 keempat berkas di atas
 kalibrasi/
   kalibrasi_quick_check.json           tier 1.000 sampel
   kalibrasi_production.json            tier 10.000 sampel
   kalibrasi_validation.json            tier 100.000 sampel (kalibrasi 2026-07-21)
   kalibrasi_validation_20260820.json   tier 100.000 sampel (sesi sama, lihat catatan)
   ringkasan_kalibrasi_tiga_tingkat.csv tabel gabungan ketiga tier
-.zenodo.json                           metadata rekaman Zenodo
+(.zenodo.json berada di akar repositori, bukan di folder ini)
 ```
 
 Berkas di `deret-mentah/` bernama `<session_id>__<nama_deret>.csv` dengan kolom
@@ -138,6 +156,47 @@ Nilai p95 pada sesi 4 (99,616 detik) melampaui timeout 90 detik tanpa satu pun k
 karena timeout berlaku per permintaan HTTP, sedangkan waktu yang diukur mencakup alur
 `generate_verify` yang terdiri atas dua permintaan berurutan.
 
+## Pengukuran empiris
+
+Dijalankan 3 September 2026 melalui `data-penelitian/harness_empiris.py`. Berbeda dari
+delapan sesi simulasi, harness ini benar-benar memodifikasi payload lalu memanggil
+verifikasi RSA-PSS dan `classify_qr_verification()` milik aplikasi. Basis data status
+keamanan diarahkan ke berkas sementara sehingga buku besar nonce produksi tidak
+tersentuh.
+
+| Skenario | Operasi | Hasil pokok |
+|---|---:|---|
+| Pemalsuan data, 7 subjenis | 50.000 | Deteksi 100%, termasuk kategori kritis |
+| Replay, 1.500 sampel × 3 verifikasi | 4.500 | Deteksi 100%, negatif palsu 0%, positif palsu 0% |
+| Kedaluwarsa dengan kontrol negatif | 5.000 | Deteksi 100% atas 2.451 payload kedaluwarsa; 0% positif palsu atas 2.549 kontrol |
+| Pemalsuan tanda tangan, 4 jenis | 4.000 | Penolakan 100% |
+
+### Perbandingan terhadap sesi simulasi
+
+| Metrik | Simulasi | Empiris | Target proposal |
+|---|---:|---:|---:|
+| Akurasi deteksi pemalsuan data | 78,14% | 100% | 79,2% |
+| Deteksi kategori kritis | 54,17% | 100% | — |
+| Laju deteksi replay | 92,21% | 100% | 95,8% |
+| Laju negatif palsu replay | 0,161% | 0% | ≤ 0,1% |
+| Laju penolakan pemalsuan tanda tangan | 97,08% | 100% | 97,0% |
+
+Selisihnya bukan perbaikan sistem antara dua tanggal. Angka simulasi merupakan
+keluaran laju terparameter di dalam harness, sedangkan angka empiris merupakan
+perilaku sistem yang sebenarnya. Deteksi 100% pada pemalsuan data bersifat struktural:
+setiap perubahan pada field yang ditandatangani merusak tanda tangan RSA-PSS, sehingga
+tidak tersedia ruang bagi angka di bawah 100%. Kontrol negatif pada skenario
+kedaluwarsa disertakan justru untuk menunjukkan bahwa detektor tidak sekadar menolak
+segalanya.
+
+### Catatan membaca `empiris_waktu.csv`
+
+Waktu deteksi pemalsuan data dan pemalsuan tanda tangan berada di bawah 1 ms karena
+kedua jalur itu berhenti pada pemeriksaan kriptografis dan perbandingan payload.
+Skenario replay dan kedaluwarsa mencatat 29,9 ms dan 25,5 ms karena keduanya menulis
+ke buku besar nonce berbasis SQLite. Metrik yang dibandingkan terhadap target proposal
+20,0 ms adalah **waktu deteksi pemalsuan data**, sesuai definisi pada usulan penelitian.
+
 ## Lingkungan pengukuran
 
 Ubuntu, Python 3.12.3, 2 vCPU pada 2,2 GHz, RAM 9,71 GB. Rincian per berkas kalibrasi
@@ -149,6 +208,10 @@ tersimpan pada `metadata.system_info`.
 python3 data-penelitian/export_dataset_pengujian.py
 python3 calibrate_performance.py --tier quick_check --output <path>.json
 python3 data-penelitian/susun_ringkasan_kalibrasi.py
+
+# pengukuran empiris (wajib root: kunci privat bermode 0640 root:www-data)
+sudo venv/bin/python data-penelitian/harness_empiris.py \
+     --operasi 50000 --replay 1500 --forgery 4000 --kedaluwarsa 5000
 ```
 
 Skrip ekspor membuka basis data dalam mode baca saja dan tidak pernah menulis ke sumber.

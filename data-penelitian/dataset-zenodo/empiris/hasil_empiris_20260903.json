@@ -1,0 +1,155 @@
+{
+  "metadata": {
+    "harness": "empiris",
+    "versi": "1.0",
+    "seed": 20260824,
+    "mulai": "2026-09-03T18:28:03.357818",
+    "selesai": "2026-09-03T18:36:07.907454",
+    "catatan": "Seluruh keputusan deteksi berasal dari verifikasi RSA-PSS dan classify_qr_verification(); tidak ada laju terparameter."
+  },
+  "pemalsuan_data": {
+    "total": 50000,
+    "terdeteksi": 50000,
+    "lolos": 0,
+    "per_subjenis": {
+      "field_modification": {
+        "total": 20030,
+        "terdeteksi": 20030,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      },
+      "field_addition": {
+        "total": 10102,
+        "terdeteksi": 10102,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      },
+      "field_removal": {
+        "total": 7467,
+        "terdeteksi": 7467,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      },
+      "data_type_change": {
+        "total": 4993,
+        "terdeteksi": 4993,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      },
+      "timestamp_tampering": {
+        "total": 3943,
+        "terdeteksi": 3943,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      },
+      "signature_injection": {
+        "total": 2491,
+        "terdeteksi": 2491,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      },
+      "encryption_bypass": {
+        "total": 974,
+        "terdeteksi": 974,
+        "lolos": 0,
+        "laju_deteksi_persen": 100.0
+      }
+    },
+    "akurasi_deteksi_persen": 100.0,
+    "deteksi_kategori_kritis_persen": 100.0,
+    "waktu_deteksi": {
+      "n": 50000,
+      "mean_ms": 0.9788713091006502,
+      "median_ms": 0.9199570631608367,
+      "sd_ms": 0.2552185970286458,
+      "min_ms": 0.045599183067679405,
+      "max_ms": 3.6977468989789486,
+      "p90_ms": 1.3036280870437622,
+      "p95_ms": 1.5589501708745956,
+      "p99_ms": 1.7321330960839987,
+      "proporsi_le_20ms": 100.0
+    }
+  },
+  "replay": {
+    "percobaan_replay": 3000,
+    "replay_terdeteksi": 3000,
+    "negatif_palsu": 0,
+    "verifikasi_pertama": 1500,
+    "positif_palsu": 0,
+    "laju_deteksi_persen": 100.0,
+    "fnr_persen": 0.0,
+    "fpr_persen": 0.0,
+    "waktu_deteksi": {
+      "n": 4500,
+      "mean_ms": 29.893803836208665,
+      "median_ms": 23.035701015032828,
+      "sd_ms": 20.923099701495634,
+      "min_ms": 16.80434006266296,
+      "max_ms": 445.5061270855367,
+      "p90_ms": 53.7192658521235,
+      "p95_ms": 74.48760489933193,
+      "p99_ms": 107.84398997202516,
+      "proporsi_le_20ms": 11.577777777777778
+    }
+  },
+  "kedaluwarsa": {
+    "total": 5000,
+    "terdeteksi": 2451,
+    "lolos": 0,
+    "kontrol_negatif": {
+      "total": 2549,
+      "keliru_ditandai": 0
+    },
+    "total_kedaluwarsa": 2451,
+    "laju_deteksi_persen": 100.0,
+    "fpr_kontrol_negatif_persen": 0.0,
+    "waktu_deteksi": {
+      "n": 5000,
+      "mean_ms": 25.482274313643575,
+      "median_ms": 23.692355025559664,
+      "sd_ms": 9.285655964124517,
+      "min_ms": 17.543860943987966,
+      "max_ms": 256.2401657924056,
+      "p90_ms": 30.9344579000026,
+      "p95_ms": 34.80340796522796,
+      "p99_ms": 48.22955513373017,
+      "proporsi_le_20ms": 3.5999999999999996
+    }
+  },
+  "pemalsuan_tanda_tangan": {
+    "total": 4000,
+    "ditolak": 4000,
+    "diterima": 0,
+    "per_jenis": {
+      "random_signature": {
+        "total": 1016,
+        "ditolak": 1016
+      },
+      "truncated_signature": {
+        "total": 963,
+        "ditolak": 963
+      },
+      "swapped_signature": {
+        "total": 1032,
+        "ditolak": 1032
+      },
+      "bit_flip": {
+        "total": 989,
+        "ditolak": 989
+      }
+    },
+    "laju_penolakan_persen": 100.0,
+    "waktu_verifikasi": {
+      "n": 4000,
+      "mean_ms": 0.7689529145136476,
+      "median_ms": 0.824332470074296,
+      "sd_ms": 0.37147877603822016,
+      "min_ms": 0.17940811812877655,
+      "max_ms": 2.0904899574816227,
+      "p90_ms": 1.2052571401000023,
+      "p95_ms": 1.419394975528121,
+      "p99_ms": 1.694930950179696,
+      "proporsi_le_20ms": 100.0
+    }
+  }
+}

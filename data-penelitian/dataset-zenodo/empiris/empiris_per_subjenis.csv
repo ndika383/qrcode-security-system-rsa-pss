@@ -1,0 +1,8 @@
+subjenis,kategori,total,terdeteksi,lolos,laju_deteksi_persen
+field_modification,reguler,20030,20030,0,100.0000
+field_addition,reguler,10102,10102,0,100.0000
+field_removal,reguler,7467,7467,0,100.0000
+data_type_change,reguler,4993,4993,0,100.0000
+timestamp_tampering,reguler,3943,3943,0,100.0000
+signature_injection,kritis,2491,2491,0,100.0000
+encryption_bypass,kritis,974,974,0,100.0000
