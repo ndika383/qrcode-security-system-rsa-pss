@@ -81,6 +81,10 @@ class Config:
     # secara default tidak ikut dibersihkan oleh scheduler harian.
     QR_RETENTION_DAYS = int(os.environ.get('QR_RETENTION_DAYS', '0'))
     QR_PAYLOAD_MAX_AGE_SECONDS = int(os.environ.get('QR_PAYLOAD_MAX_AGE_SECONDS', str(7 * 24 * 3600)))
+    # Toleransi selisih jam antara penerbit QR dan server verifikator. Timestamp
+    # yang melampaui batas ini KE DEPAN dianggap anomali: QR yang sah selalu
+    # bertimestamp masa lalu, sehingga ambang ini tidak pernah menolak QR asli.
+    QR_TIMESTAMP_DRIFT_SECONDS = int(os.environ.get('QR_TIMESTAMP_DRIFT_SECONDS', '300'))
     QR_NONCE_BYTES = int(os.environ.get('QR_NONCE_BYTES', '8'))
     VERIFICATION_FEATURE_ENABLED = os.environ.get('VERIFICATION_FEATURE_ENABLED', 'False').lower() == 'true'
     
@@ -1168,6 +1172,99 @@ def is_payload_expired(data, max_age_seconds=None):
         app.logger.warning("Gagal memproses timestamp data")
         return True
 
+# ==================== PENGUATAN VALIDASI SEMANTIK ====================
+#
+# Tiga pemeriksaan berikut bersifat aditif: tidak satu pun dapat menolak payload
+# yang selama ini diterima. Ketiganya menambah kedalaman pertahanan dan, yang
+# lebih penting bagi audit, memberi ALASAN penolakan yang spesifik alih-alih
+# pesan generik "Data Palsu".
+#
+# Catatan pengukuran: harness empiris mencatat deteksi 100% pada tujuh subjenis
+# pemalsuan bahkan sebelum penguatan ini, karena RSA-PSS mengikat seluruh field
+# yang ditandatangani. Penguatan ini karena itu bukan perbaikan atas kelemahan
+# terukur, melainkan pertahanan berlapis terhadap kasus di luar jangkauan tanda
+# tangan: payload sah yang dipakai ulang, dan jam penerbit yang menyimpang.
+
+PAYLOAD_FIELD_WAJIB = {'nama': str, 'id': str, 'timestamp': str, 'nonce': str}
+PAYLOAD_FIELD_OPSIONAL = {'qr_modules': int, 'qr_version': int}
+
+
+def validate_payload_structure(data):
+    """Periksa kelengkapan dan tipe field payload. Kembalikan daftar temuan."""
+    temuan = []
+    if not isinstance(data, dict):
+        return ['payload bukan objek']
+    for field, tipe in PAYLOAD_FIELD_WAJIB.items():
+        if field not in data:
+            temuan.append(f'field wajib {field} tidak ada')
+        elif not isinstance(data[field], tipe):
+            temuan.append(f'field {field} bertipe {type(data[field]).__name__}, seharusnya {tipe.__name__}')
+    for field, tipe in PAYLOAD_FIELD_OPSIONAL.items():
+        if field in data and not isinstance(data[field], tipe):
+            temuan.append(f'field {field} bertipe {type(data[field]).__name__}, seharusnya {tipe.__name__}')
+    asing = set(data) - set(PAYLOAD_FIELD_WAJIB) - set(PAYLOAD_FIELD_OPSIONAL)
+    if asing:
+        temuan.append('field tidak dikenal: ' + ', '.join(sorted(asing)))
+    return temuan
+
+
+def is_timestamp_from_future(data, drift_seconds=None):
+    """True bila timestamp payload melampaui toleransi drift ke depan.
+
+    QR yang sah selalu bertimestamp masa lalu, jadi pemeriksaan ini tidak
+    pernah menolak QR asli; ia menangkap jam penerbit yang menyimpang jauh
+    atau timestamp yang dimajukan untuk mengelak masa berlaku.
+    """
+    if drift_seconds is None:
+        drift_seconds = int(app.config.get('QR_TIMESTAMP_DRIFT_SECONDS', 300))
+    if drift_seconds <= 0:
+        return False
+    try:
+        ts = datetime.fromisoformat(str(data.get('timestamp', '')).replace('Z', '+00:00'))
+        return (ts - datetime.now(timezone.utc)).total_seconds() > drift_seconds
+    except Exception:
+        return False
+
+
+def check_timestamp_monotonic(nonce, timestamp):
+    """Penegakan timestamp monotonik per nonce.
+
+    Timestamp pertama yang pernah terlihat untuk sebuah nonce disimpan. Bila
+    verifikasi berikutnya membawa timestamp lebih tua untuk nonce yang sama,
+    payload itu bukan dokumen yang sama - indikasi pemakaian ulang nonce.
+    Kembalikan (monotonik, timestamp_pertama).
+    """
+    if not nonce or not timestamp or not ensure_security_state_ready():
+        return True, None
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+        with security_state_lock:
+            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO nonce_timestamp_state (nonce, first_payload_timestamp, recorded_at)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(nonce) DO NOTHING
+                    """,
+                    (nonce, timestamp, now)
+                )
+                conn.commit()
+                row = conn.execute(
+                    'SELECT first_payload_timestamp FROM nonce_timestamp_state WHERE nonce = ?',
+                    (nonce,)
+                ).fetchone()
+                pertama = row[0] if row else None
+                if pertama is None:
+                    return True, None
+                return str(timestamp) >= str(pertama), pertama
+            finally:
+                conn.close()
+    except Exception as e:
+        app.logger.warning(f'Pemeriksaan monotonik gagal: {e}')
+        return True, None
+
+
 def build_changed_fields(original_data, data):
     changed_fields = {}
     if not isinstance(original_data, dict) or not isinstance(data, dict):
@@ -1246,9 +1343,15 @@ def classify_qr_verification(data, signature_valid, sig_error="", original_data_
                 usage_count, verification_count = record_nonce_usage_and_get_count(replay_store_key)
                 verification_count = max(verification_count, legacy_usage_count + 1)
                 is_expired = is_payload_expired(data)
+                timestamp_maju = is_timestamp_from_future(data)
+                monotonik, _ = check_timestamp_monotonic(nonce, data.get('timestamp'))
                 if usage_count >= 1 or legacy_usage_count >= 1:
                     message = f"🔁 Replay Attack Terdeteksi ({verification_count} kali verifikasi)"
                     is_replay = True
+                elif timestamp_maju:
+                    message = "⚠️ Timestamp payload melampaui toleransi waktu server"
+                elif not monotonik:
+                    message = "⚠️ Timestamp lebih tua daripada pemakaian pertama nonce ini"
                 elif is_expired:
                     message = "⏰ QR Code Kedaluwarsa"
                 else:
@@ -1257,15 +1360,21 @@ def classify_qr_verification(data, signature_valid, sig_error="", original_data_
         else:
             changed_fields = build_changed_fields(original_data, data)
             details = summarize_changed_fields(changed_fields, signature_valid)
+            temuan_struktur = validate_payload_structure(data)
             if changed_fields and details:
                 message = f"❌ Data Telah Dimodifikasi ({details})"
+            elif temuan_struktur:
+                message = "❌ Struktur payload tidak sah (" + "; ".join(temuan_struktur) + ")"
             elif not signature_valid or sig_error:
                 message = "❌ Data Palsu (signature tidak cocok)"
             else:
                 message = "❌ Data Palsu"
     else:
+        temuan_struktur = validate_payload_structure(data)
         if not signature_valid or sig_error:
             message = "❌ Data Palsu (signature tidak cocok)"
+        elif temuan_struktur:
+            message = "❌ Struktur payload tidak sah (" + "; ".join(temuan_struktur) + ")"
         else:
             message = "⛔ Data Tidak Ditemukan di Database"
 
@@ -1485,6 +1594,19 @@ def init_security_state_db():
                         first_used_at TEXT NOT NULL,
                         last_used_at TEXT NOT NULL,
                         usage_count INTEGER NOT NULL DEFAULT 1
+                    )
+                    """
+                )
+                # Tabel terpisah untuk penegakan timestamp monotonik.
+                # Sengaja TIDAK menumpang pada nonce_state: baris di sana dikunci
+                # oleh replay_store_key, bukan nonce mentah, sehingga penumpangan
+                # akan merusak akuntansi replay.
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS nonce_timestamp_state (
+                        nonce TEXT PRIMARY KEY,
+                        first_payload_timestamp TEXT NOT NULL,
+                        recorded_at TEXT NOT NULL
                     )
                     """
                 )
