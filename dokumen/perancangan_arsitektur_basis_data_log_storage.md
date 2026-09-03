@@ -138,15 +138,34 @@ State nonce harus memenuhi kebutuhan berikut:
 
 Database: `logs/security_state.db`
 
+Skema berikut disalin dari `sqlite_master` basis data produksi pada 3 September 2026,
+bukan dari rancangan, sehingga mencerminkan sistem yang benar-benar berjalan.
+
 ```sql
 CREATE TABLE nonce_state (
     nonce TEXT PRIMARY KEY,
     first_used_at TEXT NOT NULL,
     last_used_at TEXT NOT NULL,
-    usage_count INTEGER NOT NULL DEFAULT 1
+    usage_count INTEGER NOT NULL DEFAULT 1,
+    first_payload_timestamp TEXT          -- vestigial, lihat catatan 4.3
 );
 
 CREATE INDEX idx_nonce_last_used ON nonce_state(last_used_at);
+
+CREATE TABLE nonce_timestamp_state (
+    nonce TEXT PRIMARY KEY,
+    first_payload_timestamp TEXT NOT NULL,
+    recorded_at TEXT NOT NULL
+);
+
+CREATE TABLE qr_record_index (
+    filename TEXT PRIMARY KEY,
+    qr_id TEXT,
+    nonce TEXT,
+    indexed_at TEXT NOT NULL
+);
+
+CREATE INDEX idx_qr_record_nonce ON qr_record_index(nonce);
 
 CREATE TABLE security_metadata (
     key TEXT PRIMARY KEY,
@@ -154,6 +173,9 @@ CREATE TABLE security_metadata (
     updated_at TEXT NOT NULL
 );
 ```
+
+Jumlah baris per tabel pada tanggal yang sama: `nonce_state` 114.285, `qr_record_index`
+100.000, `security_metadata` 2, dan `nonce_timestamp_state` 0 karena tabel baru dibuat.
 
 ### 4.3 Fungsi Tabel
 
@@ -165,6 +187,38 @@ CREATE TABLE security_metadata (
 | `first_used_at` | TEXT ISO-8601 UTC | Waktu pertama nonce dicatat. |
 | `last_used_at` | TEXT ISO-8601 UTC | Waktu terakhir nonce diverifikasi. |
 | `usage_count` | INTEGER | Jumlah penggunaan/verifikasi nonce. |
+
+#### `nonce_timestamp_state`
+
+Tabel penegakan timestamp monotonik, ditambahkan 3 September 2026 bersama penguatan
+lapisan validasi semantik (kegiatan 1 pada Tabel 16 laporan kemajuan).
+
+| Kolom | Tipe | Fungsi |
+|---|---|---|
+| `nonce` | TEXT primary key | Nonce mentah dari payload. |
+| `first_payload_timestamp` | TEXT ISO-8601 WIB | Timestamp payload pertama yang pernah terlihat untuk nonce ini. |
+| `recorded_at` | TEXT ISO-8601 UTC | Waktu pencatatan di sisi server. |
+
+Tabel ini sengaja **tidak** menumpang pada `nonce_state`. Baris di `nonce_state`
+dikunci oleh `replay_store_key`, bukan oleh nonce mentah, sehingga penumpangan akan
+merusak akuntansi replay. Pemisahan ini ditemukan melalui uji regresi: versi pertama
+yang menumpang selalu mengembalikan hasil monotonik benar karena `UPDATE`-nya tidak
+mengenai baris mana pun.
+
+> **Catatan kolom vestigial.** Kolom `first_payload_timestamp` pada `nonce_state`
+> berasal dari rancangan pertama tersebut dan seluruhnya bernilai NULL. Kolom itu
+> tidak dibaca maupun ditulis oleh kode yang berjalan. Kolom dibiarkan karena
+> `ALTER TABLE ... DROP COLUMN` akan menulis ulang tabel berisi 114.285 baris pada
+> basis data bukti yang sedang melayani permintaan, sedangkan manfaatnya nihil.
+
+#### `qr_record_index`
+
+| Kolom | Tipe | Fungsi |
+|---|---|---|
+| `filename` | TEXT primary key | Nama berkas QR pada penyimpanan. |
+| `qr_id` | TEXT | Identitas pemilik pada payload. |
+| `nonce` | TEXT | Nonce QR, terindeks untuk pencarian balik. |
+| `indexed_at` | TEXT ISO-8601 UTC | Waktu pengindeksan. |
 
 #### `security_metadata`
 

@@ -1,0 +1,1867 @@
+openapi: 3.0.3
+info:
+  title: QR Code Security System RSA-PSS — HTTP API
+  version: 1.2.0
+  description: 'Antarmuka HTTP prototipe sistem verifikasi identitas berbasis QR Code dengan tanda tangan
+    RSASSA-PSS salt 8 byte dan anti-replay nonce-timestamp.
+
+
+    Dokumen ini dibangkitkan langsung dari definisi rute pada kode sumber, sehingga daftarnya mencerminkan
+    sistem yang berjalan, bukan rancangan.
+
+
+    Catatan keamanan: verifikasi bersifat berbasis server. QR Code memuat URL pendek /v/{token} dan payload
+    bertandatangan disimpan di sisi server; verifikasi luring mandiri belum tersedia.'
+  license:
+    name: MIT
+  contact:
+    name: Tim Peneliti PDP
+    url: https://www.rsa-pss.com
+servers:
+- url: https://www.rsa-pss.com
+  description: Produksi
+- url: http://127.0.0.1:5000
+  description: Lokal
+tags:
+- name: API Internal
+- name: Aplikasi Web
+- name: Log dan Audit
+- name: Pembangkitan QR
+- name: Pengujian Otomatis
+- name: Unduhan
+- name: Verifikasi
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Cookie sesi Flask yang diperoleh melalui POST /login.
+  schemas:
+    QrPayload:
+      type: object
+      required:
+      - nama
+      - id
+      - timestamp
+      - nonce
+      properties:
+        nama:
+          type: string
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 zona WIB (UTC+7)
+        nonce:
+          type: string
+          description: Nilai acak 8 byte disajikan sebagai 16 karakter heksadesimal
+        qr_modules:
+          type: integer
+        qr_version:
+          type: integer
+    SignedPayload:
+      type: object
+      required:
+      - data
+      - signature
+      - alg
+      properties:
+        data:
+          $ref: '#/components/schemas/QrPayload'
+        signature:
+          type: string
+          description: Tanda tangan base64; RSA-PSS 2048 bit menghasilkan 256 byte (344 karakter)
+        alg:
+          type: string
+          enum:
+          - RSA
+          - ECDSA
+          description: RSA-PSS algoritma utama; ECDSA P-256 hanya pembanding
+    VerificationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Benar hanya bila lolos seluruh lapisan
+        message:
+          type: string
+        is_replay:
+          type: boolean
+        is_expired:
+          type: boolean
+        changed_fields:
+          type: object
+        outcome:
+          type: string
+          enum:
+          - berlaku
+          - kedaluwarsa
+          - replay
+          - dimodifikasi
+          - tidak_ditemukan
+          - signature_invalid
+          - error_pemrosesan
+          - lainnya
+paths:
+  /:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: testing_dashboard_get
+      summary: Dashboard utama testing
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /active_tests:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: active_tests_get
+      summary: API untuk mendapatkan test yang aktif
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/auto_recalculate_stats:
+    get:
+      tags:
+      - API Internal
+      operationId: auto_recalculate_stats_get
+      summary: API untuk auto-recalculate stats (dipanggil oleh dashboard)
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/decode_qr_string:
+    post:
+      tags:
+      - API Internal
+      operationId: decode_qr_string_post
+      summary: API untuk mendecode data QR dari string (dari scanner atau kamera)
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/generate_progress_status:
+    get:
+      tags:
+      - API Internal
+      operationId: generate_progress_status_get
+      summary: API untuk mendapatkan status progress
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/get_generate_results:
+    get:
+      tags:
+      - API Internal
+      operationId: get_generate_results_get
+      summary: API untuk mendapatkan hasil generate
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/get_generate_results_page:
+    get:
+      tags:
+      - API Internal
+      operationId: get_generate_results_page_get
+      summary: API paginated untuk tabel hasil generate massal DataTables.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/get_scanner_test_data:
+    get:
+      tags:
+      - API Internal
+      operationId: get_scanner_test_data_get
+      summary: API untuk mendapatkan data test untuk scanner
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/get_verify_massal_results:
+    get:
+      tags:
+      - API Internal
+      operationId: fetch_verify_massal_results_get
+      summary: API untuk mendapatkan hasil verifikasi massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/get_verify_massal_results_page:
+    get:
+      tags:
+      - API Internal
+      operationId: fetch_verify_massal_results_page_get
+      summary: API paginated untuk tabel hasil verifikasi massal DataTables.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/resolve_scan_target:
+    post:
+      tags:
+      - API Internal
+      operationId: resolve_scan_target_post
+      summary: Validasi hasil scan dan kembalikan URL verifikasi internal untuk redirect.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/run_benchmark:
+    post:
+      tags:
+      - API Internal
+      operationId: run_benchmark_api_post
+      summary: API untuk menjalankan benchmark RSA vs ECDSA
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/start_generate_process:
+    get:
+      tags:
+      - API Internal
+      operationId: start_generate_process_get
+      summary: API untuk memulai proses generate di background
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/start_verify_massal_process:
+    get:
+      tags:
+      - API Internal
+      operationId: initiate_verify_massal_process_get
+      summary: API untuk memulai proses verifikasi di background
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/stop_generate_process:
+    get:
+      tags:
+      - API Internal
+      operationId: stop_generate_process_get
+      summary: API untuk menghentikan proses generate di background
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/stop_verify_massal_process:
+    post:
+      tags:
+      - API Internal
+      operationId: stop_verify_massal_process_post
+      summary: API untuk menghentikan proses verifikasi massal di background.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/verify_massal_progress_status:
+    get:
+      tags:
+      - API Internal
+      operationId: check_verify_massal_progress_status_get
+      summary: API untuk mendapatkan status progress verifikasi massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /api/verify_massal_result_detail:
+    get:
+      tags:
+      - API Internal
+      operationId: get_verify_massal_result_detail_get
+      summary: API ringan untuk mengambil detail satu hasil verifikasi massal.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /apply_modification:
+    post:
+      tags:
+      - Aplikasi Web
+      operationId: apply_modification_post
+      summary: Menerapkan modifikasi dan menghasilkan QR Code palsu
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /audit_log:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: view_audit_log_get
+      summary: View audit log
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /batch_modify:
+    post:
+      tags:
+      - Aplikasi Web
+      operationId: batch_modify_post
+      summary: Modifikasi batch dari file CSV
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /benchmark:
+    get:
+      tags:
+      - Aplikasi Web
+      operationId: benchmark_page_get
+      summary: Halaman untuk benchmarking algoritma
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /calibration:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: calibration_page_get
+      summary: Halaman kalibrasi performa sistem
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /calibration_progress:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: calibration_progress_get
+      summary: Endpoint untuk mendapatkan progress kalibrasi
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /cleanup:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: cleanup_tests_post
+      summary: API untuk cleanup test yang sudah selesai dari memory
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /cleanup_calibration:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: cleanup_calibration_post
+      summary: Endpoint untuk membersihkan state kalibrasi setelah selesai
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /cleanup_verify_payloads:
+    post:
+      tags:
+      - Verifikasi
+      operationId: cleanup_verify_payloads_post
+      summary: Cleanup verify payloads
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /clear_modification_logs:
+    post:
+      tags:
+      - Log dan Audit
+      operationId: clear_modification_logs_post
+      summary: Menghapus semua log modifikasi
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /comprehensive_test:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: comprehensive_test_page_get
+      summary: Halaman untuk memulai comprehensive test.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /dashboard:
+    get:
+      tags:
+      - Aplikasi Web
+      operationId: dashboard_get
+      summary: Dashboard
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /delete_all_sessions:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: delete_all_sessions_post
+      summary: API untuk menghapus semua session testing agar bisa testing ulang dari awal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /delete_session/{session_id}:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: delete_session_post
+      summary: API untuk menghapus satu session tertentu
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /download_all_qr_codes:
+    get:
+      tags:
+      - Unduhan
+      operationId: download_all_qr_codes_get
+      summary: Download all qr codes
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /download_audit_log:
+    get:
+      tags:
+      - Unduhan
+      operationId: download_audit_log_get
+      summary: Download audit log
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /download_batch_fake:
+    get:
+      tags:
+      - Unduhan
+      operationId: download_batch_fake_get
+      summary: Download semua QR Code palsu dari batch
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /download_log_excel:
+    get:
+      tags:
+      - Unduhan
+      operationId: download_log_excel_get
+      summary: Download log excel
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /download_log_verifikasi_excel:
+    get:
+      tags:
+      - Unduhan
+      operationId: download_log_verifikasi_excel_get
+      summary: Download log verifikasi excel
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /download_qr_massal:
+    get:
+      tags:
+      - Unduhan
+      operationId: download_qr_massal_get
+      summary: Download qr massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /download_report/{session_id}:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: download_report_get
+      summary: Download report dalam format CSV
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+  /download_verify_massal_report:
+    get:
+      tags:
+      - Unduhan
+      operationId: export_verify_massal_report_get
+      summary: Download hasil verifikasi massal sebagai Excel
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /filter_log_by_date:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: filter_log_by_date_get
+      summary: Filter log by date
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /filter_log_verifikasi_by_date:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: filter_log_verifikasi_by_date_get
+      summary: Filter log verifikasi by date
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /generate_csv:
+    get:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_csv_get
+      summary: Generate csv
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+    post:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_csv_post
+      summary: Generate csv
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /generate_from_csv:
+    post:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_from_csv_post
+      summary: Generate from csv
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /generate_massive_csv:
+    post:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_massive_csv_post
+      summary: Generate massive csv
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /generate_progress:
+    get:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_progress_get
+      summary: Halaman untuk menampilkan progress generate massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /generate_qr:
+    post:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_qr_post
+      summary: Generate qr
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /generate_scanner_qr:
+    get:
+      tags:
+      - Verifikasi
+      operationId: generate_scanner_qr_get
+      summary: Generate QR Code untuk testing scanner dengan URL yang dioptimalkan
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /generate_smart_csv:
+    post:
+      tags:
+      - Pembangkitan QR
+      operationId: generate_smart_csv_post
+      summary: Generate smart csv
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /hapus_log/{jenis}:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: hapus_log_get
+      summary: Hapus log
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      parameters:
+      - name: jenis
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+      - Log dan Audit
+      operationId: hapus_log_post
+      summary: Hapus log
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      parameters:
+      - name: jenis
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /history:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: test_history_get
+      summary: Halaman history test
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /index:
+    get:
+      tags:
+      - Aplikasi Web
+      operationId: index_get
+      summary: Index
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /jobs:
+    get:
+      tags:
+      - Aplikasi Web
+      operationId: jobs_page_get
+      summary: Jobs page
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /log:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: view_log_get
+      summary: View log
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /log_verifikasi:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: view_log_verifikasi_get
+      summary: View log verifikasi
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /login:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: login_get
+      summary: Login
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      tags:
+      - Log dan Audit
+      operationId: login_post
+      summary: Login
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /logout:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: logout_get
+      summary: Logout
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /mobile_scan:
+    get:
+      tags:
+      - Verifikasi
+      operationId: scan_hp_get_mobile_scan
+      summary: Halaman scanner HP yang otomatis membuka URL verifikasi setelah QR terbaca.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /modification_logs:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: view_modification_logs_get
+      summary: Halaman untuk melihat log modifikasi
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /modify_qr_page:
+    get:
+      tags:
+      - Pembangkitan QR
+      operationId: modify_qr_page_get
+      summary: Halaman utama modifikasi QR Code
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /modify_upload:
+    post:
+      tags:
+      - Aplikasi Web
+      operationId: modify_upload_post
+      summary: Upload QR Code untuk dimodifikasi - DIPERBAIKI UNTUK MENANGANI URL DAN JSON
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /preview_csv:
+    post:
+      tags:
+      - Aplikasi Web
+      operationId: preview_csv_post
+      summary: Preview csv
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /progress/{session_id}:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: test_progress_get
+      summary: API untuk mendapatkan progress test
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+  /qr-generator:
+    get:
+      tags:
+      - Pembangkitan QR
+      operationId: qr_generator_get_qr_generator
+      summary: Qr generator
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /qr_generator:
+    get:
+      tags:
+      - Pembangkitan QR
+      operationId: qr_generator_get_qr_generator_2
+      summary: Qr generator
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /recalculate_stats:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: recalculate_stats_get
+      summary: Endpoint untuk menghitung ulang statistik dari log file
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /reset_log_format:
+    get:
+      tags:
+      - Log dan Audit
+      operationId: reset_log_format_get
+      summary: Reset log format ke versi terbaru
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /reset_nonce_log_manual:
+    post:
+      tags:
+      - Log dan Audit
+      operationId: reset_nonce_log_manual_post
+      summary: Manual reset nonce log untuk testing
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /reset_stats:
+    post:
+      tags:
+      - Log dan Audit
+      operationId: reset_stats_post
+      summary: Reset statistik global dan hapus semua file yang dihasilkan
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /results/{session_id}:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: test_results_get
+      summary: Halaman hasil test
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+  /run_calibration:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: run_calibration_post
+      summary: Endpoint untuk menjalankan kalibrasi
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /run_comprehensive_test:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: run_comprehensive_test_post
+      summary: Menjalankan comprehensive test suite dari verify_realistic_data.py.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /scan_hp:
+    get:
+      tags:
+      - Verifikasi
+      operationId: scan_hp_get_scan_hp
+      summary: Halaman scanner HP yang otomatis membuka URL verifikasi setelah QR terbaca.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /scanner:
+    get:
+      tags:
+      - Verifikasi
+      operationId: scanner_get
+      summary: Scanner
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /scanner_hp:
+    get:
+      tags:
+      - Verifikasi
+      operationId: scan_hp_get_scanner_hp
+      summary: Halaman scanner HP yang otomatis membuka URL verifikasi setelah QR terbaca.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /security_profile:
+    get:
+      tags:
+      - Aplikasi Web
+      operationId: security_profile_get
+      summary: Security profile
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /server_metrics:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: server_metrics_get
+      summary: Live server metrics for the stress-test resource monitor.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /start_test:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: start_test_post
+      summary: API untuk memulai test
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /stats:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: test_stats_get
+      summary: API untuk mendapatkan statistik testing
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+  /stop_calibration:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: stop_calibration_post
+      summary: Endpoint untuk menghentikan kalibrasi yang sedang berjalan (thread-safe)
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /stop_test/{session_id}:
+    post:
+      tags:
+      - Pengujian Otomatis
+      operationId: stop_test_post
+      summary: API untuk menghentikan test
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /test_config/{test_type}:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: test_config_get
+      summary: Halaman konfigurasi untuk test type tertentu
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      parameters:
+      - name: test_type
+        in: path
+        required: true
+        schema:
+          type: string
+  /testing_dashboard:
+    get:
+      tags:
+      - Aplikasi Web
+      operationId: redirect_to_testing_get
+      summary: Redirect ke testing dashboard
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /v/{token}:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_short_qr_token_get
+      summary: Endpoint URL pendek untuk verifikasi QR RSA-PSS dari kamera HP.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+  /verify/{encoded_data}:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_qr_data_get
+      summary: Endpoint untuk verifikasi langsung dari URL (untuk kamera HP)
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      parameters:
+      - name: encoded_data
+        in: path
+        required: true
+        schema:
+          type: string
+  /verify_direct:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_direct_page_get
+      summary: Halaman untuk verifikasi langsung dari scanner
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /verify_generated_task/{task_id}:
+    post:
+      tags:
+      - Verifikasi
+      operationId: verify_generated_task_post
+      summary: Mulai verifikasi massal langsung dari QR hasil generate di server.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /verify_generator_suite:
+    get:
+      tags:
+      - Pengujian Otomatis
+      operationId: verify_generator_suite_get
+      summary: Menjalankan test suite untuk generator data realistis dan menampilkan output
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+  /verify_massal_async:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_massal_async_page_get
+      summary: Halaman untuk memulai verifikasi massal dengan progress tracking
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /verify_massal_async_start:
+    post:
+      tags:
+      - Verifikasi
+      operationId: verify_massal_async_start_post
+      summary: Memulai proses verifikasi massal dengan progress tracking
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /verify_massal_progress:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_massal_progress_get_verify_massal_progress
+      summary: Halaman untuk menampilkan progress verifikasi massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /verify_massal_progress/{task_id}:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_massal_progress_get_verify_massal_progress_task_id
+      summary: Halaman untuk menampilkan progress verifikasi massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+  /verify_massal_results/{task_id}:
+    get:
+      tags:
+      - Verifikasi
+      operationId: verify_massal_results_get
+      summary: Menampilkan hasil verifikasi massal async
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+  /verify_qr:
+    post:
+      tags:
+      - Verifikasi
+      operationId: verify_qr_post
+      summary: Verify qr
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /verify_qr_massal:
+    post:
+      tags:
+      - Verifikasi
+      operationId: verify_qr_massal_post
+      summary: Verify qr massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /view_generate_results:
+    get:
+      tags:
+      - Pembangkitan QR
+      operationId: view_generate_results_get
+      summary: Halaman untuk melihat hasil generate
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
+        '302':
+          description: Belum masuk; dialihkan ke /login
+      security:
+      - sessionAuth: []
+  /view_verify_massal_results:
+    get:
+      tags:
+      - Verifikasi
+      operationId: render_verify_massal_results_get
+      summary: Halaman untuk melihat hasil verifikasi massal
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            text/html:
+              schema:
+                type: string
