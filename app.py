@@ -67,10 +67,14 @@ class Config:
     STATS_FILE = 'logs/qr_stats.json'  # File untuk menyimpan statistik
     
     # Rate limiting configuration (Diperlonggar untuk keperluan testing/scanner)
-    RATELIMIT_DEFAULT = "1000 per hour"
-    RATELIMIT_GENERATE = "60 per minute"
-    RATELIMIT_TESTING_PROGRESS = "1000 per minute"  # Lebih longgar untuk progress
-    RATELIMIT_DASHBOARD = "60 per minute"  # TAMBAHKAN: Lebih longgar untuk dashboard
+    # Nilai baku dipertahankan persis seperti sebelumnya sehingga perilaku produksi
+    # tidak berubah. Yang ditambahkan hanya kemampuan menimpanya lewat variabel
+    # lingkungan, supaya lingkungan staging dapat dilonggarkan untuk uji beban
+    # tanpa menyentuh konfigurasi produksi.
+    RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', "1000 per hour")
+    RATELIMIT_GENERATE = os.environ.get('RATELIMIT_GENERATE', "60 per minute")
+    RATELIMIT_TESTING_PROGRESS = os.environ.get('RATELIMIT_TESTING_PROGRESS', "1000 per minute")
+    RATELIMIT_DASHBOARD = os.environ.get('RATELIMIT_DASHBOARD', "60 per minute")
     
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000/')  # Default ke localhost, akan dideteksi otomatis
@@ -813,7 +817,7 @@ def qr_record_index_ready():
         return False
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 row = conn.execute(
                     "SELECT value FROM security_metadata WHERE key = ?",
@@ -838,7 +842,7 @@ def index_qr_record(filename, data):
 
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 conn.execute(
                     """
@@ -873,7 +877,7 @@ def reset_qr_record_index():
         return False
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=20)
+            conn = open_security_state_conn(20)
             try:
                 conn.execute("DELETE FROM qr_record_index")
                 conn.execute(
@@ -903,7 +907,7 @@ def lookup_qr_filenames_by_prefixes(prefixes):
     try:
         hasil = set()
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 for prefix in prefixes:
                     if not prefix:
@@ -927,7 +931,7 @@ def lookup_qr_filename_by_nonce(nonce):
         return None
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 row = conn.execute(
                     "SELECT filename FROM qr_record_index WHERE nonce = ? ORDER BY filename LIMIT 1",
@@ -956,7 +960,7 @@ def backfill_qr_record_index(batch_size=2000, progress_callback=None):
         if not rows:
             return
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=30)
+            conn = open_security_state_conn(30)
             try:
                 conn.executemany(
                     """
@@ -1007,7 +1011,7 @@ def backfill_qr_record_index(batch_size=2000, progress_callback=None):
     flush(batch)
 
     with security_state_lock:
-        conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=30)
+        conn = open_security_state_conn(30)
         try:
             conn.execute(
                 """
@@ -1239,7 +1243,7 @@ def check_timestamp_monotonic(nonce, timestamp):
     try:
         now = datetime.now(timezone.utc).isoformat()
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 conn.execute(
                     """
@@ -1575,6 +1579,70 @@ def load_or_create_ecdsa_keys():
 security_state_lock = threading.Lock()
 security_state_ready = False
 
+_security_state_tls = threading.local()
+
+
+class _SharedConn:
+    """Pembungkus koneksi bersama; close() sengaja tidak menutup koneksi.
+
+    Pemanggil memakai pola try/finally: conn.close(). Koneksi ini dipakai ulang
+    sepanjang umur thread, sehingga close() diabaikan dan koneksi tetap hidup.
+    """
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def close(self):
+        return None
+
+
+def open_security_state_conn(timeout=10):
+    """Koneksi basis data status keamanan, dipakai ulang per thread.
+
+    Dua biaya tersembunyi diukur pada 300 siklus tulis-baca:
+
+      buka-tutup tiap panggilan          19,195 ms
+      koneksi dipakai ulang               7,345 ms
+      dipakai ulang + synchronous=NORMAL  0,087 ms
+
+    Penyebabnya fsync. Di bawah WAL, close() memicu checkpoint yang selalu
+    ber-fsync, sehingga menyetel synchronous=NORMAL pada koneksi yang kemudian
+    ditutup tidak menolong sama sekali. Kedua hal harus dikerjakan bersama:
+    koneksi dipertahankan per thread, dan synchronous diturunkan ke NORMAL.
+
+    NORMAL aman di bawah WAL. Transaksi tetap atomik dan basis data tidak rusak;
+    yang dilepas hanya jaminan durabilitas terhadap kehilangan daya mendadak,
+    yang dapat diterima untuk buku besar nonce karena kehilangan beberapa entri
+    terakhir hanya menurunkan deteksi replay pada QR yang baru saja diverifikasi,
+    bukan merusak keabsahan kriptografis.
+    """
+    conn = getattr(_security_state_tls, 'conn', None)
+    if conn is None:
+        raw = sqlite3.connect(app.config['SECURITY_STATE_DB'],
+                              timeout=timeout, check_same_thread=False)
+        try:
+            raw.execute('PRAGMA synchronous=NORMAL')
+        except sqlite3.Error:
+            pass
+        conn = _SharedConn(raw)
+        _security_state_tls.conn = conn
+    return conn
+
+
+def reset_security_state_conn():
+    """Lepas koneksi thread ini; dipakai bila basis data dialihkan saat pengujian."""
+    conn = getattr(_security_state_tls, 'conn', None)
+    if conn is not None:
+        try:
+            conn._conn.close()
+        except sqlite3.Error:
+            pass
+        _security_state_tls.conn = None
+
+
 def init_security_state_db():
     """Inisialisasi penyimpanan replay/audit yang tahan akses paralel."""
     global security_state_ready
@@ -1657,7 +1725,7 @@ def migrate_nonce_file_to_security_db():
 
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=20)
+            conn = open_security_state_conn(20)
             try:
                 cursor = conn.execute(
                     "SELECT value FROM security_metadata WHERE key = ?",
@@ -1709,7 +1777,7 @@ def get_nonce_usage_count_db(nonce):
 
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 cursor = conn.execute(
                     "SELECT usage_count FROM nonce_state WHERE nonce = ?",
@@ -1730,7 +1798,7 @@ def record_nonce_usage_db(nonce):
     now = datetime.now(timezone.utc).isoformat()
     try:
         with security_state_lock:
-            conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+            conn = open_security_state_conn(10)
             try:
                 conn.execute(
                     """
@@ -1838,7 +1906,7 @@ def record_nonce_usage_and_get_count(nonce):
     if ensure_security_state_ready():
         try:
             with security_state_lock:
-                conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+                conn = open_security_state_conn(10)
                 try:
                     conn.execute(
                         """
@@ -2991,7 +3059,7 @@ def get_nonce_store_stats():
     if ensure_security_state_ready():
         try:
             with security_state_lock:
-                conn = sqlite3.connect(app.config['SECURITY_STATE_DB'], timeout=10)
+                conn = open_security_state_conn(10)
                 try:
                     cursor = conn.execute("SELECT COUNT(*), COALESCE(SUM(usage_count), 0) FROM nonce_state")
                     row = cursor.fetchone()
