@@ -57,3 +57,9 @@ testing_results_summary_*.png
 .idea/
 .DS_Store
 Thumbs.db
+
+# Berkas kerja yang tidak boleh masuk repositori
+# .claude/ berisi worktree yang tercatat sebagai gitlink mode 160000, dan tanpa
+# .gitmodules hasilnya direktori kosong yang rusak bagi siapa pun yang meng-clone.
+.claude/
+dokumen/*.bak*.docx
