@@ -8,6 +8,7 @@ import app as A
 
 t=tempfile.NamedTemporaryFile(prefix='uji_',suffix='.db',delete=False); t.close()
 A.app.config['SECURITY_STATE_DB']=t.name; A.security_state_ready=False
+if hasattr(A,'reset_security_state_conn'): A.reset_security_state_conn()
 assert A.init_security_state_db()
 WIB=timezone(timedelta(hours=7))
 

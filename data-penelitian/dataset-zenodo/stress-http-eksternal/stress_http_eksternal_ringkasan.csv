@@ -1,0 +1,11 @@
+metrik,nilai,satuan,catatan
+total_permintaan,25607,permintaan,4 tingkat x 60 detik
+total_gagal,10,permintaan,seluruhnya pada tingkat 1.000 dan 1.500
+error_rate_keseluruhan,0.0391,persen,10 dari 25.607
+error_rate_pada_500_pengguna,0.0000,persen,"target proposal <= 0,79% TERCAPAI"
+throughput_puncak,111.5,req/detik,plateau ~105 req/s di seluruh tingkat
+data_diterima,215,MB,753 kB/detik
+durasi_uji,4m45s,,4 tahap berurutan
+pembangkit_beban,k6,,dijalankan dari laptop di luar server aplikasi
+sasaran,staging.rsa-pss.com,,"1 worker x 12 thread, sama dengan produksi"
+validasi_hukum_little,1.4-7.0,persen selisih,R prediksi vs R terukur

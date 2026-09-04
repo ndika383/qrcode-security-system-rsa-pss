@@ -29,7 +29,16 @@ verifikasi RSA-PSS dan `classify_qr_verification()` milik aplikasi. Tidak ada sa
 pun keputusan deteksi yang diundi.
 
 Empat skenario: pemalsuan data tujuh subjenis, replay dengan verifikasi berulang,
-masa berlaku beserta kontrol negatif, dan pemalsuan tanda tangan empat jenis.
+masa berlaku, dan pemalsuan tanda tangan empat jenis. Ketiga skenario penolakan
+disertai kontrol negatif berupa payload sah yang wajib diterima, sehingga laju
+deteksi tinggi tidak dapat berasal dari detektor yang menolak segalanya.
+
+Kontrol negatif memakai generator acak terpisah (`random.Random(seed + 1)`). Ini
+disengaja: menambah operasi pada aliran acak utama akan menggeser alokasi subjenis
+dan mengubah angka yang sudah dikutip di naskah dan laporan. Dengan pemisahan ini,
+alokasi subjenis tetap reproduksi bit-per-bit terhadap run sebelum kontrol negatif
+ditambahkan — sudah diverifikasi dengan membandingkan ketujuh subjenis sebelum dan
+sesudah penyuntingan.
 
 Isolasi bukti: basis data status keamanan diarahkan ke berkas sementara sehingga
 buku besar nonce produksi tidak tersentuh, dan tidak ada penulisan ke
@@ -37,11 +46,20 @@ buku besar nonce produksi tidak tersentuh, dan tidak ada penulisan ke
 
 ```bash
 sudo venv/bin/python data-penelitian/harness_empiris.py \
-     --operasi 50000 --replay 1500 --forgery 4000 --kedaluwarsa 5000
+     --operasi 50000 --replay 1500 --forgery 4000 --kedaluwarsa 5000 \
+     --kontrol-tampering 2500 --kontrol-forgery 500 --seed 20260824
 ```
 
 Wajib dijalankan sebagai root karena kunci privat bermode 0640 `root:www-data`.
 Keluarannya tersimpan di `dataset-zenodo/empiris/`.
+
+**Sifat reproduksi.** Hitungan deteksi bersifat deterministik pada seed yang sama dan
+terverifikasi identik pada dua run berturut-turut. Lajunya bahkan tidak bergantung
+pada seed: pada seed berbeda alokasi subjenis bergeser, tetapi seluruh laju tetap
+100% deteksi dan 0% negatif/positif palsu, karena capaian itu struktural — setiap
+perubahan field tertandatangani merusak digest SHA-256. Yang **berubah tiap run**
+hanyalah statistik waktu, sebab diukur dengan `time.perf_counter()` terhadap jam
+dinding.
 
 ### `uji_penguatan_validasi_semantik.py`
 Uji regresi 12 kasus atas penguatan lapisan validasi semantik (kegiatan 1 pada

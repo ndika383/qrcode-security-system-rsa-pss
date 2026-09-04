@@ -15,7 +15,7 @@ Dataset ini memuat **dua jenis data yang tidak boleh dicampur**:
    operasinya diturunkan dari kalibrasi empiris, tetapi keputusan terdeteksi atau
    tidaknya sebuah serangan dibangkitkan dari laju terparameter, bukan dari
    pemanggilan jalur verifikasi.
-2. **Pengukuran empiris** — 63.500 operasi pada `empiris/`, seluruhnya hasil
+2. **Pengukuran empiris** — 66.500 operasi pada `empiris/`, seluruhnya hasil
    pemanggilan jalur verifikasi asli. Tidak ada satu pun keputusan deteksi yang
    diundi.
 
@@ -33,8 +33,8 @@ stress-http/
   stress_http_tahap.csv                19 tahap konkurensi, termasuk CPU dan memori
   stress_http_vs_inprocess.csv         perbandingan terhadap stress test in-process
 empiris/
-  hasil_empiris_20260903.json          keluaran lengkap harness pengukuran empiris
-  empiris_ringkasan.csv                9 metrik terhadap target proposal
+  hasil_empiris_20260904.json          keluaran lengkap harness pengukuran empiris
+  empiris_ringkasan.csv                11 metrik, termasuk 4 kontrol negatif
   empiris_per_subjenis.csv             laju deteksi 7 subjenis pemalsuan data
   empiris_waktu.csv                    statistik waktu 4 skenario
   MANIFEST.sha256                      checksum SHA-256 keempat berkas di atas
@@ -158,7 +158,7 @@ karena timeout berlaku per permintaan HTTP, sedangkan waktu yang diukur mencakup
 
 ## Pengukuran empiris
 
-Dijalankan 3 September 2026 melalui `data-penelitian/harness_empiris.py`. Berbeda dari
+Dijalankan 4 September 2026 melalui `data-penelitian/harness_empiris.py`, seed 20260824, durasi 3 menit 46 detik. Berbeda dari
 delapan sesi simulasi, harness ini benar-benar memodifikasi payload lalu memanggil
 verifikasi RSA-PSS dan `classify_qr_verification()` milik aplikasi. Basis data status
 keamanan diarahkan ke berkas sementara sehingga buku besar nonce produksi tidak
@@ -169,6 +169,8 @@ tersentuh.
 | Pemalsuan data, 7 subjenis | 50.000 | Deteksi 100%, termasuk kategori kritis |
 | Replay, 1.500 sampel × 3 verifikasi | 4.500 | Deteksi 100%, negatif palsu 0%, positif palsu 0% |
 | Kedaluwarsa dengan kontrol negatif | 5.000 | Deteksi 100% atas 2.451 payload kedaluwarsa; 0% positif palsu atas 2.549 kontrol |
+| Kontrol negatif pemalsuan data | 2.500 | 0 payload sah ditolak keliru |
+| Kontrol negatif pemalsuan tanda tangan | 500 | 0 payload sah ditolak keliru |
 | Pemalsuan tanda tangan, 4 jenis | 4.000 | Penolakan 100% |
 
 ### Perbandingan terhadap sesi simulasi
@@ -185,16 +187,23 @@ Selisihnya bukan perbaikan sistem antara dua tanggal. Angka simulasi merupakan
 keluaran laju terparameter di dalam harness, sedangkan angka empiris merupakan
 perilaku sistem yang sebenarnya. Deteksi 100% pada pemalsuan data bersifat struktural:
 setiap perubahan pada field yang ditandatangani merusak tanda tangan RSA-PSS, sehingga
-tidak tersedia ruang bagi angka di bawah 100%. Kontrol negatif pada skenario
-kedaluwarsa disertakan justru untuk menunjukkan bahwa detektor tidak sekadar menolak
-segalanya.
+tidak tersedia ruang bagi angka di bawah 100%. Kontrol negatif disertakan pada tiga skenario penolakan — 2.500 pada pemalsuan data,
+500 pada pemalsuan tanda tangan, dan 2.549 pada kedaluwarsa. Dari 5.549 payload sah
+tersebut, nol ditolak keliru. Tanpa kontrol negatif, detektor yang menolak segalanya
+akan mencatat laju deteksi sempurna, sehingga kontrol inilah yang menjadikan angka
+100% bermakna.
+
+Kontrol negatif memakai generator acak terpisah, `random.Random(seed + 1)`, agar aliran
+acak utama tidak tergeser. Sudah diverifikasi: alokasi ketujuh subjenis pemalsuan data
+reproduksi identik terhadap run sebelum kontrol ditambahkan.
 
 ### Catatan membaca `empiris_waktu.csv`
 
-Waktu deteksi pemalsuan data dan pemalsuan tanda tangan berada di bawah 1 ms karena
+Waktu deteksi pemalsuan data (0,879 ms) dan pemalsuan tanda tangan (0,671 ms) berada di bawah 1 ms karena
 kedua jalur itu berhenti pada pemeriksaan kriptografis dan perbandingan payload.
-Skenario replay dan kedaluwarsa mencatat 29,9 ms dan 25,5 ms karena keduanya menulis
-ke buku besar nonce berbasis SQLite. Metrik yang dibandingkan terhadap target proposal
+Skenario replay (1,575 ms) dan kedaluwarsa (1,924 ms) sedikit lebih tinggi karena keduanya
+menulis ke buku besar nonce berbasis SQLite, tetapi 99,6% dan 99,4% operasinya tetap di
+bawah 20 ms. Metrik yang dibandingkan terhadap target proposal
 20,0 ms adalah **waktu deteksi pemalsuan data**, sesuai definisi pada usulan penelitian.
 
 ## Lingkungan pengukuran
@@ -228,3 +237,20 @@ version DOI rilis yang memuatnya.
 
 Karena satu rekaman Zenodo hanya membawa satu pernyataan lisensi, seluruh isi arsip —
 kode maupun data — berada di bawah lisensi MIT yang sama seperti perangkat lunaknya.
+
+### Catatan kinerja jalur verifikasi
+
+Pengukuran 4 September pagi sempat mencatat waktu jauh lebih besar pada skenario replay
+(29,5 ms) dan kedaluwarsa (41,3 ms). Penelusuran menemukan penyebabnya bukan pada beban
+kriptografi melainkan pada pola koneksi SQLite: setiap panggilan membuka dan menutup
+koneksinya sendiri, dan di bawah WAL setiap `close()` memicu checkpoint ber-fsync.
+Pembedahan per tahap mencatat `close()` 12,1 ms dan `commit()` 7,3 ms, sedangkan tahap
+lain mendekati nol.
+
+Perbaikannya menggabungkan dua hal yang harus dikerjakan bersamaan: koneksi dipakai ulang
+per thread, dan `synchronous` diturunkan ke NORMAL. Salah satu saja tidak cukup — 19,195 ms
+untuk buka-tutup, 7,345 ms bila hanya koneksi dipakai ulang, dan 0,087 ms bila keduanya
+diterapkan. Setelah perbaikan, seluruh empat skenario berada di bawah 2 ms dan sekurangnya
+99,4% operasi tiap skenario di bawah 20 ms.
+
+Hitungan deteksi tidak terpengaruh perbaikan ini dan tetap reproduksi identik.

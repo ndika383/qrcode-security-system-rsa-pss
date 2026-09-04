@@ -1,10 +1,12 @@
 metrik,satuan,nilai_terukur,target_proposal,status,n_operasi
 akurasi_deteksi_pemalsuan_data,persen,100,"79,2",tercapai,50000
-deteksi_kategori_kritis,persen,100,,tanpa target proposal,50000
-waktu_deteksi_pemalsuan_data_rata2,ms,0.978871,"20,0",tercapai,50000
+deteksi_kategori_kritis,persen,100,,tanpa target proposal,3465
+waktu_deteksi_pemalsuan_data_rata2,ms,0.879444,"20,0",tercapai,50000
 laju_deteksi_replay,persen,100,"95,8",tercapai,3000
 laju_negatif_palsu_replay,persen,0,"0,1",tercapai,3000
-laju_positif_palsu_replay,persen,0,,tanpa target proposal,1500
-deteksi_kedaluwarsa,persen,100,,tanpa target proposal,2451
-positif_palsu_kontrol_negatif_kedaluwarsa,persen,0,,tanpa target proposal,2549
 laju_penolakan_pemalsuan_tanda_tangan,persen,100,"97,0",tercapai,4000
+deteksi_kedaluwarsa,persen,100,,tanpa target proposal,2451
+fpr_kontrol_negatif_pemalsuan_data,persen,0,,kontrol negatif,2500
+fpr_kontrol_negatif_tanda_tangan,persen,0,,kontrol negatif,500
+fpr_kontrol_negatif_kedaluwarsa,persen,0,,kontrol negatif,2549
+laju_positif_palsu_replay,persen,0,,kontrol negatif,1500

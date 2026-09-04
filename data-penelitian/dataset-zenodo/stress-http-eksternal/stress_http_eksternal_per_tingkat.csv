@@ -1,0 +1,5 @@
+pengguna_serentak,permintaan,throughput_req_per_detik,avg_detik,median_detik,p90_detik,p95_detik,p99_detik,maks_detik,error_rate_persen,permintaan_gagal,error_rate_simulasi_persen
+100,6389,106.48,0.92592,0.92511,1.06,1.11,1.31,2.18,0.0000,0,1.18
+500,6025,100.42,4.63,5.29,5.57,5.65,5.87,8.56,0.0000,0,1.78
+1000,6501,108.35,9.09,10.57,11.73,11.88,12.2,13.44,0.0923,6,3.07
+1500,6692,111.53,13.06,16.25,18.34,19.16,19.64,22.09,0.0598,4,4.28

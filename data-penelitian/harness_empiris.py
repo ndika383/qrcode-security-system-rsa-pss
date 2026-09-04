@@ -33,6 +33,8 @@ _tmpdb = tempfile.NamedTemporaryFile(prefix='harness_state_', suffix='.db', dele
 _tmpdb.close()
 A.app.config['SECURITY_STATE_DB'] = _tmpdb.name
 A.security_state_ready = False
+if hasattr(A, 'reset_security_state_conn'):
+    A.reset_security_state_conn()   # lepas koneksi cache agar tidak menunjuk basis data produksi
 assert A.init_security_state_db(), 'gagal menyiapkan basis data status terisolasi'
 
 NAMA = ['Andi Pratama','Siti Rahayu','Budi Santoso','Dewi Lestari','Eko Wijaya',
@@ -44,19 +46,19 @@ BOBOT   = [0.40, 0.20, 0.15, 0.10, 0.08, 0.05, 0.02]
 KRITIS  = {'signature_injection','encryption_bypass'}
 
 
-def buat_payload(i, umur_hari=0):
+def buat_payload(i, umur_hari=0, rng=random):
     """Payload asli, ditandatangani dengan jalur kriptografi produksi.
 
     umur_hari > 0 menghasilkan payload yang sah secara kriptografis namun sudah
     lewat masa berlaku, dipakai menguji lapisan kedaluwarsa.
     """
     data = {
-        'nama': random.choice(NAMA),
+        'nama': rng.choice(NAMA),
         'id': f'2026{i:07d}',
         'timestamp': (datetime.now(WIB) - timedelta(days=umur_hari)).isoformat(),
         'nonce': A.generate_qr_nonce(),
-        'qr_modules': random.choice([45, 49, 53, 57]),
-        'qr_version': random.choice([6, 7, 8, 9]),
+        'qr_modules': rng.choice([45, 49, 53, 57]),
+        'qr_version': rng.choice([6, 7, 8, 9]),
     }
     hash_digest = SHA256.new(json.dumps(data, sort_keys=True).encode('utf-8'))
     signature = pss.new(A.private_key, salt_bytes=8).sign(hash_digest)
@@ -105,8 +107,15 @@ def rusak(data, signature_b64, jenis, donor):
     return d, sig, alg
 
 
-def uji_tampering(n):
-    hasil = {'total': n, 'terdeteksi': 0, 'lolos': 0, 'per_subjenis': {}, 'waktu_ms': []}
+def uji_tampering(n, n_kontrol=0, rng_kontrol=None):
+    """Pemalsuan data pada tujuh subjenis, opsional dengan kontrol negatif.
+
+    Kontrol negatif memakai generator acak terpisah agar aliran acak utama tidak
+    tergeser; dengan begitu alokasi subjenis tetap reproduksi bit-per-bit
+    terhadap run sebelum kontrol ditambahkan.
+    """
+    hasil = {'total': n, 'terdeteksi': 0, 'lolos': 0, 'per_subjenis': {}, 'waktu_ms': [],
+             'kontrol_negatif': {'total': 0, 'keliru_ditolak': 0}}
     for s in SUBJENIS:
         hasil['per_subjenis'][s] = {'total': 0, 'terdeteksi': 0, 'lolos': 0}
     donor_data, donor_sig = buat_payload(999999)
@@ -125,6 +134,12 @@ def uji_tampering(n):
             hasil['terdeteksi'] += 1; b['terdeteksi'] += 1
         else:
             hasil['lolos'] += 1; b['lolos'] += 1
+    for i in range(n_kontrol):
+        sah, sig = buat_payload(5_000_000 + i, rng=rng_kontrol)
+        _, _, r = verifikasi(sah, sig, 'RSA', original=sah)
+        hasil['kontrol_negatif']['total'] += 1
+        if not r['valid']:
+            hasil['kontrol_negatif']['keliru_ditolak'] += 1
     return hasil
 
 
@@ -182,10 +197,10 @@ def uji_kedaluwarsa(n):
     return h
 
 
-def uji_forgery(n):
+def uji_forgery(n, n_kontrol=0, rng_kontrol=None):
     jenis = ['random_signature','truncated_signature','swapped_signature','bit_flip']
     h = {'total': n, 'ditolak': 0, 'diterima': 0, 'per_jenis': {j: {'total':0,'ditolak':0} for j in jenis},
-         'waktu_ms': []}
+         'waktu_ms': [], 'kontrol_negatif': {'total': 0, 'keliru_ditolak': 0}}
     donor_data, donor_sig = buat_payload(888888)
     for i in range(n):
         data, sig = buat_payload(3_000_000 + i)
@@ -208,6 +223,12 @@ def uji_forgery(n):
             h['ditolak'] += 1; h['per_jenis'][j]['ditolak'] += 1
         else:
             h['diterima'] += 1
+    for i in range(n_kontrol):
+        sah, sig = buat_payload(6_000_000 + i, rng=rng_kontrol)
+        sig_valid, _, _ = verifikasi(sah, sig, 'RSA', original=sah)
+        h['kontrol_negatif']['total'] += 1
+        if not sig_valid:
+            h['kontrol_negatif']['keliru_ditolak'] += 1
     return h
 
 
@@ -226,21 +247,28 @@ def main():
     ap.add_argument('--replay', type=int, default=1500, help='sampel replay (x3 verifikasi)')
     ap.add_argument('--forgery', type=int, default=2000)
     ap.add_argument('--kedaluwarsa', type=int, default=2000)
+    ap.add_argument('--kontrol-tampering', type=int, default=2500,
+                    help='kontrol negatif skenario pemalsuan data (payload sah, wajib diterima)')
+    ap.add_argument('--kontrol-forgery', type=int, default=500,
+                    help='kontrol negatif skenario pemalsuan tanda tangan')
     ap.add_argument('--seed', type=int, default=20260824)
     ap.add_argument('--keluaran', default='data-penelitian/hasil-empiris')
     a = ap.parse_args()
     random.seed(a.seed)
+    # Generator terpisah untuk kontrol negatif: menjaga aliran acak utama tidak
+    # tergeser sehingga alokasi subjenis tetap identik terhadap run terdahulu.
+    rng_kontrol = random.Random(a.seed + 1)
     os.makedirs(a.keluaran, exist_ok=True)
     mulai = datetime.now()
 
     print(f'[1/4] Pemalsuan data: {a.operasi} operasi ...', flush=True)
-    tam = uji_tampering(a.operasi)
+    tam = uji_tampering(a.operasi, a.kontrol_tampering, rng_kontrol)
     print(f'[2/4] Replay: {a.replay} sampel x 3 verifikasi ...', flush=True)
     rep = uji_replay(a.replay)
     print(f'[3/4] Kedaluwarsa: {a.kedaluwarsa} payload sah ...', flush=True)
     exp = uji_kedaluwarsa(a.kedaluwarsa)
     print(f'[4/4] Pemalsuan tanda tangan: {a.forgery} percobaan ...', flush=True)
-    forg = uji_forgery(a.forgery)
+    forg = uji_forgery(a.forgery, a.kontrol_forgery, rng_kontrol)
 
     akurasi = tam['terdeteksi'] / tam['total'] * 100
     kritis_tot = sum(tam['per_subjenis'][s]['total'] for s in KRITIS)
@@ -256,6 +284,8 @@ def main():
         'pemalsuan_data': {
             **{k: v for k, v in tam.items() if k != 'waktu_ms'},
             'akurasi_deteksi_persen': akurasi,
+            'fpr_kontrol_negatif_persen': (tam['kontrol_negatif']['keliru_ditolak']/tam['kontrol_negatif']['total']*100)
+                                           if tam['kontrol_negatif']['total'] else None,
             'deteksi_kategori_kritis_persen': (kritis_det/kritis_tot*100) if kritis_tot else None,
             'waktu_deteksi': ringkas(tam['waktu_ms']),
         },
@@ -276,6 +306,8 @@ def main():
         'pemalsuan_tanda_tangan': {
             **{k: v for k, v in forg.items() if k != 'waktu_ms'},
             'laju_penolakan_persen': forg['ditolak']/forg['total']*100,
+            'fpr_kontrol_negatif_persen': (forg['kontrol_negatif']['keliru_ditolak']/forg['kontrol_negatif']['total']*100)
+                                           if forg['kontrol_negatif']['total'] else None,
             'waktu_verifikasi': ringkas(forg['waktu_ms']),
         },
     }
@@ -301,6 +333,11 @@ def main():
     print(f"Deteksi kedaluwarsa            : {hasil['kedaluwarsa']['laju_deteksi_persen']:.2f}%  "
           f"(kontrol negatif keliru: {hasil['kedaluwarsa']['fpr_kontrol_negatif_persen']:.2f}%)")
     print(f"Laju penolakan forgery         : {hasil['pemalsuan_tanda_tangan']['laju_penolakan_persen']:.2f}%   (target proposal 97,0%)")
+    kt=tam['kontrol_negatif']; kf=forg['kontrol_negatif']
+    print(f"Kontrol negatif pemalsuan data : {kt['keliru_ditolak']}/{kt['total']} keliru ditolak "
+          f"({hasil['pemalsuan_data']['fpr_kontrol_negatif_persen']:.2f}%)" if kt['total'] else "")
+    print(f"Kontrol negatif tanda tangan   : {kf['keliru_ditolak']}/{kf['total']} keliru ditolak "
+          f"({hasil['pemalsuan_tanda_tangan']['fpr_kontrol_negatif_persen']:.2f}%)" if kf['total'] else "")
     print('-'*64)
     print('Laju deteksi per subjenis pemalsuan data:')
     for s, b in sorted(tam['per_subjenis'].items(), key=lambda x: -(x[1]['laju_deteksi_persen'] or 0)):
