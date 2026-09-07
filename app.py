@@ -28,7 +28,8 @@ from functools import wraps
 import shutil
 import tempfile
 import threading
-from collections import OrderedDict, defaultdict
+import atexit
+from collections import OrderedDict, defaultdict, deque
 import uuid
 import os
 os.environ['CSV_MAX_FIELD_SIZE'] = '10000000'  # 10MB
@@ -65,6 +66,7 @@ class Config:
     MODIFICATION_LOG = 'logs/modification_logs.json'
     BATCH_MODIFICATION_LOG = 'logs/batch_modification_logs.json'
     STATS_FILE = 'logs/qr_stats.json'  # File untuk menyimpan statistik
+    STATS_SAVE_MIN_INTERVAL = 5.0  # Jeda minimum (detik) antar penulisan file statistik
     
     # Rate limiting configuration (Diperlonggar untuk keperluan testing/scanner)
     # Nilai baku dipertahankan persis seperti sebelumnya sehingga perilaku produksi
@@ -2105,28 +2107,250 @@ class Timer:
     def get_duration_ms(self):
         return self.duration * 1000 if self.duration else 0
 
+# ==================== AKUMULATOR STATISTIK ====================
+# Sebelumnya seluruh riwayat (satu entri per QR yang pernah dibuat) disimpan
+# dalam list dan ditulis ulang ke disk setiap QR. Pada 105 ribu entri, satu
+# penulisan makan ~450 ms sehingga generate massal menjadi O(n^2).
+#
+# Nilai yang benar-benar dipakai aplikasi hanyalah rata-rata dan min/max, dan
+# semuanya bisa diturunkan dari agregat berjalan. Kelas di bawah menyimpan
+# agregat itu (ukuran tetap) plus sampel N terakhir untuk inspeksi manual,
+# sambil tetap berperilaku seperti list bagi kode pemanggil (append/len/iter).
+
+class RunningSeries:
+    """Akumulator deret angka: agregat berjalan + sampel N terakhir."""
+
+    def __init__(self, maxlen=1000):
+        self._maxlen = int(maxlen)
+        self.clear()
+
+    def clear(self):
+        self.count = 0
+        self.total = 0.0
+        self.minimum = None
+        self.maximum = None
+        self.sample = deque(maxlen=self._maxlen)
+
+    def append(self, value):
+        try:
+            val = float(value)
+        except (TypeError, ValueError):
+            return
+        self.count += 1
+        self.total += val
+        if self.minimum is None or val < self.minimum:
+            self.minimum = val
+        if self.maximum is None or val > self.maximum:
+            self.maximum = val
+        self.sample.append(val)
+
+    def extend(self, values):
+        for value in values:
+            self.append(value)
+
+    @property
+    def average(self):
+        return (self.total / self.count) if self.count else 0.0
+
+    def __len__(self):
+        return self.count
+
+    def __bool__(self):
+        return self.count > 0
+
+    def __iter__(self):
+        # Hanya sampel terakhir, bukan seluruh riwayat.
+        return iter(self.sample)
+
+    def to_dict(self):
+        return {
+            'count': int(self.count),
+            'total': float(self.total),
+            'min': None if self.minimum is None else float(self.minimum),
+            'max': None if self.maximum is None else float(self.maximum),
+            'sample': [float(v) for v in self.sample],
+        }
+
+    def load_dict(self, data):
+        self.clear()
+        if not isinstance(data, dict):
+            return
+        self.count = int(data.get('count', 0) or 0)
+        self.total = float(data.get('total', 0.0) or 0.0)
+        minimum = data.get('min')
+        maximum = data.get('max')
+        self.minimum = None if minimum is None else float(minimum)
+        self.maximum = None if maximum is None else float(maximum)
+        for value in data.get('sample', []) or []:
+            try:
+                self.sample.append(float(value))
+            except (TypeError, ValueError):
+                continue
+
+    def load_values(self, values):
+        """Migrasi dari format lama (list riwayat penuh)."""
+        self.clear()
+        for value in values or []:
+            self.append(value)
+
+
+class RunningDimensions:
+    """Akumulator dimensi (lebar, tinggi) dengan agregat per komponen."""
+
+    DEFAULT = (100, 100)
+
+    def __init__(self, maxlen=1000):
+        self._maxlen = int(maxlen)
+        self.clear()
+
+    def clear(self):
+        self.count = 0
+        self.sum_width = 0
+        self.sum_height = 0
+        self.min_width = None
+        self.min_height = None
+        self.max_width = None
+        self.max_height = None
+        self.sample = deque(maxlen=self._maxlen)
+
+    @staticmethod
+    def _coerce(dimension):
+        """Terima (w, h), [w, h] atau string 'WxH'. None bila tidak valid."""
+        try:
+            if isinstance(dimension, str):
+                if 'x' not in dimension:
+                    return None
+                parts = dimension.split('x')
+                if len(parts) < 2:
+                    return None
+                width, height = float(parts[0].strip()), float(parts[1].strip())
+            elif isinstance(dimension, (tuple, list)) and len(dimension) >= 2:
+                width, height = float(dimension[0]), float(dimension[1])
+            else:
+                return None
+            if width <= 0 or height <= 0:
+                return None
+            return int(width), int(height)
+        except (TypeError, ValueError):
+            return None
+
+    def append(self, dimension):
+        coerced = self._coerce(dimension)
+        if coerced is None:
+            coerced = self.DEFAULT
+        width, height = coerced
+        self.count += 1
+        self.sum_width += width
+        self.sum_height += height
+        if self.min_width is None or width < self.min_width:
+            self.min_width = width
+        if self.min_height is None or height < self.min_height:
+            self.min_height = height
+        if self.max_width is None or width > self.max_width:
+            self.max_width = width
+        if self.max_height is None or height > self.max_height:
+            self.max_height = height
+        self.sample.append((width, height))
+
+    def extend(self, dimensions):
+        for dimension in dimensions:
+            self.append(dimension)
+
+    def __len__(self):
+        return self.count
+
+    def __bool__(self):
+        return self.count > 0
+
+    def __iter__(self):
+        return iter(self.sample)
+
+    def summary(self):
+        if not self.count:
+            return {"min": "N/A", "max": "N/A", "avg": "N/A"}
+        return {
+            "min": f"{self.min_width}x{self.min_height}",
+            "max": f"{self.max_width}x{self.max_height}",
+            "avg": f"{int(self.sum_width / self.count)}x{int(self.sum_height / self.count)}",
+        }
+
+    def to_dict(self):
+        return {
+            'count': int(self.count),
+            'sum_width': int(self.sum_width),
+            'sum_height': int(self.sum_height),
+            'min_width': self.min_width,
+            'min_height': self.min_height,
+            'max_width': self.max_width,
+            'max_height': self.max_height,
+            'sample': [[int(w), int(h)] for w, h in self.sample],
+        }
+
+    def load_dict(self, data):
+        self.clear()
+        if not isinstance(data, dict):
+            return
+        self.count = int(data.get('count', 0) or 0)
+        self.sum_width = int(data.get('sum_width', 0) or 0)
+        self.sum_height = int(data.get('sum_height', 0) or 0)
+        for attr in ('min_width', 'min_height', 'max_width', 'max_height'):
+            value = data.get(attr)
+            setattr(self, attr, None if value is None else int(value))
+        for item in data.get('sample', []) or []:
+            coerced = self._coerce(item)
+            if coerced is not None:
+                self.sample.append(coerced)
+
+    def load_values(self, dimensions):
+        """Migrasi dari format lama (list riwayat penuh)."""
+        self.clear()
+        for dimension in dimensions or []:
+            self.append(dimension)
+
+
 # ==================== FUNGSI PERSISTENSI STATISTIK ====================
+STATS_SCHEMA_VERSION = 2
+
+def _apply_stats_payload(stats_instance, stats_data):
+    """Terapkan isi file statistik ke instance.
+
+    Mendukung dua format:
+      schema 2 - agregat berjalan ('file_size_stats' / 'dimension_stats')
+      schema 1 - riwayat penuh ('file_sizes' / 'dimensions'), dimigrasikan
+                 dengan melipatnya menjadi agregat. Nilai rata-rata dan
+                 min/max yang dihasilkan identik dengan format lama.
+    """
+    stats_instance.total_generate_time = float(stats_data.get('total_generate_time', 0.0) or 0.0)
+    stats_instance.total_verify_time = float(stats_data.get('total_verify_time', 0.0) or 0.0)
+    stats_instance.qr_count = int(stats_data.get('qr_count', 0) or 0)
+    stats_instance.verify_count = int(stats_data.get('verify_count', 0) or 0)
+    stats_instance.success_verify_count = int(stats_data.get('success_verify_count', 0) or 0)
+
+    if 'file_size_stats' in stats_data or 'dimension_stats' in stats_data:
+        stats_instance.file_sizes.load_dict(stats_data.get('file_size_stats'))
+        stats_instance.dimensions.load_dict(stats_data.get('dimension_stats'))
+        return False
+
+    # Format lama -> migrasi.
+    stats_instance.file_sizes.load_values(stats_data.get('file_sizes', []))
+    stats_instance.dimensions.load_values(stats_data.get('dimensions', []))
+    return True
+
+
 def save_stats_to_file(stats_instance):
     """Menyimpan statistik ke file JSON"""
     try:
-        def normalize_dimensions(dimensions):
-            normalized = []
-            for dimension in dimensions:
-                try:
-                    width, height = dimension
-                    normalized.append([int(width), int(height)])
-                except Exception:
-                    continue
-            return normalized
-
         stats_data = {
+            'schema': STATS_SCHEMA_VERSION,
             'total_generate_time': float(stats_instance.total_generate_time),
             'total_verify_time': float(stats_instance.total_verify_time),
             'qr_count': int(stats_instance.qr_count),
             'verify_count': int(stats_instance.verify_count),
             'success_verify_count': int(stats_instance.success_verify_count),
-            'file_sizes': [float(size) for size in stats_instance.file_sizes],
-            'dimensions': normalize_dimensions(stats_instance.dimensions)
+            # Agregat berjalan berukuran tetap; 'sample' di dalamnya hanya
+            # N entri terakhir untuk inspeksi, BUKAN seluruh riwayat.
+            'file_size_stats': stats_instance.file_sizes.to_dict(),
+            'dimension_stats': stats_instance.dimensions.to_dict(),
         }
         
         stats_file = app.config['STATS_FILE']
@@ -2145,6 +2369,47 @@ def save_stats_to_file(stats_instance):
         except Exception:
             pass
 
+# --- Penulisan statistik yang di-throttle -------------------------------
+# save_stats_to_file() menulis ulang seluruh file statistik. Ukurannya kini
+# tetap (lihat RunningSeries/RunningDimensions), tetapi memanggilnya sekali
+# per QR tetap berarti ribuan penulisan disk per job massal tanpa manfaat.
+# Hot path memakai save_stats_to_file_throttled(): file ditulis paling sering
+# sekali per STATS_SAVE_MIN_INTERVAL detik, dan flush_stats_to_file() di akhir
+# job memastikan update terakhir tetap tersimpan.
+_stats_persist_lock = threading.Lock()
+_stats_pending = False
+_stats_last_saved_at = 0.0
+
+def save_stats_to_file_throttled(stats_instance):
+    """Tandai statistik perlu disimpan; benar-benar menulis bila jeda cukup."""
+    global _stats_pending, _stats_last_saved_at
+
+    interval = float(app.config.get('STATS_SAVE_MIN_INTERVAL', 5.0))
+    now = time.monotonic()
+
+    with _stats_persist_lock:
+        if interval > 0 and (now - _stats_last_saved_at) < interval:
+            _stats_pending = True
+            return False
+        _stats_last_saved_at = now
+        _stats_pending = False
+
+    save_stats_to_file(stats_instance)
+    return True
+
+def flush_stats_to_file(stats_instance, force=False):
+    """Tulis statistik yang masih tertunda. Panggil di akhir proses batch."""
+    global _stats_pending, _stats_last_saved_at
+
+    with _stats_persist_lock:
+        if not (_stats_pending or force):
+            return False
+        _stats_last_saved_at = time.monotonic()
+        _stats_pending = False
+
+    save_stats_to_file(stats_instance)
+    return True
+
 def load_stats_from_file(stats_instance):
     """Memuat statistik dari file JSON"""
     stats_file = app.config['STATS_FILE']
@@ -2154,29 +2419,12 @@ def load_stats_from_file(stats_instance):
             with open(stats_file, 'r', encoding='utf-8') as f:
                 stats_data = json.load(f)
             
-            stats_instance.total_generate_time = float(stats_data.get('total_generate_time', 0.0))
-            stats_instance.total_verify_time = float(stats_data.get('total_verify_time', 0.0))
-            stats_instance.qr_count = int(stats_data.get('qr_count', 0))
-            stats_instance.verify_count = int(stats_data.get('verify_count', 0))
-            stats_instance.success_verify_count = int(stats_data.get('success_verify_count', 0))
-            stats_instance.file_sizes = [float(x) for x in stats_data.get('file_sizes', [])]
-            
-            # Handle dimensions dengan benar
-            dimensions_data = stats_data.get('dimensions', [])
-            processed_dims = []
-            for dim in dimensions_data:
-                if isinstance(dim, list) and len(dim) >= 2:
-                    try:
-                        width = int(float(dim[0]))
-                        height = int(float(dim[1]))
-                        processed_dims.append((width, height))
-                    except:
-                        processed_dims.append((100, 100))
-                else:
-                    processed_dims.append((100, 100))
-            stats_instance.dimensions = processed_dims
-            
+            migrated = _apply_stats_payload(stats_instance, stats_data)
+
             app.logger.info(f"Statistik dimuat dari {stats_file}: {stats_instance.qr_count} QR, {stats_instance.verify_count} verify")
+            if migrated:
+                app.logger.info("Statistik format lama terdeteksi, dimigrasikan ke agregat berjalan")
+                save_stats_to_file(stats_instance)
             return True
         except Exception as e:
             app.logger.error(f"Error loading stats: {e}")
@@ -2193,8 +2441,8 @@ class QRCodeStats:
         self.qr_count = 0
         self.success_verify_count = 0
         self.verify_count = 0
-        self.file_sizes = []
-        self.dimensions = []
+        self.file_sizes = RunningSeries()
+        self.dimensions = RunningDimensions()
         
         # Coba muat statistik dari file saat instance dibuat
         self._load_from_file()
@@ -2208,29 +2456,12 @@ class QRCodeStats:
                 with open(stats_file, 'r', encoding='utf-8') as f:
                     stats_data = json.load(f)
                 
-                self.total_generate_time = float(stats_data.get('total_generate_time', 0.0))
-                self.total_verify_time = float(stats_data.get('total_verify_time', 0.0))
-                self.qr_count = int(stats_data.get('qr_count', 0))
-                self.verify_count = int(stats_data.get('verify_count', 0))
-                self.success_verify_count = int(stats_data.get('success_verify_count', 0))
-                self.file_sizes = [float(x) for x in stats_data.get('file_sizes', [])]
-                
-                # Handle dimensions dengan benar
-                dimensions_data = stats_data.get('dimensions', [])
-                processed_dims = []
-                for dim in dimensions_data:
-                    if isinstance(dim, list) and len(dim) >= 2:
-                        try:
-                            width = int(float(dim[0]))
-                            height = int(float(dim[1]))
-                            processed_dims.append((width, height))
-                        except:
-                            processed_dims.append((100, 100))
-                    else:
-                        processed_dims.append((100, 100))
-                self.dimensions = processed_dims
-                
+                migrated = _apply_stats_payload(self, stats_data)
+
                 app.logger.info(f"Statistik dimuat dari {stats_file}: {self.qr_count} QR, {self.verify_count} verify")
+                if migrated:
+                    app.logger.info("Statistik format lama terdeteksi, dimigrasikan ke agregat berjalan")
+                    save_stats_to_file(self)
             except Exception as e:
                 app.logger.error(f"Error loading stats from file: {e}")
                 # Jika error, gunakan nilai default
@@ -2246,8 +2477,8 @@ class QRCodeStats:
         self.qr_count = 0
         self.success_verify_count = 0
         self.verify_count = 0
-        self.file_sizes = []
-        self.dimensions = []
+        self.file_sizes.clear()
+        self.dimensions.clear()
     
     def reset_stats(self):
         """Reset semua statistik ke nilai default DAN SIMPAN KE FILE"""
@@ -2271,9 +2502,10 @@ class QRCodeStats:
                 else:
                     self.dimensions.append((100, 100))  # default
             
-            # Simpan ke file setelah update
-            save_stats_to_file(self)
-            app.logger.debug(f"Statistik generate ditambahkan: total={self.qr_count}, avg_time={self.get_average_generate_time()}")
+            # Simpan ke file setelah update (di-throttle: lihat
+            # save_stats_to_file_throttled). Job massal wajib memanggil
+            # flush_stats_to_file() setelah selesai.
+            save_stats_to_file_throttled(self)
         except Exception as e:
             app.logger.warning(f"Error in add_generate_stat: {e}")
     
@@ -2285,9 +2517,8 @@ class QRCodeStats:
             self.verify_count += 1
             if success:
                 self.success_verify_count += 1
-            # Simpan ke file setelah update
-            save_stats_to_file(self)
-            app.logger.debug(f"Statistik verify ditambahkan: total={self.verify_count}, avg_time={self.get_average_verify_time()}")
+            # Simpan ke file setelah update (di-throttle).
+            save_stats_to_file_throttled(self)
         except Exception as e:
             app.logger.warning(f"Error in add_verify_stat: {e}")
 
@@ -2352,63 +2583,27 @@ class QRCodeStats:
         return 0.0
     
     def get_average_file_size(self):
-        """Ambil rata-rata ukuran file dengan aman"""
+        """Rata-rata ukuran file dari agregat berjalan (seluruh riwayat)."""
         try:
-            if self.file_sizes:
-                valid_sizes = [float(f) for f in self.file_sizes if f is not None and f >= 0]
-                if valid_sizes:
-                    return sum(valid_sizes) / len(valid_sizes)
+            return self.file_sizes.average
         except Exception as e:
             app.logger.warning(f"Error in get_average_file_size: {e}")
         return 0.0
     
     def get_dimension_stats(self):
-        """Ambil statistik dimensi dengan error handling lengkap"""
+        """Statistik dimensi (min/max/avg) dari agregat berjalan."""
         try:
-            if not self.dimensions:
-                return {"min": "N/A", "max": "N/A", "avg": "N/A"}
-            
-            valid_dims = []
-            for dim in self.dimensions:
-                try:
-                    if isinstance(dim, (tuple, list)):
-                        if len(dim) >= 2:
-                            width = float(dim[0])
-                            height = float(dim[1])
-                            if width > 0 and height > 0:
-                                valid_dims.append((int(width), int(height)))
-                    elif isinstance(dim, str):
-                        if 'x' in dim:
-                            parts = dim.split('x')
-                            if len(parts) >= 2:
-                                width = float(parts[0].strip())
-                                height = float(parts[1].strip())
-                                if width > 0 and height > 0:
-                                    valid_dims.append((int(width), int(height)))
-                except Exception:
-                    continue
-            
-            if not valid_dims:
-                return {"min": "N/A", "max": "N/A", "avg": "N/A"}
-            
-            widths = [d[0] for d in valid_dims]
-            heights = [d[1] for d in valid_dims]
-            
-            avg_width = int(sum(widths) / len(widths)) if widths else 0
-            avg_height = int(sum(heights) / len(heights)) if heights else 0
-            
-            return {
-                "min": f"{min(widths)}x{min(heights)}",
-                "max": f"{max(widths)}x{max(heights)}",
-                "avg": f"{avg_width}x{avg_height}"
-            }
-            
+            return self.dimensions.summary()
         except Exception as e:
             app.logger.error(f"Error in get_dimension_stats: {e}")
             return {"min": "N/A", "max": "N/A", "avg": "N/A"}
 
 # Global stats instance
 qr_stats = QRCodeStats()
+
+# Penulisan statistik di-throttle, jadi bisa ada update yang belum menyentuh
+# disk saat proses berhenti. Flush sekali lagi ketika interpreter keluar.
+atexit.register(flush_stats_to_file, qr_stats)
 
 # ==================== GLOBAL VARIABLES FOR TASK MANAGEMENT ====================
 # Untuk menyimpan progress task background
@@ -6367,6 +6562,10 @@ def background_generate_process(task_id):
                     })
             
             total_massal_time = total_massal_timer.stop()
+
+            # Statistik ditulis secara throttled selama loop; pastikan update
+            # terakhir benar-benar tersimpan sebelum job dinyatakan selesai.
+            flush_stats_to_file(qr_stats)
             
             # Hitung statistik massal
             if massal_stats["individual_times"]:
@@ -7425,7 +7624,7 @@ def calculate_stats_from_logs():
                     # Ukuran file
                     if 'Ukuran File (KB)' in df.columns:
                         valid_sizes = pd.to_numeric(df['Ukuran File (KB)'], errors='coerce').dropna()
-                        qr_stats.file_sizes = valid_sizes.tolist()
+                        qr_stats.file_sizes.extend(valid_sizes.tolist())
                     
                     # Dimensi
                     if 'Resolusi' in df.columns:
@@ -9211,6 +9410,10 @@ def background_verify_massal_process(task_id):
             )
 
             total_massal_time = total_massal_timer.stop()
+
+            # Statistik ditulis secara throttled selama loop; pastikan update
+            # terakhir benar-benar tersimpan sebelum job dinyatakan selesai.
+            flush_stats_to_file(qr_stats)
             
             # Hitung statistik massal
             processed_count = len(hasil_verifikasi)

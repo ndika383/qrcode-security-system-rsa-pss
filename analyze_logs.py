@@ -100,9 +100,25 @@ if os.path.exists(stats_file):
     print(f'Verify Count: {stats["verify_count"]}')
     print(f'Total Generate Time: {stats["total_generate_time"]:.4f}s')
     print(f'Total Verify Time: {stats["total_verify_time"]:.4f}s')
-    if stats['file_sizes']:
-        print(f'File Sizes: {stats["file_sizes"]}')
-    if stats['dimensions']:
-        print(f'Dimensions: {stats["dimensions"]}')
+    # Sejak schema 2, statistik disimpan sebagai agregat berjalan
+    # (ukuran tetap), bukan riwayat penuh per QR.
+    fs = stats.get('file_size_stats')
+    if fs and fs.get('count'):
+        avg = fs['total'] / fs['count']
+        print(f'File Size: n={fs["count"]} mean={avg:.4f} KB '
+              f'min={fs["min"]:.4f} max={fs["max"]:.4f}')
+    elif stats.get('file_sizes'):  # format lama
+        sizes = [float(x) for x in stats['file_sizes']]
+        print(f'File Size: n={len(sizes)} mean={sum(sizes)/len(sizes):.4f} KB (format lama)')
+
+    dim = stats.get('dimension_stats')
+    if dim and dim.get('count'):
+        n = dim['count']
+        print(f'Dimensions: n={n} '
+              f'min={dim["min_width"]}x{dim["min_height"]} '
+              f'max={dim["max_width"]}x{dim["max_height"]} '
+              f'avg={int(dim["sum_width"]/n)}x{int(dim["sum_height"]/n)}')
+    elif stats.get('dimensions'):  # format lama
+        print(f'Dimensions: n={len(stats["dimensions"])} (format lama)')
 
 print('\n' + '=' * 60)
