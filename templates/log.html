@@ -273,7 +273,7 @@
                             <a href="{{ url_for('download_all_qr_codes') }}"
                                class="btn btn-primary {% if not qr_file_counts.total %}disabled{% endif %}"
                                {% if qr_file_counts.total %}
-                               onclick="return confirm('Download semua {{ qr_file_counts.total }} file QR Code sebagai ZIP? Proses ini bisa memakan waktu jika file sangat banyak.')"
+                               onclick="return confirm('Download semua {{ qr_file_counts.total }} file QR Code sebagai ZIP? Unduhan langsung dimulai dan progresnya terlihat di browser.')"
                                {% else %}
                                aria-disabled="true"
                                {% endif %}>

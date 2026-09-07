@@ -7009,93 +7009,135 @@ def verify_generated_task(task_id):
         flash(f'Error saat memulai verifikasi hasil generate: {str(e)}', 'danger')
         return redirect(url_for('view_generate_results', task_id=task_id))
 
+ZIP_STREAM_CHUNK_SIZE = 64 * 1024
+
+class _ZipStreamBuffer:
+    """Penampung tulisan zipfile yang dikuras oleh generator respons.
+
+    Sengaja TIDAK menyediakan tell()/seek() supaya zipfile memilih mode
+    non-seekable (memakai data descriptor per entri). Dengan begitu arsip
+    bisa dialirkan sambil dibentuk, tanpa perlu ditulis utuh lebih dulu.
+    """
+
+    def __init__(self):
+        self._chunks = []
+        self._size = 0
+
+    def write(self, data):
+        self._chunks.append(data)
+        self._size += len(data)
+        return len(data)
+
+    def flush(self):
+        pass
+
+    def __len__(self):
+        return self._size
+
+    def drain(self):
+        data = b''.join(self._chunks)
+        self._chunks.clear()
+        self._size = 0
+        return data
+
 @app.route('/download_all_qr_codes')
 @login_required
 def download_all_qr_codes():
-    zip_path = None
+    """Kirim seluruh QR Code sebagai ZIP secara streaming.
 
-    try:
-        qr_files = list(iter_qr_png_files())
-        if not qr_files:
-            flash('Belum ada file QR Code untuk diunduh', 'warning')
-            return redirect(url_for('view_log'))
-
-        os.makedirs(app.config['QR_DOWNLOAD_FOLDER'], exist_ok=True)
-        cleanup_old_qr_downloads()
-        with tempfile.NamedTemporaryFile(
-            prefix='semua_qrcode_',
-            suffix='.zip',
-            dir=app.config['QR_DOWNLOAD_FOLDER'],
-            delete=False
-        ) as tmp_file:
-            zip_path = tmp_file.name
-
-        counts = {'qr_tunggal': 0, 'qr_massal': 0, 'qr_modifikasi': 0}
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_STORED) as zipf:
-            for category, filename, filepath in qr_files:
-                safe_filename = sanitize_filename(filename)
-                if not safe_filename:
-                    continue
-
-                arcname = f'{category}/{safe_filename}'
-                zipf.write(filepath, arcname=arcname)
-                counts[category] = counts.get(category, 0) + 1
-
-            manifest = {
-                'created_at': datetime.now(timezone.utc).isoformat(),
-                'total_files': sum(counts.values()),
-                'counts': counts,
-                'folders': {
-                    'qr_tunggal': app.config['QR_FOLDER'],
-                    'qr_massal': app.config['QR_MASSAL_FOLDER'],
-                    'qr_modifikasi': app.config['FAKE_QR_FOLDER']
-                }
-            }
-            zipf.writestr('manifest.json', json.dumps(manifest, indent=2, ensure_ascii=False))
-
-        total_files = sum(counts.values())
-        if total_files == 0:
-            try:
-                os.remove(zip_path)
-            except OSError:
-                pass
-            flash('Belum ada file QR Code untuk diunduh', 'warning')
-            return redirect(url_for('view_log'))
-
-        download_name = f'semua_qrcode_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
-        app.logger.info(f"Download semua QR Code: {total_files} file -> {download_name}")
-        log_audit_event('download_all_qr_codes', {
-            'download_name': download_name,
-            'total_files': total_files,
-            'counts': counts
-        })
-
-        response = send_file(
-            zip_path,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name=download_name
-        )
-
-        def cleanup_zip(path=zip_path):
-            try:
-                if path and os.path.exists(path):
-                    os.remove(path)
-            except Exception as cleanup_error:
-                app.logger.warning(f'Gagal menghapus ZIP sementara {path}: {cleanup_error}')
-
-        response.call_on_close(cleanup_zip)
-        return response
-
-    except Exception as e:
-        if zip_path and os.path.exists(zip_path):
-            try:
-                os.remove(zip_path)
-            except OSError:
-                pass
-        app.logger.error(f"Error download_all_qr_codes: {e}", exc_info=True)
-        flash(f'Error saat download semua QR Code: {str(e)}', 'danger')
+    Versi lama membangun ZIP utuh ke file sementara sebelum memanggil
+    send_file(), sehingga tidak ada satu byte pun terkirim selama proses
+    (terukur 124 detik untuk 105 ribu file dengan cache dingin). Browser
+    tidak menampilkan apa pun selama itu dan pengguna menyangka tombolnya
+    rusak. Sekarang header dikirim seketika dan isi arsip mengalir per
+    potongan, jadi unduhan langsung terlihat dan bisa dibatalkan.
+    """
+    qr_counts = get_qr_file_counts()
+    if not qr_counts.get('total'):
+        flash('Belum ada file QR Code untuk diunduh', 'warning')
         return redirect(url_for('view_log'))
+
+    # Bersihkan ZIP sementara peninggalan implementasi lama.
+    cleanup_old_qr_downloads()
+
+    download_name = f'semua_qrcode_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+    app.logger.info(
+        f"Mulai streaming semua QR Code: ~{qr_counts['total']} file -> {download_name}"
+    )
+    log_audit_event('download_all_qr_codes', {
+        'download_name': download_name,
+        'total_files': qr_counts['total'],
+        'counts': {k: v for k, v in qr_counts.items() if k != 'total'}
+    })
+
+    def generate():
+        buffer = _ZipStreamBuffer()
+        counts = {'qr_tunggal': 0, 'qr_massal': 0, 'qr_modifikasi': 0}
+        sent_bytes = 0
+        try:
+            with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_STORED) as zipf:
+                for category, filename, filepath in iter_qr_png_files():
+                    safe_filename = sanitize_filename(filename)
+                    if not safe_filename:
+                        continue
+
+                    try:
+                        zipf.write(filepath, arcname=f'{category}/{safe_filename}')
+                    except (OSError, ValueError) as file_error:
+                        # File terhapus atau tidak terbaca di tengah jalan;
+                        # lewati saja agar unduhan tetap berjalan.
+                        app.logger.warning(f'Lewati {filepath}: {file_error}')
+                        continue
+
+                    counts[category] = counts.get(category, 0) + 1
+
+                    if len(buffer) >= ZIP_STREAM_CHUNK_SIZE:
+                        chunk = buffer.drain()
+                        sent_bytes += len(chunk)
+                        yield chunk
+
+                manifest = {
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'total_files': sum(counts.values()),
+                    'counts': counts,
+                    'folders': {
+                        'qr_tunggal': app.config['QR_FOLDER'],
+                        'qr_massal': app.config['QR_MASSAL_FOLDER'],
+                        'qr_modifikasi': app.config['FAKE_QR_FOLDER']
+                    }
+                }
+                zipf.writestr('manifest.json', json.dumps(manifest, indent=2, ensure_ascii=False))
+
+            # Sisa buffer + central directory yang ditulis saat ZipFile ditutup.
+            tail = buffer.drain()
+            if tail:
+                sent_bytes += len(tail)
+                yield tail
+
+            app.logger.info(
+                f"Selesai streaming {sum(counts.values())} QR Code "
+                f"({sent_bytes / (1024 * 1024):.1f} MB) -> {download_name}"
+            )
+        except GeneratorExit:
+            app.logger.info(
+                f"Download semua QR Code dibatalkan klien setelah "
+                f"{sum(counts.values())} file ({sent_bytes / (1024 * 1024):.1f} MB)"
+            )
+            raise
+        except Exception as e:
+            app.logger.error(f"Error streaming download_all_qr_codes: {e}", exc_info=True)
+            raise
+
+    return Response(
+        generate(),
+        mimetype='application/zip',
+        headers={
+            'Content-Disposition': f'attachment; filename="{download_name}"',
+            'Content-Type': 'application/zip',
+            'Cache-Control': 'no-store',
+            'X-Accel-Buffering': 'no'
+        }
+    )
 
 @app.route('/jobs')
 @login_required
