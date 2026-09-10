@@ -547,7 +547,12 @@
 
     <footer class="container text-center mt-4 mb-5 text-muted">
         <hr>
-        <small>&copy; 2026 QR Code Security System - Log Audit System</small>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-4">
+            {% with logos_variant = 'institution-logos--inline' %}
+            {% include 'components/institution_logos.html' %}
+            {% endwith %}
+            <small>&copy; 2026 QR Code Security System - Log Audit System</small>
+        </div>
     </footer>
 
     <!-- Modal Reset Format -->

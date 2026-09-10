@@ -1,8 +1,10 @@
 Daftar screenshot halaman QR Code Security System
-Dibuat: 2026-06-18 06:53:05 WIB
-Base URL: http://127.0.0.1:5055
+Dibuat: 2026-08-17 15:44:30 WIB
+Base URL: http://127.0.0.1:5000
+Lebar tangkapan: 1366 px, tinggi penuh halaman
+Berkas 18-23: tangkapan dialog modal konfigurasi testing, lebar 800 px
 
-00_login.jpg	/login	200
+00_login.jpg	/login	200	Login - QR Code Security
 01_home_index.jpg	/	200	QR Code Security System
 02_dashboard.jpg	/dashboard	200	Dashboard QR Code Security
 03_qr_generator.jpg	/qr_generator	200	QR Generator - QR Code Security
@@ -30,3 +32,7 @@ Base URL: http://127.0.0.1:5055
 25_testing_comprehensive_test.jpg	/testing/comprehensive_test	200	Comprehensive Test Runner
 26_testing_calibration.jpg	/testing/calibration	200	Kalibrasi Performa
 27_error_404.jpg	/halaman-tidak-ditemukan-untuk-screenshot	404	Error 404 - QR Security System
+28_verify_massal_progress.jpg	/verify_massal_progress/9d43fa60-ab43-4bbe-9d76-1a810626031e	200	Progress Verifikasi Massal
+29_verify_massal_results.jpg	/verify_massal_results/9d43fa60-ab43-4bbe-9d76-1a810626031e	200	Verifikasi QR Code - QR Code Security
+30_testing_results.jpg	/testing/results/test_20260727_093910_187_real_http_stress_test_316138	200	Test Results - test_20260727_093910_187_real_http_stress_test_316138
+31_testing_active_tests.jpg	/testing/active_tests	200	

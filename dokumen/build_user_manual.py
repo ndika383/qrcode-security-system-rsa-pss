@@ -29,6 +29,13 @@ for prefix, uri in (("w", W), ("r", R), ("cp", CP), ("dc", DC)):
 
 SCREENSHOTS = [f"{i:02d}_" for i in range(28)]
 
+# Tinggi maksimum satu panel, dalam piksel sumber (lebar tangkapan 1366 px).
+# Gambar disisipkan selebar 15,5 cm, jadi 1400 px -> 15,5 x 1400/1366 = 15,9 cm.
+# Tinggi area cetak A4 dengan margin 2 cm adalah ~25,7 cm, sehingga satu panel
+# plus keterangannya masih muat dalam satu halaman.
+PANEL_MAX_HEIGHT = 1400
+PANEL_OVERLAP = 70
+
 
 def prepare_assets():
     """Split tall screenshots into readable A4 panels."""
@@ -40,11 +47,14 @@ def prepare_assets():
     for source in files:
         with Image.open(source) as image:
             image = image.convert("RGB")
-            if image.height <= 1250:
+            if image.height <= PANEL_MAX_HEIGHT:
                 image.save(ASSETS / source.name, quality=90, optimize=True)
                 continue
-            panel_count = math.ceil((image.height - 70) / (1250 - 70))
-            panel_height = math.ceil((image.height + 70 * (panel_count - 1)) / panel_count)
+            usable = PANEL_MAX_HEIGHT - PANEL_OVERLAP
+            panel_count = math.ceil((image.height - PANEL_OVERLAP) / usable)
+            panel_height = math.ceil(
+                (image.height + PANEL_OVERLAP * (panel_count - 1)) / panel_count
+            )
             top = 0
             panel = 1
             while top < image.height:
@@ -55,7 +65,7 @@ def prepare_assets():
                 )
                 if bottom == image.height:
                     break
-                top, panel = bottom - 70, panel + 1
+                top, panel = bottom - PANEL_OVERLAP, panel + 1
 
 
 def ensure(parent, tag):

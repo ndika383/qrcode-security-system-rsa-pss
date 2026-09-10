@@ -11,7 +11,7 @@ info:
 
 
     Catatan keamanan: verifikasi bersifat berbasis server. QR Code memuat URL pendek /v/{token} dan payload
-    bertandatangan disimpan di sisi server; verifikasi luring mandiri belum tersedia.'
+    bertandatangan disimpan di sisi server; verifikasi luring mandiri belum tersedia. Kunci publik penerbit dapat diambil melalui GET /.well-known/qr-public-key sehingga pemeriksaan tanda tangan dapat dilakukan secara mandiri oleh pihak ketiga.'
   license:
     name: MIT
   contact:
@@ -250,6 +250,49 @@ paths:
         '200':
           description: Berhasil
           content:
+            application/json:
+              schema:
+                type: object
+  /.well-known/qr-public-key:
+    get:
+      tags:
+      - Verifikasi
+      operationId: public_key_endpoint_get
+      summary: Sajikan kunci publik penerbit untuk verifikasi mandiri pihak ketiga
+      description: 'Mengembalikan kunci publik RSA dalam format PEM. Parameter format=json
+        mengembalikan seluruh kunci beserta kid dan parameter algoritmanya. Hanya bagian
+        publik yang disajikan; berkas kunci privat tidak memiliki rute mana pun.'
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [pem, json]
+        description: Format keluaran; bawaan PEM.
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/x-pem-file:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+  /api/public_key:
+    get:
+      tags:
+      - Verifikasi
+      operationId: public_key_endpoint_alias_get
+      summary: Alias /.well-known/qr-public-key
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/x-pem-file:
+              schema:
+                type: string
             application/json:
               schema:
                 type: object

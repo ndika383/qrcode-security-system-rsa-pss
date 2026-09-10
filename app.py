@@ -63,6 +63,16 @@ class Config:
     SECURITY_STATE_DB = 'logs/security_state.db'
     RSA_KEY_FILE = 'rsa_key.pem'
     ECDSA_KEY_FILE = 'ecdsa_key.pem'
+    # Rotasi kunci (NIST SP 800-57 Part 1 Rev. 5).
+    # RETIRED_KEYS_DIR memuat kunci publik yang sudah dipensiunkan agar QR Code
+    # terbitan lama tetap dapat diverifikasi setelah rotasi.
+    RETIRED_KEYS_DIR = 'keys/retired'
+    # Masa berlaku kunci penandatangan; dilampaui hanya memicu peringatan log.
+    RSA_KEY_VALIDITY_DAYS = 1095
+    # Penyertaan kid pada amplop payload. Baku nonaktif supaya bentuk payload
+    # produksi tetap identik dengan yang terarsip pada dataset penelitian.
+    # Aktifkan bersamaan dengan rotasi kunci pertama.
+    QR_EMIT_KEY_ID = False
     MODIFICATION_LOG = 'logs/modification_logs.json'
     BATCH_MODIFICATION_LOG = 'logs/batch_modification_logs.json'
     STATS_FILE = 'logs/qr_stats.json'  # File untuk menyimpan statistik
@@ -1578,6 +1588,107 @@ def load_or_create_ecdsa_keys():
         raise
     return key
 
+
+def load_retired_public_keys():
+    """Muat kunci publik yang sudah dipensiunkan dari direktori keys/retired/.
+
+    Keberadaannya membuat rotasi kunci mungkin dilakukan tanpa membatalkan QR
+    Code yang sudah terbit: payload lama tetap dapat diverifikasi memakai kunci
+    lamanya. Direktori boleh tidak ada, dan dalam hal itu daftarnya kosong
+    sehingga perilaku sistem persis sama seperti sebelum rotasi diperkenalkan.
+    """
+    retired = []
+    retired_dir = app.config.get('RETIRED_KEYS_DIR', 'keys/retired')
+    if not os.path.isdir(retired_dir):
+        return retired
+    for entry in sorted(os.listdir(retired_dir)):
+        if not entry.endswith('.pem'):
+            continue
+        path = os.path.join(retired_dir, entry)
+        try:
+            with open(path, 'rb') as f:
+                key = RSA.import_key(f.read())
+            pub = key.publickey() if key.has_private() else key
+            retired.append(pub)
+            app.logger.info(f"Kunci pensiun dimuat: {entry} (kid {compute_key_id(pub)})")
+        except Exception as e:
+            app.logger.error(f"Kunci pensiun {entry} gagal dimuat: {e}")
+    return retired
+
+
+class _VerifierMultiKunci:
+    """Peniru antarmuka verifier PyCryptodome yang mencoba beberapa kunci.
+
+    Kelas ini sengaja meniru bentuk objek hasil pss.new() sehingga seluruh
+    pemanggilan verifier.verify(hash_obj, signature) yang sudah ada di dalam
+    aplikasi tidak perlu diubah sama sekali. Kunci aktif dicoba lebih dulu,
+    sehingga pada keadaan normal biaya verifikasi tidak bertambah.
+    """
+
+    def __init__(self, keys):
+        self._keys = keys
+
+    def verify(self, hash_obj, signature):
+        for key in self._keys:
+            try:
+                pss.new(key, salt_bytes=8).verify(hash_obj, signature)
+                return
+            except (ValueError, TypeError):
+                continue
+        raise ValueError("Signature tidak sah untuk seluruh kunci yang dikenal")
+
+
+def verifier_rsa_pss(kid=None):
+    """Bangun verifier RSASSA-PSS salt 8 byte atas seluruh kunci yang dikenal.
+
+    Bila payload menyertakan kid dan kid itu cocok dengan salah satu kunci,
+    kunci tersebut didahulukan. Bila kid tidak ada, misalnya pada QR Code yang
+    terbit sebelum kid diperkenalkan, seluruh kunci dicoba berurutan dimulai
+    dari kunci aktif.
+    """
+    kandidat = [public_key] + RETIRED_PUBLIC_KEYS
+    if kid:
+        cocok = [k for k in kandidat if compute_key_id(k) == kid]
+        if cocok:
+            kandidat = cocok + [k for k in kandidat if k not in cocok]
+    return _VerifierMultiKunci(kandidat)
+
+
+def periksa_masa_berlaku_kunci():
+    """Catat peringatan bila kunci penandatangan melampaui masa berlakunya.
+
+    Mengacu NIST SP 800-57 Part 1 Rev. 5, kunci privat penandatangan memiliki
+    cryptoperiod terbatas. Sistem hanya memperingatkan dan tidak menolak
+    menandatangani, karena penghentian mendadak pada layanan produksi lebih
+    merugikan daripada kunci yang terlambat dirotasi beberapa hari.
+    """
+    try:
+        batas_hari = int(app.config.get('RSA_KEY_VALIDITY_DAYS', 1095))
+        key_file = app.config['RSA_KEY_FILE']
+        if not os.path.exists(key_file):
+            return None
+        umur_hari = (time.time() - os.path.getmtime(key_file)) / 86400.0
+        if umur_hari > batas_hari:
+            app.logger.warning(
+                f"Kunci RSA berumur {umur_hari:.0f} hari, melampaui masa berlaku "
+                f"{batas_hari} hari. Jadwalkan rotasi sesuai PROSEDUR_ROTASI_KUNCI.md"
+            )
+        return umur_hari
+    except Exception as e:
+        app.logger.error(f"Gagal memeriksa masa berlaku kunci: {e}")
+        return None
+
+
+def compute_key_id(public_key_obj):
+    """Pengenal kunci (kid): 16 heksadesimal pertama SHA-256 atas DER kunci publik.
+
+    Diturunkan dari kuncinya sendiri, bukan label yang ditulis tangan, sehingga
+    stabil lintas restart dan tidak perlu didaftarkan pada berkas konfigurasi.
+    """
+    der = public_key_obj.export_key(format='DER')
+    return SHA256.new(der).hexdigest()[:16]
+
+
 security_state_lock = threading.Lock()
 security_state_ready = False
 
@@ -2081,7 +2192,14 @@ try:
     private_key, public_key = load_or_create_rsa_keys()
     ecdsa_private_key = load_or_create_ecdsa_keys()
     ecdsa_public_key = ecdsa_private_key.public_key()
-    app.logger.info("Cryptographic keys (RSA & ECDSA) berhasil diinisialisasi")
+    RSA_KEY_ID = compute_key_id(public_key)
+    ECDSA_KEY_ID = compute_key_id(ecdsa_public_key)
+    RETIRED_PUBLIC_KEYS = load_retired_public_keys()
+    periksa_masa_berlaku_kunci()
+    app.logger.info(
+        f"Cryptographic keys (RSA & ECDSA) berhasil diinisialisasi "
+        f"(kid RSA {RSA_KEY_ID}, kid ECDSA {ECDSA_KEY_ID})"
+    )
 except Exception as e:
     app.logger.error(f"Gagal inisialisasi keys: {e}")
     raise
@@ -3711,6 +3829,8 @@ def generate_qr():
                 "mgf": "MGF1-SHA256" if alg == "RSA" else "N/A"
             }
         }
+        if app.config.get('QR_EMIT_KEY_ID'):
+            payload["kid"] = RSA_KEY_ID if alg == 'RSA' else ECDSA_KEY_ID
         
         qr_timer = Timer().start()
         # BUAT QR CODE DENGAN URL VERIFIKASI YANG DIOPTIMALKAN UNTUK KAMERA HP
@@ -3870,7 +3990,7 @@ def verify_qr():
         verify_timer = Timer().start()
         if alg == 'RSA':
             try:
-                verifier = pss.new(public_key, salt_bytes=8)
+                verifier = verifier_rsa_pss(payload.get("kid") if isinstance(payload, dict) else None)
                 verifier.verify(hash_obj, signature)
                 signature_valid = True
                 sig_error = "" # RSA succeeded, no error message
@@ -3948,6 +4068,55 @@ def verify_qr():
         app.logger.error(f"Error verify_qr: {e}")
         flash(f'Error saat verifikasi: {str(e)}', 'danger')
         return redirect(url_for('scanner'))
+
+# ==================== DISTRIBUSI KUNCI PUBLIK (ISO/IEC 20248 aspek 2.14 dan 2.15) ====================
+@app.route('/.well-known/qr-public-key')
+@app.route('/api/public_key')
+@limiter.limit("60 per minute")
+def public_key_endpoint():
+    """Sajikan kunci publik agar verifier pihak ketiga dapat memeriksa tanda tangan secara mandiri.
+
+    Hanya bagian publik yang disajikan. Berkas kunci privat tetap tidak memiliki
+    rute mana pun dan tidak pernah dapat diambil melalui jaringan.
+
+    Bawaan mengembalikan PEM kunci RSA. Parameter ?format=json mengembalikan
+    seluruh kunci beserta kid dan parameter algoritmanya.
+    """
+    try:
+        if (request.args.get('format') or '').lower() == 'json':
+            return jsonify({
+                'issuer': get_public_base_url(),
+                'keys': [
+                    {
+                        'kid': RSA_KEY_ID,
+                        'alg': 'RSA',
+                        'algorithm': 'RSASSA-PSS',
+                        'key_size': 2048,
+                        'hash': 'SHA-256',
+                        'salt_bytes': 8,
+                        'mgf': 'MGF1-SHA256',
+                        'status': 'aktif',
+                        'pem': public_key.export_key().decode('utf-8')
+                    },
+                    {
+                        'kid': ECDSA_KEY_ID,
+                        'alg': 'ECDSA',
+                        'algorithm': 'ECDSA',
+                        'curve': 'P-256',
+                        'hash': 'SHA-256',
+                        'status': 'pembanding',
+                        'pem': ecdsa_public_key.export_key(format='PEM')
+                    }
+                ]
+            })
+
+        response = make_response(public_key.export_key().decode('utf-8') + '\n')
+        response.headers['Content-Type'] = 'application/x-pem-file; charset=utf-8'
+        response.headers['X-Key-Id'] = RSA_KEY_ID
+        return response
+    except Exception as e:
+        app.logger.error(f"Error public_key_endpoint: {e}")
+        return jsonify({'success': False, 'error': 'Gagal menyajikan kunci publik'}), 500
 
 # ==================== ROUTES UNTUK SCANNER LANGSUNG & KAMERA HP (DIOPTIMALKAN) ====================
 @app.route('/verify_direct')
@@ -4047,7 +4216,7 @@ def decode_qr_string():
 
         if alg == 'RSA':
             try:
-                verifier = pss.new(public_key, salt_bytes=8)
+                verifier = verifier_rsa_pss(payload.get("kid") if isinstance(payload, dict) else None)
                 verifier.verify(hash_obj, signature)
                 signature_valid = True
                 sig_error = ""
@@ -4208,7 +4377,7 @@ def verify_qr_data(encoded_data):
             signature = base64.b64decode(signature_b64)
             if alg == 'RSA':
                 try:
-                    verifier = pss.new(public_key, salt_bytes=8)
+                    verifier = verifier_rsa_pss(payload.get("kid") if isinstance(payload, dict) else None)
                     verifier.verify(hash_obj, signature)
                     signature_valid = True
                     sig_error = ""
@@ -5329,7 +5498,7 @@ def verify_qr_massal_direct(valid_files):
                 verify_timer = Timer().start()
                 if alg == 'RSA':
                     try:
-                        verifier = pss.new(public_key, salt_bytes=8)
+                        verifier = verifier_rsa_pss(payload.get("kid") if isinstance(payload, dict) else None)
                         verifier.verify(hash_obj, signature)
                         signature_valid = True
                         sig_error = ""
@@ -5642,7 +5811,7 @@ def background_verify_massal_process(task_id):
                     
                     sig_error = ""
                     if alg == 'RSA':
-                        verifier = pss.new(public_key, salt_bytes=8) # Konsisten Salt 8
+                        verifier = verifier_rsa_pss(payload.get("kid") if isinstance(payload, dict) else None) # Konsisten Salt 8
                     elif alg == 'ECDSA':
                         verifier = DSS.new(ecdsa_public_key, 'fips-186-3')
                     else:
@@ -6462,6 +6631,8 @@ def background_generate_process(task_id):
                         "signature": base64.b64encode(signature).decode('utf-8'), # Algoritma default diubah ke RSA
                         "alg": alg
                     }
+                    if app.config.get('QR_EMIT_KEY_ID'):
+                        payload["kid"] = RSA_KEY_ID if alg == 'RSA' else ECDSA_KEY_ID
                     
                     # BUAT QR CODE DENGAN URL VERIFIKASI YANG DIOPTIMALKAN
                     qr_url, encoded_data = generate_verification_url(payload, base_url_override=base_url)
@@ -9294,7 +9465,7 @@ def background_verify_massal_process(task_id):
                         verify_timer = Timer().start()
                         if alg == 'RSA':
                             try:
-                                verifier = pss.new(public_key, salt_bytes=8)
+                                verifier = verifier_rsa_pss(payload.get("kid") if isinstance(payload, dict) else None)
                                 verifier.verify(hash_obj, signature)
                                 signature_valid = True
                                 sig_error = ""

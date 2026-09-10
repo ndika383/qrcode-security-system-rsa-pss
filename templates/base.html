@@ -155,12 +155,17 @@
     <footer class="footer mt-4">
         <div class="container-fluid">
             <div class="row align-items-center">
-                <div class="col-md-6">
+                <div class="col-12 col-xl-4">
                     <span class="text-muted">
                         &copy; 2026 Automated Testing System v1.0
                     </span>
                 </div>
-                <div class="col-md-6 text-md-end">
+                <div class="col-12 col-xl-4">
+                    {% with logos_variant = 'institution-logos--inline' %}
+                    {% include 'components/institution_logos.html' %}
+                    {% endwith %}
+                </div>
+                <div class="col-12 col-xl-4 text-xl-end">
                     <span class="text-muted" id="current-time">
                         Loading time...
                     </span>

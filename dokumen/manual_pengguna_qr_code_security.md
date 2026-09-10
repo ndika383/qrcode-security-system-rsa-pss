@@ -516,11 +516,9 @@ Hasil benchmark adalah karakteristik lingkungan saat pengujian, bukan jaminan pe
 
 ## Dashboard Testing
 
-![Gambar 19a. Dashboard Testing: skenario normal sampai stress test.](manual-assets/17_testing_dashboard_01.jpg){width=15.5cm}
+![Gambar 19a. Dashboard Testing: Active Tests dan enam kartu skenario pengujian.](manual-assets/17_testing_dashboard_01.jpg){width=15.5cm}
 
-![Gambar 19b. Dashboard Testing: calibration dan history.](manual-assets/17_testing_dashboard_02.jpg){width=15.5cm}
-
-![Gambar 19c. Dashboard Testing: recent sessions dan server metrics.](manual-assets/17_testing_dashboard_03.jpg){width=15.5cm}
+![Gambar 19b. Dashboard Testing: kartu kalibrasi, history, dan tabel Recent Test Sessions.](manual-assets/17_testing_dashboard_02.jpg){width=15.5cm}
 
 Dashboard menyediakan Normal Operations, Replay Attack, Data Tampering, Signature Forgery, Simulated Stress Test, Real HTTP Stress Test, Performance Calibration, Test History, Active Tests, serta Comprehensive Test.
 
@@ -578,13 +576,9 @@ Pilih Base URL publik untuk menguji Nginx/HTTPS, atau localhost untuk jalur apli
 
 History menampilkan total, completed, running, failed, serta daftar session. Gunakan **View Results**, **Download Report**, atau delete sesuai kebijakan retensi.
 
-![Gambar 26a. Test History: ringkasan dan sesi awal.](manual-assets/24_testing_history_01.jpg){width=15.5cm}
+![Gambar 26a. Test History: ringkasan jumlah sesi dan awal tabel riwayat.](manual-assets/24_testing_history_01.jpg){width=15.5cm}
 
-![Gambar 26b. Test History: daftar sesi lanjutan.](manual-assets/24_testing_history_02.jpg){width=15.5cm}
-
-![Gambar 26c. Test History: detail sesi lanjutan.](manual-assets/24_testing_history_03.jpg){width=15.5cm}
-
-![Gambar 26d. Test History: bagian akhir daftar.](manual-assets/24_testing_history_04.jpg){width=15.5cm}
+![Gambar 26b. Test History: lanjutan tabel riwayat sampai sesi terakhir.](manual-assets/24_testing_history_02.jpg){width=15.5cm}
 
 ## Comprehensive Test
 

@@ -334,11 +334,16 @@
     </div>
 
     <footer class="bg-dark text-white mt-5 py-3">
-        <div class="container text-center">
-            <p class="mb-0">
-                CSV Generator &copy; 2026 | 
-                <i class="bi bi-file-earmark-binary"></i> Untuk Testing QR Code Massal
-            </p>
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-4">
+                {% with logos_variant = 'institution-logos--on-dark institution-logos--inline' %}
+                {% include 'components/institution_logos.html' %}
+                {% endwith %}
+                <p class="mb-0">
+                    CSV Generator &copy; 2026 | 
+                    <i class="bi bi-file-earmark-binary"></i> Untuk Testing QR Code Massal
+                </p>
+            </div>
         </div>
     </footer>
 

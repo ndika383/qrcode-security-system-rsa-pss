@@ -1,0 +1,129 @@
+{# templates/components/institution_logos.html
+
+   Logo institusi (Kemendiktisaintek + LPPM Universitas Amikom Yogyakarta),
+   lengkap dengan keterangan di bawah tiap logo. Sisipkan di setiap halaman:
+
+       {% include 'components/institution_logos.html' %}
+
+   Tanpa varian, blok tampil sebagai strip di kaki halaman: lebarnya mengikuti
+   .container Bootstrap dan logo rata kiri, sejajar dengan konten halaman.
+
+   Varian (boleh digabung, dipisah spasi) lewat variabel `logos_variant`:
+
+       institution-logos--center    rata tengah (kartu login)
+       institution-logos--on-dark   footer berlatar gelap, label jadi putih
+       institution-logos--inline    sebaris dengan teks footer, tanpa pembatas
+       institution-logos--panel     di dalam kartu putih, pembatas lebih tegas
+
+   Contoh:
+
+       {% with logos_variant = 'institution-logos--on-dark institution-logos--inline' %}
+       {% include 'components/institution_logos.html' %}
+       {% endwith %}
+
+   Komponen ini mandiri: tidak bergantung pada stylesheet halaman pemanggil,
+   sehingga aman dipakai di seluruh template sistem.
+#}
+<div class="institution-logos {{ logos_variant | default('', true) }}">
+    <figure class="institution-logos__item">
+        <img class="institution-logos__mark"
+             src="{{ url_for('static', filename='img/logo-kemdiktisaintek.svg') }}"
+             alt="Logo Kementerian Pendidikan Tinggi, Sains, dan Teknologi">
+        <figcaption class="institution-logos__label">Kemendiktisaintek</figcaption>
+    </figure>
+    <figure class="institution-logos__item">
+        <img class="institution-logos__mark"
+             src="{{ url_for('static', filename='img/logo-lppm-amikom.png') }}"
+             alt="Logo LPPM Universitas Amikom Yogyakarta">
+        <figcaption class="institution-logos__label">LPPM Universitas Amikom</figcaption>
+    </figure>
+</div>
+<style>
+    .institution-logos {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.75rem 2.25rem;
+        width: 100%;
+        margin: 1.5rem auto 0;
+        padding: 1rem 0.75rem;
+        border-top: 1px solid rgba(0, 0, 0, .12);
+    }
+    .institution-logos__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        max-width: 14rem;
+    }
+    .institution-logos__mark {
+        display: block;
+        height: 52px;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+    }
+    .institution-logos__label {
+        margin: 0;
+        font-size: 0.78rem;
+        line-height: 1.3;
+        font-weight: 600;
+        text-align: center;
+        color: #6c757d;
+    }
+
+    /* Lebar disamakan dengan .container Bootstrap supaya logo lurus dengan
+       konten halaman, bukan menempel ke tepi viewport. */
+    @media (min-width: 576px)  { .institution-logos { max-width: 540px; } }
+    @media (min-width: 768px)  { .institution-logos { max-width: 720px; } }
+    @media (min-width: 992px)  { .institution-logos { max-width: 960px; } }
+    @media (min-width: 1200px) { .institution-logos { max-width: 1140px; } }
+    @media (min-width: 1400px) { .institution-logos { max-width: 1320px; } }
+
+    /* Varian: rata tengah. */
+    .institution-logos--center {
+        justify-content: center;
+    }
+
+    /* Varian: footer berlatar gelap. */
+    .institution-logos--on-dark {
+        border-top-color: rgba(255, 255, 255, .2);
+    }
+    .institution-logos--on-dark .institution-logos__label {
+        color: #f8f9fa;
+    }
+
+    /* Varian: jadi salah satu item pada baris footer, sejajar teks lain.
+       Tanpa garis pemisah, tanpa jarak, dan tanpa batas lebar container. */
+    .institution-logos--inline {
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border-top: none;
+        gap: 0.5rem 1.5rem;
+    }
+    .institution-logos--inline .institution-logos__mark {
+        height: 44px;
+    }
+    .institution-logos--inline .institution-logos__label {
+        font-size: 0.72rem;
+    }
+
+    /* Varian: berada di dalam kartu putih halaman (mis. dashboard). Selebar
+       kartu, dengan pembatas lebih tegas terhadap konten utama di atasnya. */
+    .institution-logos--panel {
+        max-width: none;
+        margin-top: 1.75rem;
+        padding: 1.25rem 0 0.25rem;
+        border-top: 2px solid rgba(0, 0, 0, .12);
+    }
+
+    @media (max-width: 575.98px) {
+        .institution-logos { gap: 0.75rem 1.5rem; }
+        .institution-logos__mark { height: 42px; }
+        .institution-logos__label { font-size: 0.72rem; }
+    }
+</style>
