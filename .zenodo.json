@@ -35,8 +35,8 @@
     "NIST SP 800-57",
     "OpenAPI"
   ],
-  "version": "1.3.1",
-  "publication_date": "2026-09-04",
+  "version": "1.4.1",
+  "publication_date": "2026-09-10",
   "access_right": "open",
   "license": "MIT"
 }
