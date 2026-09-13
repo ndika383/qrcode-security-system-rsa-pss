@@ -38,6 +38,11 @@ empiris/
   empiris_per_subjenis.csv             laju deteksi 7 subjenis pemalsuan data
   empiris_waktu.csv                    statistik waktu 4 skenario
   MANIFEST.sha256                      checksum SHA-256 keempat berkas di atas
+ablasi/
+  hasil_ablasi_20260913_134354.json    keluaran lengkap harness ablasi per lapisan
+  ablasi_per_subjenis.csv              13 subjenis x 3 verifikator + struktur saja
+  ablasi_kontrol_negatif.csv           kontrol negatif pada tiap verifikator
+  MANIFEST.sha256                      checksum SHA-256 ketiga berkas di atas
 kalibrasi/
   kalibrasi_quick_check.json           tier 1.000 sampel
   kalibrasi_production.json            tier 10.000 sampel
@@ -206,6 +211,45 @@ menulis ke buku besar nonce berbasis SQLite, tetapi 99,6% dan 99,4% operasinya t
 bawah 20 ms. Metrik yang dibandingkan terhadap target proposal
 20,0 ms adalah **waktu deteksi pemalsuan data**, sesuai definisi pada usulan penelitian.
 
+## Ablasi per lapisan verifikasi
+
+Dijalankan 13 September 2026 melalui `data-penelitian/harness_ablasi_lapisan.py`, seed
+20260824, durasi 14 menit. Pengukuran empiris di atas membuktikan seluruh serangan
+tertolak, tetapi tidak memisahkan lapisan mana yang menolaknya. Harness ablasi
+mengulang keempat skenario yang sama tiga kali — alokasi subjenis identik karena
+verifikasi tidak mengonsumsi aliran acak — dengan verifikator berbeda, masing-masing
+dengan basis data status keamanan sementara yang baru:
+
+| Mode | Verifikator |
+|---|---|
+| `full` | Jalur produksi: verifikasi RSA-PSS lalu `classify_qr_verification()` |
+| `kriptografi` | Hanya verifikasi RSA-PSS salt 8 byte, setara verifikator luring berkunci publik |
+| `aplikasi` | `classify_qr_verification()` dengan tanda tangan dianggap sah: pembandingan rekaman asli, struktur, buku besar nonce, kedaluwarsa, drift, monotonik |
+
+Ditambah satu lintasan `validate_payload_structure()` saja atas 50.000 operasi
+pemalsuan data. Mode `full` mereproduksi hitungan per subjenis kampanye 4 September
+persis, sehingga sekaligus berfungsi sebagai uji reproduksi.
+
+| Subjenis | `kriptografi` | `aplikasi` | struktur saja |
+|---|---:|---:|---:|
+| T1 field_modification, T5 timestamp_tampering | 100% | 100% | 0% |
+| T2 field_addition, T3 field_removal, T4 data_type_change | 100% | 100% | 100% |
+| T6 signature_injection, T7 encryption_bypass | 100% | 0% | 0% |
+| R1 replay, R2 kedaluwarsa | 0% | 100% | — |
+| F1–F4 pemalsuan tanda tangan | 100% | 0% | — |
+
+Tanda tangan saja menjamin integritas dan keaslian, tetapi meloloskan seluruh 3.000
+replay dan 2.451 token kedaluwarsa karena tanda tangannya memang sah. Lapisan aplikasi
+saja menangkap keduanya, tetapi meloloskan 7.465 operasi yang hanya menyerang tanda
+tangan tanpa mengubah data. Kontrol negatif tidak ada yang ditolak keliru pada ketiga
+mode. Setiap lapisan memutuskan tiap subjenis secara deterministik (0% atau 100%), jadi
+laju bertingkat seperti 40% atau 60% pada sesi simulasi tidak mungkin dihasilkan
+konfigurasi verifikator mana pun.
+
+Fungsi verifikasi yang dipakai identik byte-per-byte dengan rilis 1.3.1 yang
+menghasilkan kampanye empiris. Kolom `ditolak_struktur_saja` kosong untuk subjenis
+yang tidak mengubah payload.
+
 ## Lingkungan pengukuran
 
 Ubuntu, Python 3.12.3, 2 vCPU pada 2,2 GHz, RAM 9,71 GB. Rincian per berkas kalibrasi
@@ -221,6 +265,9 @@ python3 data-penelitian/susun_ringkasan_kalibrasi.py
 # pengukuran empiris (wajib root: kunci privat bermode 0640 root:www-data)
 sudo venv/bin/python data-penelitian/harness_empiris.py \
      --operasi 50000 --replay 1500 --forgery 4000 --kedaluwarsa 5000
+
+# ablasi per lapisan (wajib root; keluaran ke data-penelitian/hasil-ablasi/)
+sudo venv/bin/python data-penelitian/harness_ablasi_lapisan.py
 ```
 
 Skrip ekspor membuka basis data dalam mode baca saja dan tidak pernah menulis ke sumber.

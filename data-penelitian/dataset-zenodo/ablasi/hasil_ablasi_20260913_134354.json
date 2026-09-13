@@ -1,0 +1,327 @@
+{
+  "metadata": {
+    "harness": "ablasi_lapisan",
+    "versi": "1.0",
+    "seed": 20260824,
+    "mulai": "2026-09-13T13:43:54.061870",
+    "argumen": {
+      "operasi": 50000,
+      "replay": 1500,
+      "forgery": 4000,
+      "kedaluwarsa": 5000,
+      "kontrol_tampering": 2500,
+      "kontrol_forgery": 500,
+      "seed": 20260824,
+      "keluaran": "data-penelitian/hasil-ablasi"
+    },
+    "selesai": "2026-09-13T13:57:53.145279"
+  },
+  "mode": {
+    "full": {
+      "pemalsuan_data": {
+        "total": 50000,
+        "terdeteksi": 50000,
+        "lolos": 0,
+        "per_subjenis": {
+          "field_modification": {
+            "total": 20030,
+            "terdeteksi": 20030,
+            "lolos": 0
+          },
+          "field_addition": {
+            "total": 10102,
+            "terdeteksi": 10102,
+            "lolos": 0
+          },
+          "field_removal": {
+            "total": 7467,
+            "terdeteksi": 7467,
+            "lolos": 0
+          },
+          "data_type_change": {
+            "total": 4993,
+            "terdeteksi": 4993,
+            "lolos": 0
+          },
+          "timestamp_tampering": {
+            "total": 3943,
+            "terdeteksi": 3943,
+            "lolos": 0
+          },
+          "signature_injection": {
+            "total": 2491,
+            "terdeteksi": 2491,
+            "lolos": 0
+          },
+          "encryption_bypass": {
+            "total": 974,
+            "terdeteksi": 974,
+            "lolos": 0
+          }
+        },
+        "kontrol_negatif": {
+          "total": 2500,
+          "keliru_ditolak": 0
+        }
+      },
+      "replay": {
+        "percobaan_replay": 3000,
+        "replay_terdeteksi": 3000,
+        "negatif_palsu": 0,
+        "verifikasi_pertama": 1500,
+        "positif_palsu": 0
+      },
+      "kedaluwarsa": {
+        "total": 5000,
+        "terdeteksi": 2451,
+        "lolos": 0,
+        "kontrol_negatif": {
+          "total": 2549,
+          "keliru_ditandai": 0
+        },
+        "total_kedaluwarsa": 2451
+      },
+      "pemalsuan_tanda_tangan": {
+        "total": 4000,
+        "ditolak": 4000,
+        "diterima": 0,
+        "per_jenis": {
+          "random_signature": {
+            "total": 1016,
+            "ditolak": 1016
+          },
+          "truncated_signature": {
+            "total": 963,
+            "ditolak": 963
+          },
+          "swapped_signature": {
+            "total": 1032,
+            "ditolak": 1032
+          },
+          "bit_flip": {
+            "total": 989,
+            "ditolak": 989
+          }
+        },
+        "kontrol_negatif": {
+          "total": 500,
+          "keliru_ditolak": 0
+        }
+      }
+    },
+    "kriptografi": {
+      "pemalsuan_data": {
+        "total": 50000,
+        "terdeteksi": 50000,
+        "lolos": 0,
+        "per_subjenis": {
+          "field_modification": {
+            "total": 20030,
+            "terdeteksi": 20030,
+            "lolos": 0
+          },
+          "field_addition": {
+            "total": 10102,
+            "terdeteksi": 10102,
+            "lolos": 0
+          },
+          "field_removal": {
+            "total": 7467,
+            "terdeteksi": 7467,
+            "lolos": 0
+          },
+          "data_type_change": {
+            "total": 4993,
+            "terdeteksi": 4993,
+            "lolos": 0
+          },
+          "timestamp_tampering": {
+            "total": 3943,
+            "terdeteksi": 3943,
+            "lolos": 0
+          },
+          "signature_injection": {
+            "total": 2491,
+            "terdeteksi": 2491,
+            "lolos": 0
+          },
+          "encryption_bypass": {
+            "total": 974,
+            "terdeteksi": 974,
+            "lolos": 0
+          }
+        },
+        "kontrol_negatif": {
+          "total": 2500,
+          "keliru_ditolak": 0
+        }
+      },
+      "replay": {
+        "percobaan_replay": 3000,
+        "replay_terdeteksi": 0,
+        "negatif_palsu": 3000,
+        "verifikasi_pertama": 1500,
+        "positif_palsu": 0
+      },
+      "kedaluwarsa": {
+        "total": 5000,
+        "terdeteksi": 0,
+        "lolos": 2451,
+        "kontrol_negatif": {
+          "total": 2549,
+          "keliru_ditandai": 0
+        },
+        "total_kedaluwarsa": 2451
+      },
+      "pemalsuan_tanda_tangan": {
+        "total": 4000,
+        "ditolak": 4000,
+        "diterima": 0,
+        "per_jenis": {
+          "random_signature": {
+            "total": 1016,
+            "ditolak": 1016
+          },
+          "truncated_signature": {
+            "total": 963,
+            "ditolak": 963
+          },
+          "swapped_signature": {
+            "total": 1032,
+            "ditolak": 1032
+          },
+          "bit_flip": {
+            "total": 989,
+            "ditolak": 989
+          }
+        },
+        "kontrol_negatif": {
+          "total": 500,
+          "keliru_ditolak": 0
+        }
+      }
+    },
+    "aplikasi": {
+      "pemalsuan_data": {
+        "total": 50000,
+        "terdeteksi": 46535,
+        "lolos": 3465,
+        "per_subjenis": {
+          "field_modification": {
+            "total": 20030,
+            "terdeteksi": 20030,
+            "lolos": 0
+          },
+          "field_addition": {
+            "total": 10102,
+            "terdeteksi": 10102,
+            "lolos": 0
+          },
+          "field_removal": {
+            "total": 7467,
+            "terdeteksi": 7467,
+            "lolos": 0
+          },
+          "data_type_change": {
+            "total": 4993,
+            "terdeteksi": 4993,
+            "lolos": 0
+          },
+          "timestamp_tampering": {
+            "total": 3943,
+            "terdeteksi": 3943,
+            "lolos": 0
+          },
+          "signature_injection": {
+            "total": 2491,
+            "terdeteksi": 0,
+            "lolos": 2491
+          },
+          "encryption_bypass": {
+            "total": 974,
+            "terdeteksi": 0,
+            "lolos": 974
+          }
+        },
+        "kontrol_negatif": {
+          "total": 2500,
+          "keliru_ditolak": 0
+        }
+      },
+      "replay": {
+        "percobaan_replay": 3000,
+        "replay_terdeteksi": 3000,
+        "negatif_palsu": 0,
+        "verifikasi_pertama": 1500,
+        "positif_palsu": 0
+      },
+      "kedaluwarsa": {
+        "total": 5000,
+        "terdeteksi": 2451,
+        "lolos": 0,
+        "kontrol_negatif": {
+          "total": 2549,
+          "keliru_ditandai": 0
+        },
+        "total_kedaluwarsa": 2451
+      },
+      "pemalsuan_tanda_tangan": {
+        "total": 4000,
+        "ditolak": 0,
+        "diterima": 4000,
+        "per_jenis": {
+          "random_signature": {
+            "total": 1016,
+            "ditolak": 0
+          },
+          "truncated_signature": {
+            "total": 963,
+            "ditolak": 0
+          },
+          "swapped_signature": {
+            "total": 1032,
+            "ditolak": 0
+          },
+          "bit_flip": {
+            "total": 989,
+            "ditolak": 0
+          }
+        },
+        "kontrol_negatif": {
+          "total": 500,
+          "keliru_ditolak": 0
+        }
+      }
+    }
+  },
+  "struktur_saja": {
+    "field_modification": {
+      "total": 20030,
+      "terdeteksi": 0
+    },
+    "field_addition": {
+      "total": 10102,
+      "terdeteksi": 10102
+    },
+    "field_removal": {
+      "total": 7467,
+      "terdeteksi": 7467
+    },
+    "data_type_change": {
+      "total": 4993,
+      "terdeteksi": 4993
+    },
+    "timestamp_tampering": {
+      "total": 3943,
+      "terdeteksi": 0
+    },
+    "signature_injection": {
+      "total": 2491,
+      "terdeteksi": 0
+    },
+    "encryption_bypass": {
+      "total": 974,
+      "terdeteksi": 0
+    }
+  }
+}

@@ -61,6 +61,27 @@ perubahan field tertandatangani merusak digest SHA-256. Yang **berubah tiap run*
 hanyalah statistik waktu, sebab diukur dengan `time.perf_counter()` terhadap jam
 dinding.
 
+### `harness_ablasi_lapisan.py`
+Ablasi per lapisan atas kampanye empiris, ditambahkan 13 September 2026 untuk revisi
+naskah JAIC. Harness ini mengimpor `harness_empiris.py` dan menjalankan ulang keempat
+skenarionya dengan seed yang sama sebanyak tiga kali, masing-masing dengan verifikator
+berbeda: jalur produksi penuh, verifikasi RSA-PSS saja, dan lapisan aplikasi saja
+(tanda tangan dianggap sah). Satu lintasan tambahan mencatat `validate_payload_structure()`
+saja untuk subjenis pemalsuan data.
+
+Tujuannya memisahkan integritas kriptografis dari validasi tingkat aplikasi: mana yang
+dijamin tanda tangan, dan mana yang hanya dapat ditangkap pemeriksaan berstatus
+(replay, kedaluwarsa). Tiap mode memakai basis data status keamanan sementara yang
+baru, jadi buku besar nonce produksi tidak tersentuh.
+
+```bash
+sudo venv/bin/python data-penelitian/harness_ablasi_lapisan.py
+```
+
+Keluarannya tersimpan di `dataset-zenodo/ablasi/`. Mode penuh wajib mereproduksi
+`dataset-zenodo/empiris/empiris_per_subjenis.csv` persis; bila tidak, hasil ablasi
+tidak sah.
+
 ### `uji_penguatan_validasi_semantik.py`
 Uji regresi 12 kasus atas penguatan lapisan validasi semantik (kegiatan 1 pada
 Tabel 16): toleransi drift timestamp 300 detik, penegakan timestamp monotonik per

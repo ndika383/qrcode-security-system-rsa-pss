@@ -1,0 +1,4 @@
+mode,kontrol_pemalsuan_data_total,keliru_ditolak,kontrol_kedaluwarsa_total,keliru_ditandai,kontrol_tanda_tangan_total,keliru_ditolak_ttd,verifikasi_pertama_replay,positif_palsu_replay
+full,2500,0,2549,0,500,0,1500,0
+kriptografi,2500,0,2549,0,500,0,1500,0
+aplikasi,2500,0,2549,0,500,0,1500,0

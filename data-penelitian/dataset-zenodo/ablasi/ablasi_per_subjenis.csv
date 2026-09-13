@@ -1,0 +1,14 @@
+id,subjenis,n,ditolak_full,ditolak_kriptografi,ditolak_aplikasi,ditolak_struktur_saja
+T1,field_modification,20030,20030,20030,20030,0
+T2,field_addition,10102,10102,10102,10102,10102
+T3,field_removal,7467,7467,7467,7467,7467
+T4,data_type_change,4993,4993,4993,4993,4993
+T5,timestamp_tampering,3943,3943,3943,3943,0
+T6,signature_injection,2491,2491,2491,0,0
+T7,encryption_bypass,974,974,974,0,0
+R1,replay,3000,3000,0,3000,
+R2,kedaluwarsa,2451,2451,0,2451,
+F1,random_signature,1016,1016,1016,0,
+F2,truncated_signature,963,963,963,0,
+F3,swapped_signature,1032,1032,1032,0,
+F4,bit_flip,989,989,989,0,
