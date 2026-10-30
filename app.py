@@ -122,16 +122,21 @@ class Config:
     # terbesar di aplikasi ini hanya berisi nama/prefix/angka, jadi 1 MB sudah
     # sangat longgar. Sebelumnya None alias tanpa batas. 0 = tidak terbatas.
     #
-    # PENTING - cakupan sebenarnya pada Werkzeug 3.0.3 yang terpasang saat ini:
-    # batas ini ditegakkan untuk body application/x-www-form-urlencoded
-    # (formparser.py memeriksa content_length), TETAPI TIDAK efektif untuk
-    # multipart/form-data: sansio/multipart.py hanya memeriksa buffer kerja
-    # parser (len(buffer) + len(data)), yang terus dikuras saat parsing, jadi
-    # field besar yang datang bertahap tidak pernah melampaui batas. Itulah
-    # CVE-2024-49767, dan sudah diverifikasi terjadi di instalasi ini.
-    # Jalur multipart baru benar-benar terlindungi setelah Werkzeug >= 3.0.6.
-    # Sampai upgrade itu dilakukan, pelindung endpoint upload publik adalah
-    # rate limit per-IP di atas, bukan batas ini.
+    # CAKUPAN pada Werkzeug >= 3.1 (terpasang 3.1.9, lihat requirements.txt):
+    # batas ini berlaku PER text part pada multipart/form-data, diperiksa
+    # dengan benar terhadap ukuran field (formparser.py: field_size >
+    # max_form_memory_size). Inilah yang melindungi keempat endpoint upload
+    # publik, karena semuanya memakai multipart.
+    #
+    # Pada Werkzeug 3.0.3 sebelumnya pemeriksaan itu keliru: hanya menyentuh
+    # buffer kerja parser (len(buffer) + len(data)) yang terus dikuras saat
+    # parsing, sehingga field besar yang datang bertahap tidak pernah
+    # melampaui batas. Itu CVE-2024-49767, terverifikasi aktif di instalasi
+    # ini sebelum upgrade. JANGAN turunkan Werkzeug ke < 3.0.6.
+    #
+    # Sejak 3.1 batas ini TIDAK lagi diterapkan pada body
+    # x-www-form-urlencoded (seluruh stream dibaca sekaligus); yang membatasi
+    # jalur itu adalah MAX_CONTENT_LENGTH.
     MAX_FORM_MEMORY_SIZE = int(os.environ.get('MAX_FORM_MEMORY_SIZE', str(1024 * 1024)))
     MAX_FILES_MASSAL = 0  # 0 = tidak terbatas
     MAX_TOTAL_SIZE_MASSAL = 0  # 0 = tidak terbatas
