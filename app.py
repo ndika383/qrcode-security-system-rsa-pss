@@ -87,6 +87,14 @@ class Config:
     RATELIMIT_GENERATE = os.environ.get('RATELIMIT_GENERATE', "60 per minute")
     RATELIMIT_TESTING_PROGRESS = os.environ.get('RATELIMIT_TESTING_PROGRESS', "1000 per minute")
     RATELIMIT_DASHBOARD = os.environ.get('RATELIMIT_DASHBOARD', "60 per minute")
+    # Endpoint upload berikut tidak memerlukan login, sehingga siapa pun di
+    # internet dapat mengirim gambar untuk diurai OpenCV + diverifikasi RSA.
+    # Sebelumnya hanya dibatasi RATELIMIT_DEFAULT (1000/jam). Limit per-IP di
+    # bawah dapat dilonggarkan lewat environment untuk keperluan uji beban.
+    RATELIMIT_VERIFY = os.environ.get('RATELIMIT_VERIFY', "30 per minute")
+    RATELIMIT_VERIFY_MASSAL = os.environ.get('RATELIMIT_VERIFY_MASSAL', "10 per minute")
+    RATELIMIT_MODIFY = os.environ.get('RATELIMIT_MODIFY', "30 per minute")
+    RATELIMIT_BATCH_MODIFY = os.environ.get('RATELIMIT_BATCH_MODIFY', "10 per minute")
     
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000/')  # Default ke localhost, akan dideteksi otomatis
@@ -109,7 +117,22 @@ class Config:
     MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 500MB (Mendukung upload batch file besar)
     # Werkzeug membatasi multipart ke 1000 part secara default; satu file upload = satu part.
     MAX_FORM_PARTS = int(os.environ.get('MAX_FORM_PARTS', '20000'))  # 0 = tidak terbatas
-    MAX_FORM_MEMORY_SIZE = int(os.environ['MAX_FORM_MEMORY_SIZE']) if os.environ.get('MAX_FORM_MEMORY_SIZE') else None
+    # Batas data form NON-FILE yang ditahan di memori. File upload tidak
+    # dihitung di sini karena Werkzeug menumpahkannya ke disk, dan field form
+    # terbesar di aplikasi ini hanya berisi nama/prefix/angka, jadi 1 MB sudah
+    # sangat longgar. Sebelumnya None alias tanpa batas. 0 = tidak terbatas.
+    #
+    # PENTING - cakupan sebenarnya pada Werkzeug 3.0.3 yang terpasang saat ini:
+    # batas ini ditegakkan untuk body application/x-www-form-urlencoded
+    # (formparser.py memeriksa content_length), TETAPI TIDAK efektif untuk
+    # multipart/form-data: sansio/multipart.py hanya memeriksa buffer kerja
+    # parser (len(buffer) + len(data)), yang terus dikuras saat parsing, jadi
+    # field besar yang datang bertahap tidak pernah melampaui batas. Itulah
+    # CVE-2024-49767, dan sudah diverifikasi terjadi di instalasi ini.
+    # Jalur multipart baru benar-benar terlindungi setelah Werkzeug >= 3.0.6.
+    # Sampai upgrade itu dilakukan, pelindung endpoint upload publik adalah
+    # rate limit per-IP di atas, bukan batas ini.
+    MAX_FORM_MEMORY_SIZE = int(os.environ.get('MAX_FORM_MEMORY_SIZE', str(1024 * 1024)))
     MAX_FILES_MASSAL = 0  # 0 = tidak terbatas
     MAX_TOTAL_SIZE_MASSAL = 0  # 0 = tidak terbatas
 
@@ -119,7 +142,8 @@ app.config.from_object(Config)
 
 configured_max_form_parts = app.config.get('MAX_FORM_PARTS')
 app.request_class.max_form_parts = None if configured_max_form_parts == 0 else configured_max_form_parts
-app.request_class.max_form_memory_size = app.config.get('MAX_FORM_MEMORY_SIZE')
+configured_max_form_memory = app.config.get('MAX_FORM_MEMORY_SIZE')
+app.request_class.max_form_memory_size = None if configured_max_form_memory == 0 else configured_max_form_memory
 
 if app.config['TRUST_PROXY_HEADERS']:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
@@ -3910,6 +3934,7 @@ def scanner():
     return render_template('scanner.html', hasil_tunggal=None, hasil_massal=None)
 
 @app.route('/verify_qr', methods=['POST'])
+@limiter.limit(app.config['RATELIMIT_VERIFY'])
 def verify_qr():
     if not is_verification_feature_enabled():
         return verification_disabled_view('Verifikasi QR sedang dinonaktifkan sementara.')
@@ -4587,6 +4612,7 @@ def modify_qr_page():
         return redirect(url_for('index'))
 
 @app.route('/modify_upload', methods=['POST'])
+@limiter.limit(app.config['RATELIMIT_MODIFY'])
 def modify_upload():
     """Upload QR Code untuk dimodifikasi - DIPERBAIKI UNTUK MENANGANI URL DAN JSON"""
     try:
@@ -4991,6 +5017,7 @@ def apply_modification():
         return redirect(url_for('modify_qr_page'))
 
 @app.route('/batch_modify', methods=['POST'])
+@limiter.limit(app.config['RATELIMIT_BATCH_MODIFY'])
 def batch_modify():
     """Modifikasi batch dari file CSV"""
     try:
@@ -5184,6 +5211,7 @@ def download_batch_fake():
         return redirect(url_for('modify_qr_page'))
 
 @app.route('/verify_qr_massal', methods=['POST'])
+@limiter.limit(app.config['RATELIMIT_VERIFY_MASSAL'])
 def verify_qr_massal():
     if not is_verification_feature_enabled():
         flash('Fitur verifikasi massal sedang dinonaktifkan sementara.', 'warning')
