@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "tier": "validation",
+    "num_samples": 100000,
+    "calibration_date": "2026-11-22 05:29:07",
+    "total_runtime_seconds": 987.317224141967,
+    "salt_bytes_rsa_pss": 8,
+    "platform": "Linux 6.8.0-147-generic x86_64",
+    "python": "3.12.3",
+    "catatan": "Ed25519 menandatangani pesan mentah (RFC 8032); RSA-PSS dan ECDSA menandatangani digest SHA-256."
+  },
+  "benchmark_results": {
+    "rsa_pss_2048": {
+      "signing": {
+        "mean": 2.1987533253600122,
+        "std": 0.17411805383380285,
+        "ci_lower": 2.197674137249765,
+        "ci_upper": 2.1998325134702594,
+        "ci_width": 0.00215837622049443,
+        "relative_error_percent": 0.04908181821944553,
+        "samples": 100000
+      },
+      "verification": {
+        "mean": 0.7404272219113772,
+        "std": 0.07452401596731544,
+        "ci_lower": 0.7399653201717875,
+        "ci_upper": 0.7408891236509669,
+        "ci_width": 0.0009238034791793295,
+        "relative_error_percent": 0.06238313853416784,
+        "samples": 100000
+      }
+    },
+    "ecdsa_p256": {
+      "signing": {
+        "mean": 1.032287472920143,
+        "std": 0.10627465136469981,
+        "ci_lower": 1.0316287799377202,
+        "ci_upper": 1.0329461659025658,
+        "ci_width": 0.0013173859648457238,
+        "relative_error_percent": 0.06380906479079379,
+        "samples": 100000
+      },
+      "verification": {
+        "mean": 2.15441000241437,
+        "std": 0.18733820256320577,
+        "ci_lower": 2.1532488754872663,
+        "ci_upper": 2.1555711293414737,
+        "ci_width": 0.0023222538542071237,
+        "relative_error_percent": 0.053895355378146624,
+        "samples": 100000
+      }
+    },
+    "ed25519": {
+      "signing": {
+        "mean": 1.0189386104157894,
+        "std": 0.10051358362713272,
+        "ci_lower": 1.0183156246772038,
+        "ci_upper": 1.019561596154375,
+        "ci_width": 0.0012459714771712214,
+        "relative_error_percent": 0.06114065481642652,
+        "samples": 100000
+      },
+      "verification": {
+        "mean": 2.7088129741419107,
+        "std": 0.24401200019992283,
+        "ci_lower": 2.7073005815807996,
+        "ci_upper": 2.710325366703022,
+        "ci_width": 0.003024785122222342,
+        "relative_error_percent": 0.05583229907521622,
+        "samples": 100000
+      }
+    }
+  },
+  "ukuran_statis": {
+    "rsa_pss_2048": {
+      "signature_bytes": 256,
+      "public_key_bytes": 294
+    },
+    "ecdsa_p256": {
+      "signature_bytes": 64,
+      "public_key_bytes": 91
+    },
+    "ed25519": {
+      "signature_bytes": 64,
+      "public_key_bytes": 44
+    }
+  }
+}

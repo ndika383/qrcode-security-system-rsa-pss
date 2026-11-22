@@ -1,0 +1,5 @@
+algoritma,salt_bytes,signature_bytes,signature_base64_bytes,envelope_json_bytes,qr_version_envelope_tertanam,public_key_der_bytes
+rsa_pss_2048_slen8,8,256,344,562,22,294
+rsa_pss_2048_slen32,32,256,344,565,22,294
+ecdsa_p256,,64,88,274,15,91
+ed25519,,64,88,268,15,44
